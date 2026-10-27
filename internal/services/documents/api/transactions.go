@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
@@ -25,16 +26,11 @@ import (
 
 // principalOf is the caller as transactions know it (ADR-025 §7.1): an admin (a service account,
 // the project's owner, the dev owner) or an end user (an ID token, or none), named stably across
-// its requests. An end user's uid is its ID token's sub, unverified until the rules verify the
-// token (F5): before F5 only documents.dev_open_rules admits an end user at all.
-//
-// TODO(F5): bind an end user to the uid the rules verified, never to UnverifiedSubject, and give
-// a token that fails verification no principal (F2 review M3). Until then the binding of an id
-// to its end user, and the per-user bound (documents.limits.max_open_txns_per_user), rest on a
-// claim anyone can forge; and every caller without a credential is the one principal "", which
-// that bound skips (they share max_open_unlocked_txns). Ids stay unguessable: they carry a
-// 128-bit MAC.
-func principalOf(c *authn.Caller) core.Principal {
+// its requests. An end user is the uid of the token the service verified (claims; F2 review M3):
+// a token that fails verification is refused before any transaction sees it. Every caller
+// without a credential is the one principal "", which documents.limits.max_open_txns_per_user
+// skips (they share max_open_unlocked_txns). Ids stay unguessable: they carry a 128-bit MAC.
+func principalOf(c *authn.Caller, claims *idtoken.Claims) core.Principal {
 	switch {
 	case c.Role == authn.RoleAdmin && c.Principal == nil: // the dev owner
 		return core.Principal{Admin: true}
@@ -42,8 +38,10 @@ func principalOf(c *authn.Caller) core.Principal {
 		return core.Principal{Admin: true, ID: cmp.Or(c.Principal.Email, c.Principal.ServiceAccountID.String())}
 	case c.Role == authn.RoleAdmin:
 		return core.Principal{Admin: true, ID: c.Principal.AccountID.String()}
+	case claims != nil:
+		return core.Principal{ID: claims.UID}
 	}
-	return core.Principal{ID: c.UnverifiedSubject()}
+	return core.Principal{}
 }
 
 // transaction names a transaction the request's caller uses.
@@ -92,6 +90,11 @@ func (s *Service) BeginTransaction(ctx context.Context, c Call, req *pb.BeginTra
 	if err != nil {
 		return nil, err
 	}
+	if !o.ReadOnly {
+		if err := a.refuseHeld(); err != nil {
+			return nil, err
+		}
+	}
 	id, err := s.o.Store.BeginTransaction(ctx, a.db, a.by, o)
 	if err != nil {
 		return nil, s.fail(ctx, err)
@@ -120,6 +123,11 @@ func (s *Service) newTransaction(ctx context.Context, a admitted, o *pb.Transact
 	opts, err := transactionOptions(o)
 	if err != nil {
 		return nil, nil, err
+	}
+	if !opts.ReadOnly {
+		if err := a.refuseHeld(); err != nil {
+			return nil, nil, err
+		}
 	}
 	id, err = s.o.Store.BeginTransaction(ctx, a.db, a.by, opts)
 	if err != nil {

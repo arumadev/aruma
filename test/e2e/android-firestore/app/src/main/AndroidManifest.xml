@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- http to the server on the device's loopback (adb reverse), for this test app only. -->
+    <application
+        android:label="Aruma Document Database e2e"
+        android:networkSecurityConfig="@xml/network_security_config">
+        <meta-data android:name="ArumaURL" android:value="${arumaUrl}" />
+        <meta-data android:name="ArumaRedirectLog" android:value="true" />
+    </application>
+</manifest>

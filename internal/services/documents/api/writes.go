@@ -109,6 +109,10 @@ func (s *Service) commitWrites(ctx context.Context, a admitted, ws []*pb.Write, 
 	if err := sameDocumentWrites(writes); err != nil {
 		return core.CommitResult{}, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return core.CommitResult{}, err
+	}
 	var res core.CommitResult
 	if len(txn) > 0 {
 		res, err = s.o.Store.CommitTransaction(ctx, a.db, *a.transaction(txn), writes)
@@ -158,6 +162,10 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 	if err != nil {
 		return nil, err
 	}
+	// Production refuses BatchWrite to end users, even every write allowed (rules.go).
+	if err := a.refuseHeld(); err != nil {
+		return nil, err
+	}
 	writes, err := writesOf(req.GetWrites())
 	if err != nil {
 		return nil, err
@@ -169,6 +177,10 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 			return nil, errSameDocument
 		}
 		seen[k] = true
+	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
 	}
 	results := make([]core.CommitResult, len(writes))
 	errs := make([]error, len(writes))

@@ -116,6 +116,8 @@ type Ruleset struct {
 	blocks []*compiledBlock
 	// treeBytes estimates the tree the ruleset keeps, for Weight.
 	treeBytes int64
+	// readsTime is whether an expression may read request.time (ReadsRequestTime).
+	readsTime bool
 }
 
 // Version returns the file's rules_version: 1 or 2.
@@ -125,6 +127,11 @@ func (rs *Ruleset) Version() int { return rs.version }
 // Evaluate refuses a longer one as an invalid request, which a service answers UNAVAILABLE, so
 // the service denies such a path itself.
 func (rs *Ruleset) RequestSegments() int { return rs.lim.RequestSegments }
+
+// ReadsRequestTime reports whether an expression of the file may read request.time, so that a
+// decision may change with the clock alone. It is conservative: request used whole (passed to a
+// function, compared, its keys()) or indexed by an expression counts as reading it.
+func (rs *Ruleset) ReadsRequestTime() bool { return rs.readsTime }
 
 // Service returns the service the ruleset was compiled for.
 func (rs *Ruleset) Service() Service { return rs.service }

@@ -64,6 +64,12 @@ func equal(m *meter, rel relation, a, b Value) (bool, error) {
 	if err := m.work(visitWork); err != nil {
 		return false, err
 	}
+	if err := reserved(a); err != nil {
+		return false, err // a reserved value a service put in a container
+	}
+	if err := reserved(b); err != nil {
+		return false, err
+	}
 	if a.isNumber() && b.isNumber() {
 		return numbersEqual(rel, a, b), nil
 	}
@@ -310,6 +316,9 @@ var hashSeed = maphash.MakeSeed()
 // visits.
 func hashValue(m *meter, rel relation, v Value) (uint64, error) {
 	if err := m.work(visitWork); err != nil {
+		return 0, err
+	}
+	if err := reserved(v); err != nil {
 		return 0, err
 	}
 	inner := relContainer

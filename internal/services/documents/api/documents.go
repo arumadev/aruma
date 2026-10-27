@@ -3,6 +3,7 @@ package api
 import (
 	"cmp"
 	"context"
+	"errors"
 	"slices"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -39,9 +40,19 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	if err != nil {
 		return nil, err
 	}
-	d, _, err := s.o.Store.Get(ctx, a.db, pathOf(n), ro)
+	d, readTime, err := s.o.Store.Get(ctx, a.db, pathOf(n), ro)
+	if ce, ok := errors.AsType[*core.Error](err); ok && ce.Code == core.NotFound {
+		// The rules decide first: a missing document is NOT_FOUND only to whom may read it. Their
+		// lookups read at the time the store read, a transaction's snapshot too.
+		if err := s.allowReads(ctx, a, []core.Document{{Path: pathOf(n)}}, readTime, readBudget()); err != nil {
+			return nil, err
+		}
+	}
 	if err != nil {
 		return nil, s.fail(ctx, err)
+	}
+	if err := s.allowReads(ctx, a, []core.Document{d}, readTime, readBudget()); err != nil {
+		return nil, err
 	}
 	return documentProto(a.db, d, mask, masked), nil
 }
@@ -55,7 +66,8 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 //
 // The documents are read batchGetChunk at a time, in name order, at the first read's time, and
 // each chunk's found documents are sent before the next is read: a request's memory is bounded
-// by a chunk of documents, not by every document it names (F1 review M3). In a transaction each
+// by a chunk of documents, not by every document it names (F1 review M3); under rules, a request
+// of more than one chunk reads them twice, to judge all of them first. In a transaction each
 // chunk reads as the transaction does. With new_transaction the read runs in a transaction begun
 // for it, whose id is the first response, alone (f1-batch-get.json new_transaction.*,
 // new_transaction.empty_list).
@@ -115,6 +127,25 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 	paths = slices.CompactFunc(paths, func(x, y core.Path) bool { return comparePaths(x, y) == 0 })
 	var missing []core.Path
 	var rt *timestamppb.Timestamp
+	budget := readBudget()
+	// The rules judge every document before any is sent, so a denial denies the request whole.
+	// Past one chunk they are judged in a pass of their own, which reads the chunks again to send
+	// them, at the same time or in the same transaction, with memory still bounded by a chunk.
+	judgedFirst := a.guard != nil && len(paths) > batchGetChunk
+	if judgedFirst {
+		for chunk := range slices.Chunk(paths, batchGetChunk) {
+			docs, readTime, err := s.o.Store.BatchGet(ctx, a.db, chunk, ro)
+			if err != nil {
+				return s.fail(ctx, err)
+			}
+			if ro.Transaction == nil {
+				ro.ReadTime = readTime
+			}
+			if err := s.allowReads(ctx, a, docs, readTime, budget); err != nil {
+				return err
+			}
+		}
+	}
 	for chunk := range slices.Chunk(paths, batchGetChunk) {
 		docs, readTime, err := s.o.Store.BatchGet(ctx, a.db, chunk, ro)
 		if err != nil {
@@ -124,6 +155,11 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 			ro.ReadTime = readTime
 		}
 		rt = timestamppb.New(readTime)
+		if !judgedFirst {
+			if err := s.allowReads(ctx, a, docs, readTime, budget); err != nil {
+				return err
+			}
+		}
 		for _, d := range docs {
 			if !d.Exists() {
 				missing = append(missing, d.Path)
@@ -195,6 +231,14 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
+		return nil, err
+	}
+	// A list without filters (q1.list-documents). The page size as the limit is unrecorded.
+	lq := listQuery{parent: pathOf(parent), collection: req.GetCollectionId(), orders: len(order)}
+	if ps := req.GetPageSize(); ps > 0 {
+		lq.limit = new(int64(ps))
+	}
+	if err := s.allowList(ctx, a, lq, ro.ReadTime); err != nil {
 		return nil, err
 	}
 	listing := listingDigest(parent.String(), req.GetCollectionId(), order.String(), req.GetShowMissing())
@@ -313,6 +357,10 @@ func (s *Service) CreateDocument(ctx context.Context, c Call, req *pb.CreateDocu
 	if err != nil {
 		return nil, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
 	res, err := s.o.Store.Commit(ctx, a.db, []core.Write{{
 		Kind: core.WriteUpdate, Path: pathOf(n), Fields: fields,
 		Precondition: core.Precondition{Exists: new(false)},
@@ -347,7 +395,11 @@ func (s *Service) UpdateDocument(ctx context.Context, c Call, req *pb.UpdateDocu
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.o.Store.Commit(ctx, a.db, []core.Write{w})
+	jctx, err := s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.o.Store.Commit(jctx, a.db, []core.Write{w})
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
@@ -379,6 +431,10 @@ func (s *Service) DeleteDocument(ctx context.Context, c Call, req *pb.DeleteDocu
 	if err != nil {
 		return nil, err
 	}
+	ctx, err = s.judged(ctx, a)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := s.o.Store.Commit(ctx, a.db, []core.Write{{Kind: core.WriteDelete, Path: pathOf(n), Precondition: pre}}); err != nil {
 		return nil, s.fail(ctx, err)
 	}
@@ -390,6 +446,9 @@ func (s *Service) DeleteDocument(ctx context.Context, c Call, req *pb.DeleteDocu
 func (s *Service) ListCollectionIds(ctx context.Context, c Call, req *pb.ListCollectionIdsRequest) (*pb.ListCollectionIdsResponse, error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
+		return nil, err
+	}
+	if err := a.requireBypass(); err != nil {
 		return nil, err
 	}
 	parent, err := wire.ParseParentName(req.GetParent())

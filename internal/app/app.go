@@ -60,7 +60,7 @@ type App struct {
 	Users       idtoken.Users
 
 	// The Firestore and Storage rules engine's limits, and the one cap on the memory of every
-	// evaluation in the process (ADR-021 §4). Storage takes both with rules.NoDocuments{}; the
+	// evaluation in the process (ADR-021 §4). Storage and the Document Database take both; the
 	// rules API takes the limits alone, since its :test evaluates nothing.
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
@@ -153,14 +153,21 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Revocations: revocations,
 		}, logger)
 	}
+	// The Document Database, when enabled, is what Storage's rules read (firestore.get()).
+	var docs *Documents
+	var ruleDocuments rules.Documents = rules.NoDocuments{}
+	if cfg.Documents.Enabled {
+		docs = newDocuments(cfg, svc, pool, keys, m, idTokens, revocations, rulesInflight, logger)
+		ruleDocuments = docs.RuleDocuments()
+	}
 	var storageSvc *storage.Service
 	if cfg.Storage.Enabled {
 		disk, err := blob.NewDisk(cfg.Storage.DataDir)
 		if err != nil {
 			return nil, fmt.Errorf("storage: %w", err)
 		}
-		// Storage resolves buckets, rulesets and ownership through the control plane, reads no
-		// Firestore document until v0.4, shares the process's one cap on rules memory, and asks
+		// Storage resolves buckets, rulesets and ownership through the control plane, reads the
+		// Document Database's documents when it is enabled, shares the process's one cap on rules memory, and asks
 		// Auth for a user's live state when an upload finalizes (ADR-022 §7, §8). It opens
 		// nothing here: Boot takes the data directory before the listener opens (Serve).
 		storageMetrics := storage.NewMetrics()
@@ -168,7 +175,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			Limits:    storage.Limits(cfg.Storage.Limits),
 			Keys:      keys,
 			Projects:  svc,
-			Documents: rules.NoDocuments{},
+			Documents: ruleDocuments,
 			Inflight:  rulesInflight,
 			Users:     users,
 			DataDir:   cfg.Storage.DataDir,
@@ -192,7 +199,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{
-		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits,
+		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, Documents: docs != nil, RulesLimits: rulesLimits,
 	})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {
@@ -241,9 +248,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		svc.OnProjectPurged(storageSvc.PurgeProject)
 	}
 
-	var docs *Documents
-	if cfg.Documents.Enabled {
-		docs = newDocuments(cfg, svc, pool, keys, m, idTokens, revocations, logger)
+	if docs != nil {
 		docs.mount(&handlers)
 	}
 

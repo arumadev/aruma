@@ -24,6 +24,8 @@ import (
 
 	"github.com/arumadev/aruma/internal/platform/authn"
 	acrypto "github.com/arumadev/aruma/internal/platform/crypto"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/listen"
@@ -91,7 +93,7 @@ func New(t testing.TB, o Options) *Env {
 	}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := tenancy.New(pool, keys, acrypto.NewHasher(acrypto.Argon2Params{Time: 1, Memory: 64, Threads: 1}, 1),
-		tenancy.Options{PublicURL: PublicURL, ProjectDomain: "aruma.test"}, log)
+		tenancy.Options{PublicURL: PublicURL, ProjectDomain: "aruma.test", RulesLimits: rules.DefaultLimits()}, log)
 	id := uuid.New()
 	if _, err := pool.Exec(t.Context(), `INSERT INTO control.accounts (id, email, password_hash) VALUES ($1, 'owner@example.com', 'x')`, id); err != nil {
 		t.Fatal(err)
@@ -132,6 +134,7 @@ func New(t testing.TB, o Options) *Env {
 	}
 	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions, Notifier: notify})
 	hub.Bind(store)
+	tokens := idtoken.Verifier(idTokens{proj.Number})
 	var s documents.Store = store
 	if o.Store != nil {
 		s = o.Store(store)
@@ -139,9 +142,10 @@ func New(t testing.TB, o Options) *Env {
 	return &Env{
 		Pool: pool, Tenancy: svc, Store: store, Hub: hub, Owner: owner, Number: proj.Number, Key: key,
 		SAEmail: sa.Email, OwnerPAT: pat.Plaintext,
-		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log}),
+		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log,
+			Rulesets: svc, IDTokens: tokens}),
 		Reference: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log,
-			ReferenceOnly: true}),
+			Rulesets: svc, IDTokens: tokens, ReferenceOnly: true}),
 	}
 }
 
@@ -187,15 +191,15 @@ func (e *Env) sign(t testing.TB, claims map[string]any) string {
 	return input + "." + base64.RawURLEncoding.EncodeToString(sig)
 }
 
-// IDToken is a token shaped as an end user's ID token of Project: an issuer under public_url's
-// /issuers/. Its signature does not matter here: before F5 an end user is refused whatever its
-// token says (ADR-025 §8).
+// IDToken is an end user's ID token of Project, uid user-1: an issuer under public_url's
+// /issuers/, which the environment's verifier accepts (UserToken). With no release published the
+// locked default denies such a user everything.
 func IDToken(t testing.TB) string {
 	t.Helper()
 	now := time.Now().Unix()
 	return segment(t, map[string]any{"alg": "RS256", "typ": "JWT"}) + "." +
 		segment(t, map[string]any{"iss": PublicURL + "/issuers/" + Project, "aud": Project, "sub": "user-1", "iat": now, "exp": now + 3600}) +
-		".c2ln"
+		"." + fakeSignature
 }
 
 func segment(t testing.TB, v any) string {

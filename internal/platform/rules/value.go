@@ -29,11 +29,11 @@ const (
 	KindLatLng
 	KindPath
 
-	// Reserved for Firestore's list queries (F5, ADR-021 §2.4). No constructor makes them in S1,
-	// and every operation that meets one is an error without a message, so the engine never
-	// allows what it does not understand.
+	// For Firestore's list queries (ADR-021 §2.4, constraint.go). Every operation that meets one
+	// is an error without a message, so the engine never allows what it does not understand,
+	// but for the comparisons a Constraint's filters imply and the fields a PartialMap knows.
 	KindConstraint // what a query knows of a field: pairs of comparator and value
-	KindUnknown    // what cannot be evaluated at all, such as request.path in a collection group
+	KindUnknown    // what cannot be evaluated, like request.path in a collection group; or a PartialMap
 )
 
 // kindNames are the names the official messages give the types ("Received: [int]",
@@ -92,6 +92,8 @@ type Value struct {
 	//	KindDuration             duration
 	//	KindLatLng               latLng
 	//	KindPath                 []string, decoded segments
+	//	KindConstraint           []Filter
+	//	KindUnknown              nil, or *mapValue for a PartialMap
 	x any
 }
 
@@ -378,6 +380,11 @@ func newString(m *meter, s string) (Value, error) {
 // buildList returns a list literal's value: [a, b]. The interpreter (S1-C) calls it with the
 // elements it evaluated, so the list is charged before it is kept.
 func buildList(m *meter, elems []Value) (Value, error) {
+	for _, e := range elems {
+		if err := reserved(e); err != nil {
+			return Value{}, err // a Constraint is never an element: [c] == [1] would be false
+		}
+	}
 	if err := chargeList(m, len(elems)); err != nil {
 		return Value{}, err
 	}
@@ -391,6 +398,11 @@ func buildList(m *meter, elems []Value) (Value, error) {
 func buildMap(m *meter, keys, vals []Value) (Value, error) {
 	if len(keys) != len(vals) {
 		return Value{}, errorf("a map literal has %d keys and %d values", len(keys), len(vals))
+	}
+	for _, v := range vals {
+		if err := reserved(v); err != nil {
+			return Value{}, err
+		}
 	}
 	var keyBytes int64
 	for _, k := range keys {

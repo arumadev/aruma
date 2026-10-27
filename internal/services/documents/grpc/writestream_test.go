@@ -228,9 +228,14 @@ func TestWriteStreamAuth(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	st := x.client.Write(t.Context())
 	_ = st.Send(&pb.WriteRequest{Database: db})
-	_, err := st.Receive()
-	if code := connect.CodeOf(err); code != connect.CodeUnauthenticated && code != connect.CodePermissionDenied {
-		t.Fatalf("no credential: %v", err)
+	// A caller without a credential opens the stream; the rules, the locked default here,
+	// deny its writes.
+	if _, err := st.Receive(); err != nil {
+		t.Fatalf("no credential, handshake: %v", err)
+	}
+	_ = st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{update("q/x", nil)}})
+	if _, err := st.Receive(); connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("no credential, write: %v", err)
 	}
 	st, _ = openWrite(t, x, x.env.JWT(t))
 	_ = st.Send(&pb.WriteRequest{StreamToken: anyToken, Writes: []*pb.Write{update("q/x", nil)}})

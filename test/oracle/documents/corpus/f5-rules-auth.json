@@ -1,0 +1,6067 @@
+{
+  "cases": [
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/authnull by user: the rule asserts 'authnull' about request.auth",
+      "id": "user.authnull",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/authnotnull by user: the rule asserts 'authnotnull' about request.auth",
+      "id": "user.authnotnull",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/uid-a by user: the rule asserts 'uid-a' about request.auth",
+      "id": "user.uid-a",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/uid-b by user: the rule asserts 'uid-b' about request.auth",
+      "id": "user.uid-b",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/uid-is-string by user: the rule asserts 'uid-is-string' about request.auth",
+      "id": "user.uid-is-string",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/email by user: the rule asserts 'email' about request.auth",
+      "id": "user.email",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/verified-false by user: the rule asserts 'verified-false' about request.auth",
+      "id": "user.verified-false",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/verified-true by user: the rule asserts 'verified-true' about request.auth",
+      "id": "user.verified-true",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-true"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-true"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/verified-bool by user: the rule asserts 'verified-bool' about request.auth",
+      "id": "user.verified-bool",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-bool"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-bool",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-bool"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-bool",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/prov-password by user: the rule asserts 'prov-password' about request.auth",
+      "id": "user.prov-password",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/prov-anonymous by user: the rule asserts 'prov-anonymous' about request.auth",
+      "id": "user.prov-anonymous",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/ident-email by user: the rule asserts 'ident-email' about request.auth",
+      "id": "user.ident-email",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/ident-email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/ident-email",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/ident-email"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/ident-email",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/sub-is-uid by user: the rule asserts 'sub-is-uid' about request.auth",
+      "id": "user.sub-is-uid",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/aud by user: the rule asserts 'aud' about request.auth",
+      "id": "user.aud",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/aud"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/aud",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/aud"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/aud",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/iss by user: the rule asserts 'iss' about request.auth",
+      "id": "user.iss",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iss"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iss",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iss"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iss",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/auth-time-int by user: the rule asserts 'auth-time-int' about request.auth",
+      "id": "user.auth-time-int",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-time-int"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-time-int",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-time-int"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-time-int",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/iat-int by user: the rule asserts 'iat-int' about request.auth",
+      "id": "user.iat-int",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iat-int"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iat-int",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iat-int"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/iat-int",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/exp-int by user: the rule asserts 'exp-int' about request.auth",
+      "id": "user.exp-int",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/exp-int"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/exp-int",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/exp-int"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/exp-int",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/firebase-map by user: the rule asserts 'firebase-map' about request.auth",
+      "id": "user.firebase-map",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/firebase-map"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/firebase-map",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/firebase-map"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/firebase-map",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/token-map by user: the rule asserts 'token-map' about request.auth",
+      "id": "user.token-map",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/token-map"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/token-map",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/token-map"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/token-map",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/auth-keys by user: the rule asserts 'auth-keys' about request.auth",
+      "id": "user.auth-keys",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/auth-keys-only by user: the rule asserts 'auth-keys-only' about request.auth",
+      "id": "user.auth-keys-only",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_name by user: the rule asserts 'tok_name' about request.auth",
+      "id": "user.tok_name",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_email by user: the rule asserts 'tok_email' about request.auth",
+      "id": "user.tok_email",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_email_verified by user: the rule asserts 'tok_email_verified' about request.auth",
+      "id": "user.tok_email_verified",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_sub by user: the rule asserts 'tok_sub' about request.auth",
+      "id": "user.tok_sub",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_iss by user: the rule asserts 'tok_iss' about request.auth",
+      "id": "user.tok_iss",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_aud by user: the rule asserts 'tok_aud' about request.auth",
+      "id": "user.tok_aud",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_iat by user: the rule asserts 'tok_iat' about request.auth",
+      "id": "user.tok_iat",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_exp by user: the rule asserts 'tok_exp' about request.auth",
+      "id": "user.tok_exp",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_auth_time by user: the rule asserts 'tok_auth_time' about request.auth",
+      "id": "user.tok_auth_time",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_auth_time"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_auth_time"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_user_id by user: the rule asserts 'tok_user_id' about request.auth",
+      "id": "user.tok_user_id",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_user_id"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_user_id"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_firebase by user: the rule asserts 'tok_firebase' about request.auth",
+      "id": "user.tok_firebase",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_picture by user: the rule asserts 'tok_picture' about request.auth",
+      "id": "user.tok_picture",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_picture"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_picture"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_phone_number by user: the rule asserts 'tok_phone_number' about request.auth",
+      "id": "user.tok_phone_number",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_phone_number"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_phone_number"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_admin by user: the rule asserts 'tok_admin' about request.auth",
+      "id": "user.tok_admin",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_admin"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_admin"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_uid by user: the rule asserts 'tok_uid' about request.auth",
+      "id": "user.tok_uid",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_uid"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_uid"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_nonce by user: the rule asserts 'tok_nonce' about request.auth",
+      "id": "user.tok_nonce",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_nonce"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_nonce"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/tok_azp by user: the rule asserts 'tok_azp' about request.auth",
+      "id": "user.tok_azp",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_azp"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_azp"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/fb_sign_in_provider by user: the rule asserts 'fb_sign_in_provider' about request.auth",
+      "id": "user.fb_sign_in_provider",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_provider"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_provider"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/fb_identities by user: the rule asserts 'fb_identities' about request.auth",
+      "id": "user.fb_identities",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/fb_tenant by user: the rule asserts 'fb_tenant' about request.auth",
+      "id": "user.fb_tenant",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_tenant"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_tenant"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/fb_sign_in_second_factor by user: the rule asserts 'fb_sign_in_second_factor' about request.auth",
+      "id": "user.fb_sign_in_second_factor",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_second_factor"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_second_factor"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of aruma-ref-f5-a/fb_second_factor_identifier by user: the rule asserts 'fb_second_factor_identifier' about request.auth",
+      "id": "user.fb_second_factor_identifier",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_second_factor_identifier"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_second_factor_identifier"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "userB",
+      "description": "get of aruma-ref-f5-a/authnull by userB: the rule asserts 'authnull' about request.auth",
+      "id": "userB.authnull",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "userB",
+      "description": "get of aruma-ref-f5-a/authnotnull by userB: the rule asserts 'authnotnull' about request.auth",
+      "id": "userB.authnotnull",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "userB",
+      "description": "get of aruma-ref-f5-a/uid-a by userB: the rule asserts 'uid-a' about request.auth",
+      "id": "userB.uid-a",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "userB",
+      "description": "get of aruma-ref-f5-a/uid-b by userB: the rule asserts 'uid-b' about request.auth",
+      "id": "userB.uid-b",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-b",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "userB",
+      "description": "get of aruma-ref-f5-a/email by userB: the rule asserts 'email' about request.auth",
+      "id": "userB.email",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/authnull by anon: the rule asserts 'authnull' about request.auth",
+      "id": "anon.authnull",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/authnotnull by anon: the rule asserts 'authnotnull' about request.auth",
+      "id": "anon.authnotnull",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/uid-a by anon: the rule asserts 'uid-a' about request.auth",
+      "id": "anon.uid-a",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/uid-is-string by anon: the rule asserts 'uid-is-string' about request.auth",
+      "id": "anon.uid-is-string",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-is-string",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/email by anon: the rule asserts 'email' about request.auth",
+      "id": "anon.email",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/verified-false by anon: the rule asserts 'verified-false' about request.auth",
+      "id": "anon.verified-false",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-false"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/verified-true by anon: the rule asserts 'verified-true' about request.auth",
+      "id": "anon.verified-true",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-true"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/verified-true"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/prov-password by anon: the rule asserts 'prov-password' about request.auth",
+      "id": "anon.prov-password",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-password"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/prov-anonymous by anon: the rule asserts 'prov-anonymous' about request.auth",
+      "id": "anon.prov-anonymous",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/prov-anonymous",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/sub-is-uid by anon: the rule asserts 'sub-is-uid' about request.auth",
+      "id": "anon.sub-is-uid",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/sub-is-uid",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/auth-keys by anon: the rule asserts 'auth-keys' about request.auth",
+      "id": "anon.auth-keys",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/auth-keys-only by anon: the rule asserts 'auth-keys-only' about request.auth",
+      "id": "anon.auth-keys-only",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys-only",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_name by anon: the rule asserts 'tok_name' about request.auth",
+      "id": "anon.tok_name",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_email by anon: the rule asserts 'tok_email' about request.auth",
+      "id": "anon.tok_email",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_email_verified by anon: the rule asserts 'tok_email_verified' about request.auth",
+      "id": "anon.tok_email_verified",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_email_verified"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_sub by anon: the rule asserts 'tok_sub' about request.auth",
+      "id": "anon.tok_sub",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_iss by anon: the rule asserts 'tok_iss' about request.auth",
+      "id": "anon.tok_iss",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iss",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_aud by anon: the rule asserts 'tok_aud' about request.auth",
+      "id": "anon.tok_aud",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_aud",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_iat by anon: the rule asserts 'tok_iat' about request.auth",
+      "id": "anon.tok_iat",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_iat",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_exp by anon: the rule asserts 'tok_exp' about request.auth",
+      "id": "anon.tok_exp",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_exp",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_auth_time by anon: the rule asserts 'tok_auth_time' about request.auth",
+      "id": "anon.tok_auth_time",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_auth_time"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_auth_time"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_user_id by anon: the rule asserts 'tok_user_id' about request.auth",
+      "id": "anon.tok_user_id",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_user_id"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_user_id"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_firebase by anon: the rule asserts 'tok_firebase' about request.auth",
+      "id": "anon.tok_firebase",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_firebase",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_picture by anon: the rule asserts 'tok_picture' about request.auth",
+      "id": "anon.tok_picture",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_picture"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_picture"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_phone_number by anon: the rule asserts 'tok_phone_number' about request.auth",
+      "id": "anon.tok_phone_number",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_phone_number"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_phone_number"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_admin by anon: the rule asserts 'tok_admin' about request.auth",
+      "id": "anon.tok_admin",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_admin"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_admin"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_uid by anon: the rule asserts 'tok_uid' about request.auth",
+      "id": "anon.tok_uid",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_uid"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_uid"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_nonce by anon: the rule asserts 'tok_nonce' about request.auth",
+      "id": "anon.tok_nonce",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_nonce"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_nonce"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/tok_azp by anon: the rule asserts 'tok_azp' about request.auth",
+      "id": "anon.tok_azp",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_azp"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_azp"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/fb_sign_in_provider by anon: the rule asserts 'fb_sign_in_provider' about request.auth",
+      "id": "anon.fb_sign_in_provider",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_provider"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_provider"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/fb_identities by anon: the rule asserts 'fb_identities' about request.auth",
+      "id": "anon.fb_identities",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_identities",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/fb_tenant by anon: the rule asserts 'fb_tenant' about request.auth",
+      "id": "anon.fb_tenant",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_tenant"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_tenant"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/fb_sign_in_second_factor by anon: the rule asserts 'fb_sign_in_second_factor' about request.auth",
+      "id": "anon.fb_sign_in_second_factor",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_second_factor"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_sign_in_second_factor"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "anon",
+      "description": "get of aruma-ref-f5-a/fb_second_factor_identifier by anon: the rule asserts 'fb_second_factor_identifier' about request.auth",
+      "id": "anon.fb_second_factor_identifier",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_second_factor_identifier"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/fb_second_factor_identifier"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/authnull by none: the rule asserts 'authnull' about request.auth",
+      "id": "none.authnull",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/authnotnull by none: the rule asserts 'authnotnull' about request.auth",
+      "id": "none.authnotnull",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnotnull"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/uid-a by none: the rule asserts 'uid-a' about request.auth",
+      "id": "none.uid-a",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/email by none: the rule asserts 'email' about request.auth",
+      "id": "none.email",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/email"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/tok_name by none: the rule asserts 'tok_name' about request.auth",
+      "id": "none.tok_name",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_name"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/tok_sub by none: the rule asserts 'tok_sub' about request.auth",
+      "id": "none.tok_sub",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/tok_sub"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "get of aruma-ref-f5-a/auth-keys by none: the rule asserts 'auth-keys' about request.auth",
+      "id": "none.auth-keys",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/auth-keys"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "unauthenticated batchGet of authnull",
+      "id": "none.batch-get-authnull",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:batchGet"
+              },
+              "response": {
+                "body": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "unauthenticated batchGet of uid-a",
+      "id": "none.batch-get-uid-a",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:batchGet"
+              },
+              "response": {
+                "body": [
+                  {
+                    "error": {
+                      "code": 403,
+                      "message": "Missing or insufficient permissions.",
+                      "status": "PERMISSION_DENIED"
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "unauthenticated runQuery where only get is allowed",
+      "id": "none.run-query",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-a"
+                      }
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunQuery"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-a"
+                      }
+                    ]
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "error": {
+                      "code": 403,
+                      "message": "Missing or insufficient permissions.",
+                      "status": "PERMISSION_DENIED"
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "none",
+      "description": "unauthenticated write where no write is allowed",
+      "id": "none.write-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+    "notes": [
+      "Auth: an end-user Firebase Auth ID token (the caller field names the actor: user and userB are email/password users, anon is an anonymous user, none sends the web API key only, owner is the project owner whose token bypasses rules). The owner only seeds and reads back state.",
+      "Rules: f5-rules-deployed.json holds the source every case ran under. Each case names the document ids its rule asserts; \"allow\" and \"deny\" are OK and PERMISSION_DENIED.",
+      "Times, durations and transaction ids are replaced by placeholders; everything else is as returned. A case ran once over REST and once over gRPC, each from the seeded state in \"seed\" (documents in \"touch\" are reset first); \"after\" is the state read back by the owner afterwards.",
+      "The users' own uids appear only inside the rules; tokens are never stored."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1; security rules deployed by the recorder (f5-rules-deployed.json)",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+      "node": "v24.21.0"
+    }
+  },
+  "rules": "corpus/f5-rules-deployed.json",
+  "schema": "aruma.documents-oracle/v1"
+}

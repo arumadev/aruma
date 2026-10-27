@@ -5,12 +5,15 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/listen"
@@ -32,8 +35,20 @@ type Options struct {
 	// Projects resolves the project of a request's database.
 	Projects Projects
 	// DevOpenRules is documents.dev_open_rules: callers that are not admins reach the data from
-	// a loopback peer. Config accepts it only on a loopback deployment (ADR-025 §8).
+	// a loopback peer, past the security rules. Config accepts it only on a loopback deployment
+	// (ADR-025 §8).
 	DevOpenRules bool
+	// Rulesets resolves the projects' cloud.firestore releases (rules.go); without it every end
+	// user has the locked default, denied everything.
+	Rulesets Rulesets
+	// IDTokens verifies end users' ID tokens (Auth's side of the contract); without it no end
+	// user is admitted (ErrTokenUnchecked), unless with no token.
+	IDTokens idtoken.Verifier
+	// RulesInflight is the process's one cap on the memory of rules evaluations (ADR-021 §4);
+	// nil is a cap of the service's own, of the default 512 MiB.
+	RulesInflight *rules.Inflight
+	// Now is request.time's clock; nil is time.Now.
+	Now func() time.Time
 	// IndexEnforcement is documents.index_enforcement, the composite-index enforcement of every
 	// database that sets none of its own (ADR-025 §4.4); the zero value is index.Enforce.
 	IndexEnforcement index.Mode
@@ -49,8 +64,9 @@ type Options struct {
 // Service serves the Document Database's methods for every transport. It is safe for
 // concurrent use.
 type Service struct {
-	o   Options
-	log *slog.Logger
+	o        Options
+	log      *slog.Logger
+	inflight *rules.Inflight
 
 	// Tests' hooks into the index paths (export_test.go): indexBatch, when set, is the results
 	// of every batch; afterBatch runs after a batch is sent, before the next snapshot begins;
@@ -60,9 +76,16 @@ type Service struct {
 	observePeak func(int)
 }
 
+// defaultRulesInflight is rules.limits.inflight_bytes' default (ADR-021 §4).
+const defaultRulesInflight = 512 << 20
+
 // New returns the service.
 func New(o Options) *Service {
-	return &Service{o: o, log: cmp.Or(o.Logger, slog.Default())}
+	inflight := o.RulesInflight
+	if inflight == nil {
+		inflight = rules.NewInflight(defaultRulesInflight)
+	}
+	return &Service{o: o, log: cmp.Or(o.Logger, slog.Default()), inflight: inflight}
 }
 
 // Call is how a request arrived, besides its message.
@@ -111,6 +134,8 @@ type admitted struct {
 	caller *authn.Caller
 	// by is the caller as transactions know it (principalOf).
 	by core.Principal
+	// guard holds the security rules' hold on the caller; nil for one that bypasses them.
+	guard *guard
 }
 
 // admit runs the steps every request takes before its own (package doc): the caller, the
@@ -157,20 +182,26 @@ func (s *Service) admitAs(ctx context.Context, c Call, req proto.Message, primar
 	if err := s.o.Auth.Admit(ctx, caller, number); err != nil {
 		return admitted{}, s.fail(ctx, err)
 	}
-	if !s.permitted(caller, c.Transport) {
-		return admitted{}, wire.PermissionDenied()
+	claims, err := s.endUser(ctx, caller, number)
+	if err != nil {
+		return admitted{}, err
 	}
-	return admitted{
+	a := admitted{
 		db:     core.DB{Project: number, ProjectID: wdb.Project, ID: wdb.ID},
 		wdb:    wdb,
 		caller: caller,
-		by:     principalOf(caller),
-	}, nil
+		by:     principalOf(caller, claims),
+	}
+	if !s.bypasses(caller, c.Transport) {
+		a.guard = guardOf(claims)
+	}
+	return a, nil
 }
 
-// permitted is the rules' default until F5 (ADR-025 §8): admins only, or anyone on this machine
-// with documents.dev_open_rules.
-func (s *Service) permitted(caller *authn.Caller, t authn.Transport) bool {
+// bypasses reports whether the caller is past the security rules: an admin, as in production, or
+// anyone on this machine with documents.dev_open_rules (ADR-025 §8). Anyone else answers to the
+// rules (rules.go).
+func (s *Service) bypasses(caller *authn.Caller, t authn.Transport) bool {
 	if caller.Role == authn.RoleAdmin {
 		return true
 	}

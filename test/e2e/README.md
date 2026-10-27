@@ -17,6 +17,7 @@ machine, fails the run.
 | [ios-storage](ios-storage) | `FirebaseStorage` 12.19.3 from the Aruma mirror (SwiftPM) or 12.19.0 patched (CocoaPods), XCTest in a host app | production, `ArumaURL` in Info.plist; Auth through `ArumaRedirect` | `ios-storage/run.sh [--cocoapods]` | by hand (Codemagic later) |
 | [android-rtdb](android-rtdb) | `firebase-database` and `firebase-auth` (BoM 35), instrumented tests | production; Auth through `aruma-redirect` | `android-rtdb/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
+| [android-firestore](android-firestore) | `firebase-firestore` and `firebase-auth` (BoM 35), instrumented tests | production host set in code; Auth through `aruma-redirect`; the server under `documents.dev_open_rules` (`ARUMA_E2E_RULES=released` for the cloud.firestore ruleset of `firestore.rules`, once list and Listen are under rules) | `android-firestore/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 
 The Auth device suites cover the Auth P0 list ([docs/compat/auth-p0-scenarios.md](../../docs/compat/auth-p0-scenarios.md)):
 sign-up, duplicate email, weak password, invalid email, sign-in, wrong password, anonymous,
@@ -97,7 +98,7 @@ alone (sandbox-exec is macOS only). Nothing in CI needs a secret or reaches Goog
 
 | Suite | Why | Command |
 |---|---|---|
-| android-auth, android-rtdb | an emulator run costs about as many minutes as the whole of `ci.yml`: weekly and by hand in `devices.yml` | `test/e2e/android-auth/run.sh`, `test/e2e/android-rtdb/run.sh` |
+| android-auth, android-rtdb, android-firestore | an emulator run costs about as many minutes as the whole of `ci.yml`: weekly and by hand in `devices.yml` | `test/e2e/android-auth/run.sh`, `test/e2e/android-rtdb/run.sh` |
 | android-storage | the same cost, and two builds (debug and release) with bundletool; not in `devices.yml` yet | `test/e2e/android-storage/run.sh` (a `google_apis` emulator for the iptables half) |
 | ios-auth, ios-rtdb | Xcode and a simulator: macOS only; Codemagic (`codemagic.yaml`) | `test/e2e/ios-auth/run.sh`, `test/e2e/ios-rtdb/run.sh` |
 | ios-storage | Xcode, the Aruma mirror of firebase-ios-sdk; for Codemagic later | `test/e2e/ios-storage/run.sh`, `test/e2e/ios-storage/run.sh --cocoapods` |

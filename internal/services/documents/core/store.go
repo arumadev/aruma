@@ -23,7 +23,8 @@ import (
 type Store interface {
 	// Database returns a database's settings; '(default)' is created on first use.
 	Database(ctx context.Context, db DB) (Database, error)
-	// Get returns a document, or an *Error with code NotFound and production's text.
+	// Get returns a document, or an *Error with code NotFound and production's text; the read
+	// time it read at either way.
 	Get(ctx context.Context, db DB, p Path, o ReadOptions) (Document, time.Time, error)
 	// BatchGet returns the documents in the order asked; one that does not exist has its Path
 	// alone (Exists false). A path may be asked twice.

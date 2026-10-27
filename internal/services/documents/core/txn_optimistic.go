@@ -53,6 +53,7 @@ func (s *PGStore) lockOptimistic(ctx context.Context, db DB, p *plan, c *commitT
 		return ErrReadsChanged
 	}
 	p.verify = verifyWritten(p, c.reads, conflict)
+	rulesCtx := ctx
 	return s.lockWrites(ctx, db, p, c.tx.age, more, func() error {
 		// The check holds shared locks, the database's for a listing of every collection, so
 		// it is bounded in time as a lock wait is: past it the commit is ABORTED with the
@@ -63,7 +64,10 @@ func (s *PGStore) lockOptimistic(ctx context.Context, db DB, p *plan, c *commitT
 		if err != nil && errors.Is(context.Cause(ctx), ErrContention) {
 			return ErrContention
 		}
-		return err
+		if err != nil {
+			return err
+		}
+		return s.authorize(rulesCtx, db, p)
 	})
 }
 

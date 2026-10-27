@@ -8,6 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
@@ -30,22 +31,26 @@ func TestTransactionTexts(t *testing.T) {
 	}
 }
 
+// An end user is the uid of the token verified, never of the token's own claim (F2 review M3).
 func TestPrincipalOf(t *testing.T) {
 	account := uuid.New()
-	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"user-1","iss":"x"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"forged","iss":"x"}`))
+	endUser := &authn.Caller{Role: authn.RoleEndUser, UnverifiedIDToken: "e30." + payload + ".c2ln"}
 	for _, c := range []struct {
 		caller *authn.Caller
+		claims *idtoken.Claims
 		want   core.Principal
 	}{
-		{&authn.Caller{Role: authn.RoleAdmin, IsDevOwner: true}, core.Principal{Admin: true}},
+		{&authn.Caller{Role: authn.RoleAdmin, IsDevOwner: true}, nil, core.Principal{Admin: true}},
 		{&authn.Caller{Role: authn.RoleAdmin, Principal: &authn.Principal{Kind: authn.KindServiceAccount, Email: "sa@p.iam"}},
-			core.Principal{Admin: true, ID: "sa@p.iam"}},
+			nil, core.Principal{Admin: true, ID: "sa@p.iam"}},
 		{&authn.Caller{Role: authn.RoleAdmin, Principal: &authn.Principal{Kind: authn.KindAccount, AccountID: account}},
-			core.Principal{Admin: true, ID: account.String()}},
-		{&authn.Caller{Role: authn.RoleEndUser, UnverifiedIDToken: "e30." + payload + ".c2ln"}, core.Principal{ID: "user-1"}},
-		{&authn.Caller{Role: authn.RoleAnonymous}, core.Principal{}},
+			nil, core.Principal{Admin: true, ID: account.String()}},
+		{endUser, &idtoken.Claims{UID: "user-1"}, core.Principal{ID: "user-1"}},
+		{endUser, nil, core.Principal{}},
+		{&authn.Caller{Role: authn.RoleAnonymous}, nil, core.Principal{}},
 	} {
-		if got := principalOf(c.caller); got != c.want {
+		if got := principalOf(c.caller, c.claims); got != c.want {
 			t.Errorf("%+v: %+v, want %+v", c.caller, got, c.want)
 		}
 	}

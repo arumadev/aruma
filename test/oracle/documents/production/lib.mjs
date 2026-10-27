@@ -38,7 +38,13 @@ export const PREFIX = 'aruma-ref';
 
 let cached = null;
 
-async function accessToken() {
+// identity lets a recorder call as someone other than the project owner (whose
+// access token bypasses security rules): bearer is an end user's ID token, and
+// apiKey the project's web API key, sent alone for an unauthenticated request.
+// null fields leave the owner's token in use.
+export const identity = { bearer: null, apiKey: null, none: false };
+
+export async function accessToken() {
   if (cached && cached.expires > Date.now() + 60_000) return cached.token;
   const auth = require(join(FT, 'lib/auth.js'));
   const scopes = require(join(FT, 'lib/scopes.js'));
@@ -80,7 +86,9 @@ export async function rest(method, path, body, { origin = ORIGIN, auth = true } 
     let res, out;
     try {
       const headers = { 'Content-Type': 'application/json' };
-      if (auth) headers.Authorization = `Bearer ${origin === ORIGIN ? await accessToken() : 'owner'}`;
+      if (identity.apiKey) headers['x-goog-api-key'] = identity.apiKey;
+      if (identity.none) delete headers.Authorization;
+      else if (auth) headers.Authorization = `Bearer ${origin === ORIGIN ? identity.bearer || (await accessToken()) : 'owner'}`;
       res = await fetch(`${origin}/v1/${path}`, { method, headers, body: text, signal: AbortSignal.timeout(120_000) });
       out = await res.text();
     } catch (e) {
@@ -147,7 +155,8 @@ export function grpcVersions() {
 
 async function metadata(database) {
   const md = new grpcState.grpc.Metadata();
-  md.set('authorization', `Bearer ${await accessToken()}`);
+  if (identity.apiKey) md.set('x-goog-api-key', identity.apiKey);
+  if (!identity.none) md.set('authorization', `Bearer ${identity.bearer || (await accessToken())}`);
   md.set('google-cloud-resource-prefix', database);
   md.set('x-goog-request-params', `database=${encodeURIComponent(database)}`);
   return md;

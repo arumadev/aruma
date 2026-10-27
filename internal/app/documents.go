@@ -15,6 +15,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
+	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	docapi "github.com/arumadev/aruma/internal/services/documents/api"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
@@ -62,7 +63,7 @@ type Documents struct {
 // with it (ADR-024 §1.1). Transaction ids are authenticated with a key derived from the master
 // key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
 func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics,
-	idTokens idtoken.Verifier, revocations idtoken.Revocations, logger *slog.Logger) *Documents {
+	idTokens idtoken.Verifier, revocations idtoken.Revocations, rulesInflight *rules.Inflight, logger *slog.Logger) *Documents {
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
 		return documents.PurgeProject(ctx, pool, project)
 	})
@@ -87,6 +88,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	hub := newHubs(listen.Options{LagEvents: l.StreamLagEvents, SnapshotRows: l.SnapshotRows, Log: logger})
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
+		Rulesets: svc, IDTokens: idTokens, RulesInflight: rulesInflight,
 		IndexEnforcement: enforcement, Listen: hub, Logger: logger,
 	})
 	rpcMetrics := docgrpc.NewMetrics()
@@ -121,6 +123,11 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		},
 	}
 }
+
+// RuleDocuments is what firestore.get() and firestore.exists() read in Storage's rules (ADR-021
+// §3): the default database of the project each evaluation names, at the latest commit, through
+// the store Boot opens.
+func (d *Documents) RuleDocuments() rules.Documents { return docapi.Lookups(d.store) }
 
 // mount puts the surfaces on the entry point.
 func (d *Documents) mount(h *server.Handlers) {

@@ -20,9 +20,19 @@
 //
 // What the package does not do: it reports fewer warnings than the emulator (only an unknown
 // function and an unused one; the emulator's type warnings are not ported), and it keeps limits
-// of its own that Firebase does not have, which docs/compat/rules-v0.3.md lists. A Constraint or
-// an Unknown value, reserved for Firestore's list queries (F5), is an error wherever it meets an
-// operation, so the engine never allows what it does not understand.
+// of its own that Firebase does not have, which docs/compat/rules-v0.3.md lists.
+//
+// Firestore's list queries (constraint.go, ADR-021 §2.4) are decided before any document is
+// read. The binding splits a query into ways: each branch of an or, each value of an in (a
+// FilterEQ) and of an array-contains-any (a FilterContains). For each way it calls Evaluate with
+// MethodList, a Path whose document ID is UnknownSegment (a collection group puts UnknownRun
+// before the collection's name), and Variables where resource is a Map whose data is a
+// PartialMap: a field the way filters on holds Constraint(its filters...), a field path a.b a
+// nested PartialMap, and resource's other fields Unknown(); request.query is Query(limit,
+// offset, orders). The query is allowed when every way is. A comparison on a Constraint is true when
+// one of its filters alone implies it, and otherwise an error without a message; every other
+// operation on a Constraint, an Unknown or a PartialMap is that error, so the engine never
+// allows what it does not understand. Leaving a filter out never allows more.
 //
 // The package imports nothing from the rest of Aruma (archtest).
 package rules

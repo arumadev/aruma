@@ -65,6 +65,9 @@ func (s *Service) RunQuery(ctx context.Context, c Call, req *pb.RunQueryRequest,
 	if err != nil {
 		return err
 	}
+	if err := s.allowList(ctx, a, listOf(parent, q), ro.ReadTime); err != nil {
+		return err
+	}
 	if err := s.checkQuery(ctx, a, q, nil, req.GetExplainOptions() != nil); err != nil {
 		return err
 	}
@@ -136,6 +139,9 @@ func (s *Service) RunAggregationQuery(ctx context.Context, c Call, req *pb.RunAg
 	if err != nil {
 		return err
 	}
+	if err := s.allowList(ctx, a, listOf(parent, q), ro.ReadTime); err != nil {
+		return err
+	}
 	if err := s.checkQuery(ctx, a, q, query.Shapes(aggs), req.GetExplainOptions() != nil); err != nil {
 		return err
 	}
@@ -195,8 +201,20 @@ func (s *Service) PartitionQuery(ctx context.Context, c Call, req *pb.PartitionQ
 		}
 		return nil, err
 	}
-	if _, err := readOptions(req.GetReadTime(), nil); err != nil {
+	ro, err := readOptions(req.GetReadTime(), nil)
+	if err != nil {
 		return nil, err
+	}
+	if a.guard != nil {
+		// The partitions are of the query's documents: the rules judge it as a list
+		// (unrecorded; no client SDK sends PartitionQuery as an end user).
+		q, err := query.Parse(req.GetStructuredQuery(), parent)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.allowList(ctx, a, listOf(parent, q), ro.ReadTime); err != nil {
+			return nil, err
+		}
 	}
 	if _, err := s.o.Store.Database(ctx, a.db); err != nil {
 		return nil, s.fail(ctx, err)

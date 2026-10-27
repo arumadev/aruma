@@ -360,3 +360,36 @@ func TestWeightCountsTheTree(t *testing.T) {
 		t.Errorf("Weight() = %d counts no tree", rs.Weight())
 	}
 }
+
+// TestReadsRequestTime: a ruleset reads request.time when an expression names it, uses request
+// whole, or indexes it by anything but another literal key.
+func TestReadsRequestTime(t *testing.T) {
+	for cond, want := range map[string]bool{
+		"true":                 false,
+		"request.auth != null": false,
+		"request.auth.uid == 'a' && request.query.limit < 5": false,
+		"resource.data.time == 1":                            false,
+		"request['auth'] != null":                            false,
+		"request.time < timestamp.date(2030, 1, 1)":          true,
+		"request.time.toMillis() > 0":                        true,
+		"request['time'] != null":                            true,
+		"request[resource.data.k] != null":                   true,
+		"request.keys().size() > 0":                          true,
+		"f(request)":                                         true,
+	} {
+		src := `rules_version = '2';
+service cloud.firestore {
+  function f(r) { return r.time != null; }
+  match /databases/{database}/documents {
+    match /c/{d} { allow read: if ` + cond + `; }
+  }
+}`
+		rs, issues := Compile(Firestore, File{Name: "firestore.rules", Content: src}, DefaultLimits())
+		if rs == nil {
+			t.Fatalf("%s: %v", cond, issues)
+		}
+		if got := rs.ReadsRequestTime(); got != want {
+			t.Errorf("%s: ReadsRequestTime() = %v, want %v", cond, got, want)
+		}
+	}
+}

@@ -445,10 +445,15 @@ func (c *checker) expr(e expr, cx exprCtx) {
 	case *litExpr:
 	case *identExpr:
 		c.ident(e, cx)
+		c.noteRequest(e, "")
 	case *memberExpr:
-		c.expr(e.x, cx)
+		c.operand(e.x, cx, e.name)
 	case *indexExpr:
-		c.expr(e.x, cx)
+		field := ""
+		if l, ok := e.i.(*litExpr); ok {
+			field, _ = l.val.AsString()
+		}
+		c.operand(e.x, cx, field)
 		c.expr(e.i, cx)
 	case *sliceExpr:
 		c.expr(e.x, cx)
@@ -482,6 +487,27 @@ func (c *checker) expr(e expr, cx exprCtx) {
 		for _, s := range e.segs {
 			c.expr(s.x, cx)
 		}
+	}
+}
+
+// operand checks x, the operand of a member or an index named field ("" when it is not a
+// literal string).
+func (c *checker) operand(x expr, cx exprCtx, field string) {
+	id, ok := x.(*identExpr)
+	if !ok {
+		c.expr(x, cx)
+		return
+	}
+	c.nodes++
+	c.ident(id, cx)
+	c.noteRequest(id, field)
+}
+
+// noteRequest marks the ruleset as reading request.time when id is request and field is time,
+// or is not known ("": request as a whole, or indexed by an expression), for ReadsRequestTime.
+func (c *checker) noteRequest(id *identExpr, field string) {
+	if id.kind == identGlobal && id.name == "request" && (field == "" || field == "time") {
+		c.rs.readsTime = true
 	}
 }
 
