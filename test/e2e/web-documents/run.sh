@@ -8,8 +8,6 @@
 #   test/e2e/web-documents/run.sh [engine ...] [-- playwright test arguments]
 #
 #   engines              chromium firefox webkit (default: chromium)
-#   ARUMA_E2E_WRITES     1 turns on the full SDK's write cases (setDoc, batch, transaction over the
-#                        Write channel); without it they are test.fixme until Write over WebChannel lands
 #   ARUMA_E2E_PAGE_PORT  the app's port (default 4190)
 #   ARUMA_E2E_ADDR       Aruma's address (default 127.0.0.1:0: any free port)
 #

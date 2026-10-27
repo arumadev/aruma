@@ -3,9 +3,6 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { test, expect, value, call, signIn, signOut, listen, unlisten, eventsOf, expectLast, unique, arumaURL } from './fixtures.mjs';
 
-// ARUMA_E2E_WRITES=1 turns on the full SDK's write cases: they need Write over WebChannel.
-const writes = Boolean(process.env.ARUMA_E2E_WRITES);
-
 // Text in every width of UTF-16: ASCII, two-byte, a CJK run, right-to-left, an emoji (a surrogate
 // pair) and a mathematical letter outside the BMP.
 const text = 'héllo ✓ 日本語 عربي 😀 𝒳 end';
@@ -96,8 +93,6 @@ for (const [transport, label] of transports) {
     });
 
     test.describe('writes over the Write channel', () => {
-      test.fixme(!writes, 'Write over WebChannel is not served yet: set ARUMA_E2E_WRITES=1 once it is');
-
       test('setDoc, updateDoc, deleteDoc and a non-ASCII value, seen by a listener', async ({ app }) => {
         const page = await app(transport);
         await signIn(page);
