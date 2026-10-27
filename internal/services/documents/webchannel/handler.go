@@ -1,6 +1,6 @@
 // Package webchannel is the Document Database's WebChannel surface (ADR-027 §5): the protocol the
 // full web SDK speaks for Listen and Write, at /google.firestore.v1.Firestore/{Listen,Write}/channel,
-// on top of the same streams as gRPC (grpc.Handler.ServeListen), so a stream has the same
+// on top of the same streams as gRPC (grpc.Handler.ServeListen and ServeWrite), so a stream has the same
 // semantics, limits, identity and rules on both.
 //
 // A session is opened by a handshake POST, which carries the client's headers in its body
@@ -51,6 +51,7 @@ const (
 // Streams runs the streams: *grpc.Handler.
 type Streams interface {
 	ServeListen(ctx context.Context, p grpc.Peer, c api.Call, conn grpc.ListenConn) *wire.Error
+	ServeWrite(ctx context.Context, p grpc.Peer, c api.Call, conn grpc.WriteConn) *wire.Error
 }
 
 // Keys resolves a client API key (ADR-027 §5.3): *tenancy/core.Service.
@@ -144,11 +145,6 @@ const maxMaps = 1000
 // ServeHTTP serves a request of a channel path. CORS is the mount's (rest.cors).
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	if r.URL.Path != ListenPath {
-		// Write over WebChannel is a later step's: its handshake answers as before.
-		wire.WriteREST(w, wire.Unimplemented("WebChannel"), false)
-		return
-	}
 	hd := w.Header()
 	hd.Set("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
 	switch {
@@ -290,9 +286,14 @@ func (h *Handler) handshake(w http.ResponseWriter, r *http.Request, q url.Values
 		ResourcePrefix: headers.Get("Google-Cloud-Resource-Prefix"),
 		RequestParams:  cmp.Or(headers.Get("X-Goog-Request-Params"), "database="+url.QueryEscape(database)),
 	}
-	peer := grpc.Peer{Procedure: ListenPath, Client: client, Transport: c.Transport, Deadlines: s}
+	peer := grpc.Peer{Procedure: r.URL.Path, Client: client, Transport: c.Transport, Deadlines: s}
 	go func() {
-		status := h.streams.ServeListen(s.ctx, peer, c, listenConn{s})
+		var status *wire.Error
+		if r.URL.Path == WritePath {
+			status = h.streams.ServeWrite(s.ctx, peer, c, writeConn{s})
+		} else {
+			status = h.streams.ServeListen(s.ctx, peer, c, listenConn{s})
+		}
 		s.end(status)
 	}()
 	writeHandshake(w, s, hello)
@@ -451,6 +452,9 @@ func (h *Handler) terminate(w http.ResponseWriter, q url.Values) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// listenConn is a Listen stream's messages on a session: requests and responses in proto3 JSON,
-// as the SDK sends and reads them.
-type listenConn struct{ s *session }
+// listenConn and writeConn are a stream's messages on a session: requests and responses in
+// proto3 JSON, as the SDK sends and reads them.
+type (
+	listenConn struct{ s *session }
+	writeConn  struct{ s *session }
+)

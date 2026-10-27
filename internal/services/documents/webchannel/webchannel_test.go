@@ -667,3 +667,86 @@ func TestProtocolErrors(t *testing.T) {
 		t.Errorf("preflight: %d %v", res.StatusCode, res.Header)
 	}
 }
+
+// writeReq is a WriteRequest in proto3 JSON: the handshake when token is empty, else a batch of
+// an update per document carrying the stream's last token.
+func writeReq(token string, docs ...string) string {
+	r := &pb.WriteRequest{Database: db}
+	if token != "" {
+		r = new(pb.WriteRequest)
+		if err := protojson.Unmarshal([]byte(`{"streamToken":"`+token+`"}`), r); err != nil {
+			panic(err)
+		}
+	}
+	for _, d := range docs {
+		r.Writes = append(r.Writes, &pb.Write{Operation: &pb.Write_Update{Update: &pb.Document{Name: root + "/" + d,
+			Fields: map[string]*pb.Value{"n": {ValueType: &pb.Value_IntegerValue{IntegerValue: 1}}}}}})
+	}
+	b, _ := protojson.Marshal(r)
+	return string(b)
+}
+
+// writeResponse reads the next message of a Write session, skipping noops, as a JSON object; nil
+// for a payload that is not a message, such as a status. The array is returned too.
+func (b *backReader) writeResponse(wait time.Duration) (map[string]any, warray) {
+	b.c.t.Helper()
+	for {
+		a, ok := b.next(wait)
+		if !ok {
+			b.c.t.Fatalf("backchannel ended: %v", b.err)
+		}
+		if string(a.payload) == `["noop"]` {
+			continue
+		}
+		var data []map[string]any
+		if json.Unmarshal(a.payload, &data) != nil || len(data) != 1 {
+			return nil, a
+		}
+		return data[0], a
+	}
+}
+
+// Write over WebChannel is gRPC's Write stream: the handshake's stream id and token, one batch per
+// request carrying the last token, answered with its results and commit time; a batch the rules
+// deny ends the session with the status and a close, as production does
+// (f6-webchannel-write.json, f6-webchannel-errors.json).
+func TestWrite(t *testing.T) {
+	x := newHarness(t, options{})
+	wurl := strings.Replace(x.url, webchannel.ListenPath, webchannel.WritePath, 1)
+	c, _ := handshake(t, wurl, admin(t, x), writeReq(""))
+	b := c.back("0")
+	hello, _ := b.writeResponse(10 * time.Second)
+	token, _ := hello["streamToken"].(string)
+	if hello["streamId"] != "0" || token == "" || len(hello) != 2 {
+		t.Fatalf("handshake response %v", hello)
+	}
+	for i, docs := range [][]string{{"aruma-ref-wc-w/a"}, {"aruma-ref-wc-w/b", "aruma-ref-wc-w/c"}} {
+		c.send(writeReq(token, docs...))
+		res, a := b.writeResponse(10 * time.Second)
+		results, _ := res["writeResults"].([]any)
+		if res["commitTime"] == nil || res["streamToken"] == nil || res["streamToken"] == token || len(results) != len(docs) {
+			t.Fatalf("batch %d: %s", i, a.payload)
+		}
+		token = res["streamToken"].(string)
+	}
+
+	// A user the rules deny: the status, then the close, in production's form.
+	x.env.PublishFirestoreRules(t, `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /aruma-ref-wc-w/{doc} { allow read; }
+  }
+}`)
+	user := map[string]string{"Authorization": "Bearer " + apitest.UserToken(t, "u1", nil)}
+	c, _ = handshake(t, wurl, user, writeReq(""))
+	b = c.back("0")
+	hello, _ = b.writeResponse(10 * time.Second)
+	c.send(writeReq(hello["streamToken"].(string), "aruma-ref-wc-w/d"))
+	_, a := b.writeResponse(10 * time.Second)
+	if want := `{"__sm__":{"status":[[{"error":{"code":403,"message":"Missing or insufficient permissions.","status":"PERMISSION_DENIED"}}]]}}`; string(a.payload) != want {
+		t.Errorf("denied batch: %s", a.payload)
+	}
+	if a, _ := b.next(5 * time.Second); string(a.payload) != `["close"]` {
+		t.Errorf("after the status: %s", a.payload)
+	}
+}

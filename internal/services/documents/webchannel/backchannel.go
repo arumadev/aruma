@@ -174,3 +174,30 @@ func (c listenConn) Send(r *pb.ListenResponse) error {
 	}
 	return c.s.send(message(b))
 }
+
+// Receive reads the stream's next request.
+func (c writeConn) Receive() (*pb.WriteRequest, error) {
+	b, err := c.s.receive()
+	if err != nil {
+		return nil, err
+	}
+	req := new(pb.WriteRequest)
+	if err := wire.UnmarshalREST(b, req); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+// Send queues a response for the backchannel. The handshake's stream id is "0", as production
+// answers every Write session (f6-webchannel-write.json, f6-webchannel-errors.json); no client
+// reads it back, a stream being never resumed.
+func (c writeConn) Send(r *pb.WriteResponse) error {
+	if r.GetStreamId() != "" {
+		r.StreamId = "0"
+	}
+	b, err := wire.MarshalREST(r)
+	if err != nil {
+		return err
+	}
+	return c.s.send(message(b))
+}
