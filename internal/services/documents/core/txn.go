@@ -16,8 +16,8 @@ import (
 
 // Transactions (ADR-025 §7, ADR-024 §6). Three models, chosen by the principal and the options:
 //
-//   - read-only (txn_readonly.go): one snapshot, its read_time or the last commit at Begin; no
-//     locks;
+//   - read-only (txn_readonly.go): one snapshot, its read_time or the time of its first read;
+//     no locks;
 //   - pessimistic (txn_pessimistic.go), an admin's read-write transaction by default: a shared
 //     lock on each document read and on each scope listed, held in the lock manager until the
 //     transaction ends; exclusive locks at commit;
@@ -35,7 +35,8 @@ import (
 
 // TransactionOptions are BeginTransaction's options (google.firestore.v1.TransactionOptions).
 type TransactionOptions struct {
-	// ReadOnly begins a read-only transaction, at ReadTime when set, else at the last commit.
+	// ReadOnly begins a read-only transaction, at ReadTime when set, else at the latest commit
+	// at its first read.
 	ReadOnly bool
 	ReadTime time.Time
 	// Concurrency is the read-write transaction's concurrency_mode.
@@ -203,7 +204,8 @@ type txn struct {
 	user     userKey // the end user it counts against (MaxOpenPerUser); zero for none
 	mode     txnMode
 	issued   time.Time
-	readTime time.Time  // read-only: the snapshot
+	readTime time.Time  // read-only: the snapshot, under snap; zero until the first read fixes it
+	snap     sync.Mutex // read-only: held by the read that fixes readTime (atSnapshot)
 	table    *lockTable // pessimistic: its locks
 	lt       *lockTxn
 	age      uint64 // optimistic: the age its commit's locks take; 0 for a new one
@@ -622,7 +624,9 @@ func (s *PGStore) txnBatchGet(ctx context.Context, db DB, paths []Path, o ReadOp
 	}
 	switch tx.mode {
 	case txnReadOnly:
-		return s.BatchGet(ctx, db, paths, ReadOptions{ReadTime: tx.readTime})
+		return atSnapshot(tx, func(t time.Time) ([]Document, time.Time, error) {
+			return s.BatchGet(ctx, db, paths, ReadOptions{ReadTime: t})
+		})
 	case txnPessimistic:
 		if err := tx.table.acquireAll(ctx, tx.lt, readLocks(paths)); err != nil {
 			return nil, time.Time{}, s.txns.failed(tx, err)
@@ -651,8 +655,12 @@ func (s *PGStore) txnList(ctx context.Context, db DB, r ListRequest) (ListResult
 	}
 	switch tx.mode {
 	case txnReadOnly:
-		r.ReadTime = tx.readTime
-		return s.ListDocuments(ctx, db, r)
+		res, _, err := atSnapshot(tx, func(t time.Time) (ListResult, time.Time, error) {
+			r.ReadTime = t
+			res, err := s.ListDocuments(ctx, db, r)
+			return res, res.ReadTime, err
+		})
+		return res, err
 	case txnPessimistic:
 		if err := tx.table.acquire(ctx, tx.lt, listLock(r), lockShared); err != nil {
 			return ListResult{}, s.txns.failed(tx, err)

@@ -308,12 +308,7 @@ func send(base, method, path, body, token string) (int, []byte, error) {
 
 // transactionGapsF2 are the cases of f2-transactions.json this server does not answer as
 // production, each with its reason. A listed case answered as production fails the test.
-var transactionGapsF2 = map[string]string{
-	// The read-only transaction #2 began before retry.new_id_commit wrote r2, and production's
-	// query in it returns r2: its snapshot is taken at the first read, not at Begin as core takes
-	// it (ADR-025 §7.4). A core change of F2's, left to the lead.
-	"read.run_query_read_only": "a read-only transaction's snapshot is taken at Begin, production's at its first read",
-}
+var transactionGapsF2 = map[string]string{}
 
 // TestTransactionsReplayF2 replays the REST cases of f2-transactions.json in their order, on the
 // file's setup: Begin's options and read times, retry_transaction, reads and commits in a

@@ -209,8 +209,12 @@ func (s *PGStore) txnScan(ctx context.Context, db DB, r ScanRequest) (ListResult
 	}
 	switch tx.mode {
 	case txnReadOnly:
-		r.ReadTime = tx.readTime
-		return s.Scan(ctx, db, r)
+		res, _, err := atSnapshot(tx, func(t time.Time) (ListResult, time.Time, error) {
+			r.ReadTime = t
+			res, err := s.Scan(ctx, db, r)
+			return res, res.ReadTime, err
+		})
+		return res, err
 	case txnPessimistic:
 		if err := tx.table.acquire(ctx, tx.lt, r.lock(), lockShared); err != nil {
 			return ListResult{}, s.txns.failed(tx, err)

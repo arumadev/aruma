@@ -587,7 +587,9 @@ func (c *client) getParallel(ctx context.Context, keys []int, ref core.Transacti
 }
 
 // snapshot is a read-only transaction: two reads, a pause apart, which must answer at one
-// read_time. It linearizes within its Begin, which fixes the snapshot.
+// read_time. It linearizes within its first read, which fixes the snapshot, as production's
+// does (f2-transactions.json read.run_query_read_only), not within its Begin: a pause between
+// the two lets commits in, which the first read must see.
 func (c *client) snapshot() {
 	ctx, cancel, _ := c.context()
 	defer cancel()
@@ -595,9 +597,7 @@ func (c *client) snapshot() {
 	if c.rng.IntN(2) == 0 {
 		by, who = endUser, "user"
 	}
-	call := c.h.now()
 	id, err := c.h.s.BeginTransaction(ctx, testDB, by, core.TransactionOptions{ReadOnly: true})
-	ret := c.h.now()
 	if err != nil {
 		c.readFailed(ctx, opSnapshot, err)
 		return
@@ -608,13 +608,19 @@ func (c *client) snapshot() {
 			c.h.t.Errorf("rollback: %v", err)
 		}
 	}()
+	c.pause(3 * time.Millisecond)
 	var reads []observation
-	var readTime int64
+	var readTime, call, ret int64
 	for i := range 2 {
-		if i == 1 {
+		if i == 0 {
+			call = c.h.now()
+		} else {
 			c.pause(3 * time.Millisecond)
 		}
 		r, rt, err := c.get(ctx, c.readKeys(), core.ReadOptions{Transaction: &ref})
+		if i == 0 {
+			ret = c.h.now()
+		}
 		if err != nil {
 			c.readFailed(ctx, opSnapshot, err)
 			return

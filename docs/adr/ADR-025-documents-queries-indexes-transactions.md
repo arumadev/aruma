@@ -213,7 +213,7 @@
 
 #### 7.4 القراءة فقط و`read_time`
 
-- **`read_only{read_time?}`**، بـ `BeginTransaction` أو `new_transaction`: بلا أقفال، وكل قراءاتها من لقطة واحدة: `read_time` إن أُعطي، وإلا وقت آخر commit عند البدء (المتسلسل، ADR-024). ولا يعيدها العملاء (CL §2.3، §2.4).
+- **`read_only{read_time?}`**، بـ `BeginTransaction` أو `new_transaction`: بلا أقفال، وكل قراءاتها من لقطة واحدة: `read_time` إن أُعطي، وإلا وقت أول قراءة فيها: تقرأ آخر commit، ويثبت `read_time` ردها لما بعدها (المتسلسل، ADR-024). فما كُتب بين البدء وأول قراءة يُرى، كما في الإنتاج (f2-transactions.json `read.run_query_read_only`). ولا يعيدها العملاء (CL §2.3، §2.4).
 - **`read_time`** بدقة الميكروثانية وضمن الساعة الماضية («within the past one hour»، OF §2d). وأقدم منها `FAILED_PRECONDITION`، بنص لم يُسجَّل في F0 فيُسجَّل في F2 (ADR-028 §7.6). ونافذة 7 أيام بالدقيقة الكاملة (PITR) تأتي مع مقبض الاحتفاظ في v0.4.x (ADR-028).
 - **Node بـ `readOnly` و`readTime`** لا يبدأ معاملة، ويمرر `read_time` على كل قراءة (CL §2.3). فكل RPC قراءة يقبل `read_time` بالشروط نفسها.
 - **الاستعلام والتجميع بـ `read_time` قديم** بالمسار المرجعي على جدول النسخ بسقف صفوف، وما يتجاوزه `FAILED_PRECONDITION` موثّق (PL §4، ADR-024).
