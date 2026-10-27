@@ -138,7 +138,10 @@ type composite struct {
 	// vector: a field has a vector_config. Such an index is stored and listed, never written
 	// nor served (ADR-025 §3).
 	vector bool
-	spec   *adminpb.Index
+	// vectorField and vectorDim are the vector field's path and dimension, for a vector index.
+	vectorField string
+	vectorDim   int
+	spec        *adminpb.Index
 	// createTime and readyTime are the row's; operation is the CreateIndex operation's id.
 	createTime time.Time
 	readyTime  time.Time
@@ -324,8 +327,12 @@ func readCatalog(ctx context.Context, q *queries.Queries, db DB) (*catalog, erro
 // ones, CREATING ones marked so (R21), and the field overrides with their indexes' states.
 func plannerCatalog(cat *catalog) (*index.Catalog, error) {
 	var ixs []index.Index
+	var vectors []index.VectorIndex
 	for _, c := range cat.composites {
 		if c.vector {
+			if v, ok := c.nearestIndex(); ok {
+				vectors = append(vectors, v)
+			}
 			continue
 		}
 		ix := index.Index{CollectionGroup: c.group, Scope: c.scope, State: index.StateCreating}
@@ -344,7 +351,31 @@ func plannerCatalog(cat *catalog) (*index.Catalog, error) {
 	slices.SortFunc(ovs, func(a, b index.FieldOverride) int {
 		return cmp.Or(strings.Compare(a.CollectionGroup, b.CollectionGroup), strings.Compare(a.Path, b.Path))
 	})
-	return index.NewCatalog(ixs, ovs)
+	planner, err := index.NewCatalog(ixs, ovs)
+	if err != nil {
+		return nil, err
+	}
+	return planner.WithVectors(vectors), nil
+}
+
+// nearestIndex is a READY vector index as a find_nearest meets it. One with a prefix field that
+// is not ascending is left out: the missing-index command production gives asks for ascending
+// prefixes only (f0-find-nearest.json rest.prefilter).
+func (c *composite) nearestIndex() (index.VectorIndex, bool) {
+	v := index.VectorIndex{CollectionGroup: c.group, Scope: c.scope, Field: c.vectorField, Dimension: c.vectorDim}
+	if !c.ready {
+		return v, false
+	}
+	for _, f := range c.fields {
+		if f.canon == index.NameField {
+			continue
+		}
+		if f.mode != index.Ascending {
+			return v, false
+		}
+		v.Prefix = append(v.Prefix, f.canon)
+	}
+	return v, true
 }
 
 // decodeComposite reads an indexes row's spec.
@@ -363,6 +394,7 @@ func decodeComposite(id int64, group string, scope int16, spec []byte, state str
 		switch {
 		case f.GetVectorConfig() != nil:
 			ix.vector = true
+			ix.vectorField, ix.vectorDim = cf.canon, int(f.GetVectorConfig().GetDimension())
 			continue
 		case f.GetArrayConfig() == adminpb.Index_IndexField_CONTAINS:
 			cf.mode = index.Contains

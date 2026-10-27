@@ -86,8 +86,6 @@ const (
 	// ReasonExemption: the automatic index that would serve is exempted by a field override,
 	// and production's message for that is unrecorded (R20).
 	ReasonExemption Reason = "R20"
-	// ReasonNotReady: the index that would serve is not READY (R21).
-	ReasonNotReady Reason = "R21"
 	// ReasonUnprobed: a shape the probe never sent, such as array-contains before __name__
 	// descending, __name__ ordered before another field, or a kindless query on a field. The
 	// query package rejects most of these first.
@@ -462,11 +460,12 @@ func (sh shape) disjunct(conj []Filter, cat *Catalog) Decision {
 		if !scopeServes(ix.Scope, q.Scope) {
 			continue
 		}
+		if ix.State != StateReady {
+			// Never served from (R21): the query is as if the index were absent.
+			continue
+		}
 		c := cover{ok: true}
-		switch {
-		case ix.State != StateReady:
-			c.reason, c.detail = ReasonNotReady, "a composite index that is not READY"
-		case ix.Scope != q.Scope:
+		if ix.Scope != q.Scope {
 			c.reason, c.detail = ReasonSelection, "a collection-group composite for a collection query"
 		}
 		prefix, ok := splitOrder(ix.Fields, order)
@@ -499,7 +498,8 @@ func (sh shape) disjunct(conj []Filter, cat *Catalog) Decision {
 			}
 			return cover{ok: true, reason: ReasonUnprobed, detail: "array-contains before __name__ descending"}
 		case notReady:
-			return cover{ok: true, reason: ReasonNotReady, detail: "a single-field index that is not READY"}
+			// Never served from (R21): the query is as if the index were absent.
+			return cover{}
 		case exempted:
 			return cover{ok: true, reason: ReasonExemption, detail: "an exempted single-field index on " + path}
 		}

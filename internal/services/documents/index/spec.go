@@ -136,6 +136,32 @@ func (ix Index) Validate() error {
 type Catalog struct {
 	composites map[string][]Index
 	overrides  overrides
+	vectors    []VectorIndex
+}
+
+// VectorIndex is a READY vector index: a composite index whose last field is a vector field.
+// Queries never read it; find_nearest only needs to know it exists (ADR-025 §5).
+type VectorIndex struct {
+	CollectionGroup string
+	Scope           Scope
+	// Prefix is the fields before the vector field, __name__ left out.
+	Prefix    []string
+	Field     string
+	Dimension int
+}
+
+// WithVectors sets the catalog's vector indexes, before it is shared.
+func (c *Catalog) WithVectors(v []VectorIndex) *Catalog {
+	c.vectors = v
+	return c
+}
+
+// Vectors returns the READY vector indexes; a nil catalog has none.
+func (c *Catalog) Vectors() []VectorIndex {
+	if c == nil {
+		return nil
+	}
+	return c.vectors
 }
 
 // NewCatalog validates and normalizes a database's composite indexes and field overrides, as the

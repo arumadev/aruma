@@ -20,7 +20,7 @@ func filter(f index.Filter) *index.Filter { return &f }
 
 // TestCheckCatalog covers what the corpus cannot: declared composites and field overrides,
 // where the verdict is verified (exact indexes, collection-group enablement) and where it is
-// left Uncertain (R18 to R21, unprobed shapes).
+// left Uncertain (R18 to R20, unprobed shapes).
 func TestCheckCatalog(t *testing.T) {
 	const C, CG = index.ScopeCollection, index.ScopeCollectionGroup
 	asc, desc, contains := index.Ascending, index.Descending, index.Contains
@@ -131,7 +131,7 @@ func TestCheckCatalog(t *testing.T) {
 			name:    "R21: exact composite still CREATING",
 			q:       coll(filter(eqA), byD),
 			indexes: []index.Index{composite("c", C, index.StateCreating, field("a", asc), field("d", asc))},
-			want:    index.Uncertain, reason: index.ReasonNotReady,
+			want:    index.NeedsIndex,
 		},
 		{
 			name:      "R12: collection-group single-field index enabled by an override",
@@ -155,7 +155,7 @@ func TestCheckCatalog(t *testing.T) {
 			name:      "R12: collection-group override still building",
 			q:         group(filter(eqA)),
 			overrides: []index.FieldOverride{{CollectionGroup: "c", Path: "a", Indexes: append(automatic, index.SingleFieldIndex{Scope: CG, Mode: asc, State: index.StateCreating})}},
-			want:      index.Uncertain, reason: index.ReasonNotReady,
+			want:      index.NeedsIndex,
 		},
 		{
 			name:      "R20: field exempted",
