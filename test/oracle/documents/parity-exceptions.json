@@ -226,6 +226,19 @@
         "corpus/f3-index-entries.json"
       ],
       "test": "internal/services/documents/core/indexentries_test.go:TestTransactionBoundPerDocument"
+    },
+    {
+      "id": "rules-token-issuer",
+      "kind": "restriction",
+      "summary": "request.auth.token.iss is the deployment's own issuer, not https://securetoken.google.com/<project>.",
+      "production": "An end user's ID token carries iss https://securetoken.google.com/<project id>, which the rules see as request.auth.token.iss (corpus/f5-rules-auth.json user.iss, allowed under iss == 'https://securetoken.google.com/chatapp-8ae21').",
+      "emulator": "Not recorded.",
+      "aruma": "Aruma issues its own ID tokens (ADR-004): their iss is public_url's /issuers/<project id>, and request.auth.token.iss is the verified token's. A rule comparing iss with Google's issuer denies on Aruma. Every other claim the recording shows is the same: aud the project id, sub, iat, exp and auth_time integers, email, email_verified, firebase.identities and firebase.sign_in_provider. The rules replay lists user.iss as differing.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f5-rules-auth.json"
+      ],
+      "test": "test/differential/documents/rules_replay_test.go:TestReplayRulesInProcess"
     }
   ]
 }
