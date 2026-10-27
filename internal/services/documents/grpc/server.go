@@ -36,6 +36,7 @@ import (
 
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
+	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/adminpb"
@@ -52,7 +53,8 @@ type Limits struct {
 	MessageBytes int64
 	// StreamFirstMessage bounds the wait for a stream's first message (10 s).
 	StreamFirstMessage time.Duration
-	// StreamIdle ends a Write stream that sent no request for this long (5 min).
+	// StreamIdle ends a Listen stream without a target, or a Write stream, that sent no request
+	// for this long (5 min).
 	StreamIdle time.Duration
 	// StreamWriteStall bounds each message a server stream writes (30 s).
 	StreamWriteStall time.Duration
@@ -60,6 +62,12 @@ type Limits struct {
 	ServerStreamMax time.Duration
 	// StreamsPerIP caps the streams open from one client address (500).
 	StreamsPerIP int
+	// StreamsPerProject caps the Listen and Write streams open on one project (10000).
+	StreamsPerProject int
+	// StreamOutboxBytes caps what waits to be sent on one Listen stream (64 MiB).
+	StreamOutboxBytes int64
+	// TargetsPerStream caps one Listen stream's targets (1000).
+	TargetsPerStream int
 }
 
 // Options configure the handler.
@@ -70,7 +78,12 @@ type Options struct {
 	Limits         Limits
 	// Metrics, when set, counts every RPC.
 	Metrics *Metrics
-	Logger  *slog.Logger
+	// IDTokens verifies an end user's ID token when its stream opens, and again when
+	// revocations were lost; Revocations tells of the users whose tokens stop being valid
+	// (ADR-026 §4). Without them an end user's stream is watched for neither.
+	IDTokens    idtoken.Verifier
+	Revocations idtoken.Revocations
+	Logger      *slog.Logger
 }
 
 // Handler serves the Document Database's gRPC methods. It is safe for concurrent use.
@@ -89,6 +102,9 @@ type Handler struct {
 	mu      sync.Mutex
 	streams map[netip.Addr]int
 	open    int
+
+	// watch holds the admitted Listen and Write streams (watch.go).
+	watch streamWatch
 }
 
 // New returns the handler.
@@ -100,10 +116,14 @@ func New(o Options) *Handler {
 	l.StreamWriteStall = cmp.Or(l.StreamWriteStall, 30*time.Second)
 	l.ServerStreamMax = cmp.Or(l.ServerStreamMax, 5*time.Minute)
 	l.StreamsPerIP = cmp.Or(l.StreamsPerIP, 500)
+	l.StreamsPerProject = cmp.Or(l.StreamsPerProject, 10_000)
+	l.StreamOutboxBytes = cmp.Or(l.StreamOutboxBytes, 64<<20)
+	l.TargetsPerStream = cmp.Or(l.TargetsPerStream, 1000)
 	h := &Handler{
 		svc: o.Service, trusted: o.TrustedProxies, limits: l, metrics: o.Metrics,
 		log: cmp.Or(o.Logger, slog.Default()), streams: make(map[netip.Addr]int),
 	}
+	h.watch.init(h, o.IDTokens, o.Revocations)
 	h.drain, h.stopDrain = context.WithCancel(context.Background())
 	opts := []connect.HandlerOption{
 		connect.WithReadMaxBytes(int(l.MessageBytes)),
@@ -303,6 +323,9 @@ func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
 func (h *Handler) openServerStream(ctx context.Context, maxLife time.Duration) (*serverStream, error) {
 	info := rpcOf(ctx)
 	release, err := h.openStream(info.client)
+	if errors.Is(err, errTooManyStreams) {
+		h.overflowed(ctx, info, "streams_per_ip")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -337,13 +360,22 @@ func (s *serverStream) admitted() {
 
 // send writes one message within stream_write_stall.
 func (s *serverStream) send(send func() error) error {
+	return s.sendWithin(s.stall, send)
+}
+
+// sendWithin writes one message within d; 0 is no bound but the stream's end, which cuts it.
+func (s *serverStream) sendWithin(d time.Duration, send func() error) error {
 	s.mu.Lock()
 	if s.ctx.Err() != nil {
 		s.mu.Unlock()
 		return context.Cause(s.ctx)
 	}
 	s.sending = true
-	_ = s.info.rc.SetWriteDeadline(time.Now().Add(s.stall))
+	deadline := time.Time{}
+	if d > 0 {
+		deadline = time.Now().Add(d)
+	}
+	_ = s.info.rc.SetWriteDeadline(deadline)
 	s.mu.Unlock()
 	err := send()
 	s.mu.Lock()
@@ -384,6 +416,10 @@ func (s *serverStream) finish(err error) error {
 			return errDraining.Connect()
 		case errors.Is(cause, errStreamMax), errors.Is(cause, context.DeadlineExceeded):
 			return wire.From(context.DeadlineExceeded).Connect()
+		}
+		// A status the stream was closed with from outside: its token, a limit, the lock's loss.
+		if we, ok := errors.AsType[*wire.Error](cause); ok {
+			return we.Connect()
 		}
 	}
 	if err == nil {
