@@ -33,6 +33,11 @@
 # of what the server does not serve yet are listed in test/compat/documents/expected-failures/,
 # and a listed test that passes fails the target.
 #
+# Listen and the Write stream (F4) ride on the same targets: listen_test.go (Snapshots), the admin-node
+# listen.test.mjs (onSnapshot, on the gRPC run) and web/listen.test.mjs (the full firebase 11, 12 and 13,
+# which speak gRPC in Node: onSnapshot, getDoc, setDoc and updateDoc with serverTimestamp and increment,
+# writeBatch).
+#
 # firebase-tools-documents runs firebase-tools 15.34.0 (test/acceptance/testdata/firebase-cli)
 # against a live Aruma with the Document Database (TestDocumentsWithTheFirebaseCLI, F3): deploy
 # --only firestore:indexes, firestore:indexes (the export, deployed back), a second deploy, a
