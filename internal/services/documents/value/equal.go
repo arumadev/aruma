@@ -33,6 +33,14 @@ func Equivalent(a, b Value) bool {
 	return c.value(a, b) == 0
 }
 
+// CompareWhole orders a and b as Compare does without its index budget: the order of document
+// names (__name__), which the store keeps whole however long they are (ADR-024 §1.4), where an
+// index entry's value keeps 1500 bytes. AppendWholeKey is its key.
+func CompareWhole(a, b Value) int {
+	c := comparer{ra: math.MaxInt / 2, rb: math.MaxInt / 2}
+	return c.value(a, b)
+}
+
 // Identical reports whether a and b are the same value: the same kind, the same bits (-0.0 is
 // not 0.0, any NaN is NaN), and for arrays and maps the same elements and fields, identical.
 // It is what a write changes and a listener sees, where Equal is what a query matches.

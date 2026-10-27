@@ -13,6 +13,20 @@ type Order struct {
 	Desc bool
 }
 
+// compare orders two values of o's field in o's direction: a field's as its index does
+// (value.Compare, which keeps 1500 bytes of a value), __name__ by the whole name, as the store
+// orders documents (ADR-024 §1.4).
+func (o Order) compare(a, b value.Value) int {
+	c := value.Compare(a, b)
+	if o.Path.IsDocumentID() {
+		c = value.CompareWhole(a, b)
+	}
+	if o.Desc {
+		c = -c
+	}
+	return c
+}
+
 // ordersOf reads the explicit orders off the wire. A direction left unspecified is ascending;
 // one outside the enum is production's "Unrecognized ordering." (f1-wire-errors.json
 // json.bad_enum_number).

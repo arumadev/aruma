@@ -2,12 +2,14 @@ package rest_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
+	"github.com/arumadev/aruma/internal/services/documents/query"
 )
 
 // TestIndexesReplay sends the 105 recorded shapes of indexes-105.json through :runQuery and
@@ -23,7 +25,9 @@ func TestIndexesReplay(t *testing.T) {
 		}
 	}
 	matched := 0
-	for _, c := range apitest.IndexCases(t) {
+	cases := apitest.IndexCases(t)
+	indexed := indexServed()
+	for _, c := range cases {
 		path := "/v1/" + strings.ReplaceAll(c.Request.Path, "{project}", apitest.Project)
 		for _, empty := range []bool{true, false} {
 			code, _, b := h.do(t, c.Request.Method, path, c.Body(root, empty), tok)
@@ -37,6 +41,49 @@ func TestIndexesReplay(t *testing.T) {
 	if matched != 210 {
 		t.Errorf("%d of 210 answers as production's", matched)
 	}
+	// The automatic single-field indexes serve some of the shapes production serves.
+	if indexServed() == indexed {
+		t.Error("no recorded shape was served by an index path")
+	}
+	// With the indexes production asked for, each needs-index shape is served by one.
+	n := apitest.IndexedReplay(t, h.env, root, cases, func(c *apitest.IndexCase) (apitest.IndexAnswer, error) {
+		path := "/v1/" + strings.ReplaceAll(c.Request.Path, "{project}", apitest.Project)
+		code, _, b := h.do(t, c.Request.Method, path, c.Body(root, false), tok)
+		if code != http.StatusOK {
+			return apitest.IndexAnswer{}, fmt.Errorf("%d %s", code, b)
+		}
+		return restAnswer(b)
+	})
+	t.Logf("%d needs-index shapes replayed with their indexes", n)
+}
+
+func indexServed() int64 {
+	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
+}
+
+// restAnswer reads a :runQuery or :runAggregationQuery answer's documents or aggregates.
+func restAnswer(b []byte) (apitest.IndexAnswer, error) {
+	var elems []struct {
+		Document *struct {
+			Name string `json:"name"`
+		} `json:"document"`
+		Result *struct {
+			AggregateFields json.RawMessage `json:"aggregateFields"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(b, &elems); err != nil {
+		return apitest.IndexAnswer{}, err
+	}
+	var out apitest.IndexAnswer
+	for _, e := range elems {
+		switch {
+		case e.Document != nil:
+			out.IDs = append(out.IDs, apitest.LastSegments(e.Document.Name))
+		case e.Result != nil:
+			out.Aggregates = append(out.Aggregates, e.Result.AggregateFields)
+		}
+	}
+	return out, nil
 }
 
 // indexOutcomeDiff is how an answer differs from the recorded outcome, or "".

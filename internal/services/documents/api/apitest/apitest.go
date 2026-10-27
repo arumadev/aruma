@@ -55,15 +55,17 @@ type Options struct {
 
 // Env is a service layer on a fresh database.
 type Env struct {
-	Pool     *pgxpool.Pool
-	Tenancy  *tenancy.Service
-	Store    *documents.PGStore
-	Service  *api.Service
-	Owner    *authn.Principal
-	Number   int64 // Project's number
-	Key      tenancy.GeneratedKey
-	SAEmail  string
-	OwnerPAT string // an aruma_pat_ token of the owner of both projects
+	Pool    *pgxpool.Pool
+	Tenancy *tenancy.Service
+	Store   *documents.PGStore
+	Service *api.Service
+	// Reference is Service with the planner off: every query on the reference path.
+	Reference *api.Service
+	Owner     *authn.Principal
+	Number    int64 // Project's number
+	Key       tenancy.GeneratedKey
+	SAEmail   string
+	OwnerPAT  string // an aruma_pat_ token of the owner of both projects
 }
 
 // New returns the environment.
@@ -122,6 +124,8 @@ func New(t testing.TB, o Options) *Env {
 		Pool: pool, Tenancy: svc, Store: store, Owner: owner, Number: proj.Number, Key: key,
 		SAEmail: sa.Email, OwnerPAT: pat.Plaintext,
 		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Logger: log}),
+		Reference: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Logger: log,
+			ReferenceOnly: true}),
 	}
 }
 

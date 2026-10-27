@@ -314,7 +314,10 @@ func TestPessimisticListLocksItsCollection(t *testing.T) {
 	}
 }
 
-// A read-only transaction reads one snapshot, at Begin or at its read_time, and takes no write.
+// A read-only transaction reads one snapshot, at its read_time or else at its first read, and
+// takes no write. A commit between its Begin and its first read is seen, as production's query
+// in a read-only transaction sees one (f2-transactions.json read.run_query_read_only); one after
+// its first read is not.
 func TestReadOnlyTransaction(t *testing.T) {
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
@@ -323,17 +326,35 @@ func TestReadOnlyTransaction(t *testing.T) {
 	now := begin(t, s, endUser, TransactionOptions{ReadOnly: true})
 	then := begin(t, s, endUser, TransactionOptions{ReadOnly: true, ReadTime: first.CommitTime})
 	mustCommit(t, s, set("ro/a", doc("n", value.Int(3))), set("ro/b", doc()))
-	for ref, want := range map[*TransactionRef]int64{&now: 2, &then: 1} {
+	type want struct {
+		n    int64
+		docs int
+	}
+	wants := map[*TransactionRef]want{&now: {3, 2}, &then: {1, 1}}
+	readTimes := map[*TransactionRef]time.Time{}
+	for ref, want := range wants {
 		d, readTime, err := s.Get(ctx, testDB, ParsePath("ro/a"), in(*ref))
-		if err != nil || intField(t, d, "n") != want {
-			t.Fatalf("read: %v %v, want n=%d", d, err, want)
+		if err != nil || intField(t, d, "n") != want.n {
+			t.Fatalf("first read: %v %v, want n=%d", d, err, want.n)
+		}
+		readTimes[ref] = readTime
+	}
+	mustCommit(t, s, set("ro/a", doc("n", value.Int(4))), set("ro/c", doc()))
+	for ref, want := range wants {
+		d, readTime, err := s.Get(ctx, testDB, ParsePath("ro/a"), in(*ref))
+		if err != nil || intField(t, d, "n") != want.n || !readTime.Equal(readTimes[ref]) {
+			t.Fatalf("a later read: %v at %v %v, want n=%d at %v", d, readTime, err, want.n, readTimes[ref])
 		}
 		res, err := s.ListDocuments(ctx, testDB, ListRequest{CollectionID: "ro", ReadOptions: in(*ref)})
-		if err != nil || len(res.Documents) != 1 || !res.ReadTime.Equal(readTime) {
+		if err != nil || len(res.Documents) != want.docs || !res.ReadTime.Equal(readTime) {
 			t.Fatalf("list: %v %v", paths(res.Documents), err)
 		}
+		res, err = s.Scan(ctx, testDB, ScanRequest{CollectionID: "ro", ReadOptions: in(*ref)})
+		if err != nil || len(res.Documents) != want.docs || !res.ReadTime.Equal(readTime) {
+			t.Fatalf("scan: %v %v", paths(res.Documents), err)
+		}
 	}
-	_, err := s.CommitTransaction(ctx, testDB, now, []Write{set("ro/c", doc())})
+	_, err := s.CommitTransaction(ctx, testDB, now, []Write{set("ro/d", doc())})
 	wantError(t, err, InvalidArgument, ErrReadOnlyWrite.Message)
 	// After its refused write, the transaction's expired text comes as INVALID_ARGUMENT
 	// (f2-transactions.json ro.commit_empty_after_refused_write).

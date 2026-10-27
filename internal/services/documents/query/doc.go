@@ -23,5 +23,8 @@
 //   - aggregate.go: count (with up_to), sum and avg;
 //   - nearest.go: find_nearest, answered as production answers without a vector index;
 //   - partition.go: PartitionQuery's checks;
+//   - plan.go: the planner, which serves a query from index entries when an index serves it
+//     exactly, as abstract scans that the service layer reads from core;
+//   - recheck.go: every index path candidate checked again by the reference matcher;
 //   - paths.go: the path counters (documents_query_path_total).
 package query

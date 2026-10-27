@@ -23,6 +23,9 @@ type Queries interface {
 	Scan(ctx context.Context, db DB, r ScanRequest) (ListResult, error)
 	// IndexCatalog returns a database's declared composite indexes and field overrides.
 	IndexCatalog(ctx context.Context, db DB) (*index.Catalog, error)
+	// BeginIndexRead begins the planner's read of index entries and their documents at the
+	// latest commit, in one snapshot (indexread.go).
+	BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error)
 }
 
 // ScanRequest is a page of a query's candidates.
@@ -206,8 +209,12 @@ func (s *PGStore) txnScan(ctx context.Context, db DB, r ScanRequest) (ListResult
 	}
 	switch tx.mode {
 	case txnReadOnly:
-		r.ReadTime = tx.readTime
-		return s.Scan(ctx, db, r)
+		res, _, err := atSnapshot(tx, func(t time.Time) (ListResult, time.Time, error) {
+			r.ReadTime = t
+			res, err := s.Scan(ctx, db, r)
+			return res, res.ReadTime, err
+		})
+		return res, err
 	case txnPessimistic:
 		if err := tx.table.acquire(ctx, tx.lt, r.lock(), lockShared); err != nil {
 			return ListResult{}, s.txns.failed(tx, err)

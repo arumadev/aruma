@@ -494,39 +494,27 @@ const scanPage = 1000
 var errIndexNotReady = errors.New("documents: scan of an index that is not READY")
 
 // ScanIndex returns the entries of an index in r, ordered by whole key, at the latest commit,
-// and that commit's commit_time: the planner's read of an index (ADR-025 §1). A composite index
-// must be READY; a single-field index's readiness is the catalog's (index.Check). Keys that
-// share their first 2,048 bytes are stored in hash order: each such run is read whole and
-// ordered by the whole key before the limit applies (ADR-024 §1.4). A read at a read_time is
-// not served from index entries, which hold the latest state only: such queries take the
-// reference path.
+// and that commit's commit_time. A composite index must be READY; a single-field index's
+// readiness is the catalog's (index.Check). Keys that share their first 2,048 bytes are stored in
+// hash order: each such run is read whole and ordered by the whole key before the limit applies
+// (ADR-024 §1.4). A read at a read_time is not served from index entries, which hold the latest
+// state only: such queries take the reference path. The planner reads through BeginIndexRead,
+// which holds its scans and documents to one snapshot.
 func (s *PGStore) ScanIndex(ctx context.Context, db DB, r IndexRange) ([]IndexHit, time.Time, error) {
-	if err := s.serving(); err != nil {
-		return nil, time.Time{}, err
-	}
-	cat, err := s.catalog(ctx, db)
+	rd, err := s.BeginIndexRead(ctx, db)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
-	if r.Index > 0 {
-		i := slices.IndexFunc(cat.composites, func(c *composite) bool { return c.id == r.Index })
-		if i < 0 || !cat.composites[i].ready {
-			return nil, time.Time{}, errIndexNotReady
-		}
-	}
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	defer rd.Close(ctx)
+	hits, _, err := rd.Scan(ctx, r)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
-	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
-	q := queries.New(tx)
-	head, err := q.ReadCatalog(ctx, queries.ReadCatalogParams{ProjectNumber: db.Project, DatabaseID: db.ID})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, time.Time{}, &DatabaseNotFoundError{ProjectID: db.ProjectID, DatabaseID: db.ID}
-	}
-	if err != nil {
-		return nil, time.Time{}, err
-	}
+	return hits, rd.ReadTime(), nil
+}
+
+// scanEntries reads the entries of r with q, in q's snapshot.
+func scanEntries(ctx context.Context, q *queries.Queries, db DB, r IndexRange) ([]IndexHit, int, error) {
 	lo, hi := []byte{}, []byte{value.KeyVersion + 1} // every key starts with the version byte
 	if r.Lo != nil {
 		lo = lowerBound(r.Lo)
@@ -538,16 +526,23 @@ func (s *PGStore) ScanIndex(ctx context.Context, db DB, r IndexRange) ([]IndexHi
 		return (r.Lo == nil || bytes.Compare(k, r.Lo) >= 0) && (r.Hi == nil || bytes.Compare(k, r.Hi) < 0)
 	}
 	var hits []IndexHit
+	read := 0
 	for r.Limit <= 0 || len(hits) < r.Limit {
+		// A page reads no more than the limit still wants, so a scan under a limit reads about
+		// as many entries as it returns.
+		n := scanPage
+		if r.Limit > 0 {
+			n = min(n, r.Limit-len(hits))
+		}
 		rows, err := q.ScanIndexEntries(ctx, queries.ScanIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
-			IndexID: r.Index, Lo: lo, Hi: hi, RowLimit: scanPage})
+			IndexID: r.Index, Lo: lo, Hi: hi, RowLimit: int32(n)})
 		if err != nil {
-			return nil, time.Time{}, err
+			return nil, 0, err
 		}
 		if len(rows) == 0 {
 			break
 		}
-		full := len(rows) == scanPage
+		full := len(rows) == n
 		last := rows[len(rows)-1].Key
 		if full && len(last) > cutLen {
 			// The page ends inside a run of keys cut alike: read the rest of the run.
@@ -555,11 +550,12 @@ func (s *PGStore) ScanIndex(ctx context.Context, db DB, r IndexRange) ([]IndexHi
 			more, err := q.ScanIndexEntries(ctx, queries.ScanIndexEntriesParams{ProjectNumber: db.Project, DatabaseID: db.ID,
 				IndexID: r.Index, Lo: append(bytes.Clone(last), 0x00), Hi: append(runHi, 0x00), RowLimit: 1 << 30})
 			if err != nil {
-				return nil, time.Time{}, err
+				return nil, 0, err
 			}
 			rows = append(rows, more...)
 			last = rows[len(rows)-1].Key
 		}
+		read += len(rows)
 		page := make([]IndexHit, 0, len(rows))
 		for _, row := range rows {
 			k := row.Key
@@ -571,7 +567,7 @@ func (s *PGStore) ScanIndex(ctx context.Context, db DB, r IndexRange) ([]IndexHi
 			}
 			p, err := pathOfEntry(k)
 			if err != nil {
-				return nil, time.Time{}, err
+				return nil, 0, err
 			}
 			page = append(page, IndexHit{Key: k, Path: p})
 		}
@@ -585,5 +581,5 @@ func (s *PGStore) ScanIndex(ctx context.Context, db DB, r IndexRange) ([]IndexHi
 	if r.Limit > 0 && len(hits) > r.Limit {
 		hits = hits[:r.Limit]
 	}
-	return hits, head.LastTs, nil
+	return hits, read, nil
 }

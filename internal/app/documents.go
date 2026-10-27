@@ -312,3 +312,11 @@ func (b *bootStore) IndexCatalog(ctx context.Context, db documents.DB) (*index.C
 	}
 	return s.IndexCatalog(ctx, db)
 }
+
+func (b *bootStore) BeginIndexRead(ctx context.Context, db documents.DB) (*documents.IndexRead, error) {
+	s, err := b.get()
+	if err != nil {
+		return nil, err
+	}
+	return s.BeginIndexRead(ctx, db)
+}

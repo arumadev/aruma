@@ -89,6 +89,15 @@ func NewRunner(q *Query, unordered bool, limits Limits, emit func(*Doc) error) *
 	return r
 }
 
+// NewOrderedRunner returns a runner for candidates that arrive in q's whole order, as an index
+// path reads them (plan.go), rather than in name order: it streams, applies the filter, the
+// cursors, the offset and the limit, and reports done at the limit or past the end cursor.
+func NewOrderedRunner(q *Query, emit func(*Doc) error) *Runner {
+	r := NewRunner(q, false, Limits{}, emit)
+	r.stream, r.upper = true, nil
+	return r
+}
+
 // Streams reports whether results are sent as candidates are added, before Finish.
 func (r *Runner) Streams() bool { return r.stream }
 
@@ -213,11 +222,7 @@ type entries struct {
 // compare orders two matches by the query's order, each field in its direction.
 func (h *entries) compare(a, b entry) int {
 	for i, o := range h.order {
-		c := value.Compare(a.vals[i], b.vals[i])
-		if o.Desc {
-			c = -c
-		}
-		if c != 0 {
+		if c := o.compare(a.vals[i], b.vals[i]); c != 0 {
 			return c
 		}
 	}
@@ -242,7 +247,7 @@ type bound struct {
 
 // past reports whether a name is above an upper bound.
 func (b *bound) past(name value.Value) bool {
-	c := value.Compare(name, b.ref)
+	c := value.CompareWhole(name, b.ref)
 	return c > 0 || c == 0 && !b.inclusive
 }
 
@@ -272,7 +277,7 @@ func (q *Query) nameBounds() (lo, hi *bound) {
 		if cur == nil {
 			return &b
 		}
-		c := value.Compare(b.ref, cur.ref)
+		c := value.CompareWhole(b.ref, cur.ref)
 		if lower && c > 0 || !lower && c < 0 || c == 0 && !b.inclusive {
 			return &b
 		}

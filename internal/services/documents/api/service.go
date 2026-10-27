@@ -36,7 +36,10 @@ type Options struct {
 	// IndexEnforcement is documents.index_enforcement, the composite-index enforcement of every
 	// database that sets none of its own (ADR-025 §4.4); the zero value is index.Enforce.
 	IndexEnforcement index.Mode
-	Logger           *slog.Logger
+	// ReferenceOnly serves every query on the reference path, never from an index: the
+	// arbiter the planner's differential tests compare it with (ADR-025 §1).
+	ReferenceOnly bool
+	Logger        *slog.Logger
 }
 
 // Service serves the Document Database's methods for every transport. It is safe for
