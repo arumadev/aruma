@@ -100,6 +100,7 @@ The limits, under `documents.limits` in the file. Each must be positive.
 |---|---|---|---|---|
 | `message_bytes` | `ARUMA_DOCUMENTS_MESSAGE_BYTES` | bytes | `17825792` (17 MiB) | One gRPC message, and one REST body: a 16 MiB document from a mobile client and its overhead. At least 1 MiB |
 | `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's 60-second timeouts lifted for it |
+| `stream_idle` | `ARUMA_DOCUMENTS_STREAM_IDLE` | duration | `5m` | How long a write stream may go without a request before it ends with `UNAVAILABLE`; the client reopens it when it needs it |
 | `stream_write_stall` | `ARUMA_DOCUMENTS_STREAM_WRITE_STALL` | duration | `30s` | How long a streamed answer (a batch get, a query) may wait on a client that stopped reading before it is cut |
 | `server_stream_max` | `ARUMA_DOCUMENTS_SERVER_STREAM_MAX` | duration | `5m` | The longest a streamed answer may last when the client set no deadline; it then ends with `DEADLINE_EXCEEDED` |
 | `streams_per_ip` | `ARUMA_DOCUMENTS_STREAMS_PER_IP` | count | `500` | Streams open at once from one client address (through `trusted_proxies`) |

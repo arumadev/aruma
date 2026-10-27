@@ -88,7 +88,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 			TrustedProxies: cfg.TrustedProxyPrefixes(),
 			Limits: docgrpc.Limits{
 				MessageBytes: l.MessageBytes, StreamFirstMessage: l.StreamFirstMessage,
-				StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
+				StreamIdle: l.StreamIdle, StreamWriteStall: l.StreamWriteStall, ServerStreamMax: l.ServerStreamMax, StreamsPerIP: l.StreamsPerIP,
 			},
 			Metrics: rpcMetrics,
 			Logger:  logger,
