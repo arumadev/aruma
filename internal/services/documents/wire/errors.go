@@ -101,6 +101,18 @@ func IndexEntryTooLarge() *Error {
 	})
 }
 
+// TooManyIndexEntries is INVALID_ARGUMENT "too many index entries for entity <docPath>" with the
+// google.rpc.ErrorInfo production attaches, docPath in its metadata (f3-index-entries.json
+// fields.n_20001: "/aruma-ref-f3-ix/fields-20001"; recorded on REST, the same details assumed
+// on gRPC).
+func TooManyIndexEntries(docPath string) *Error {
+	return InvalidArgument("too many index entries for entity " + docPath).withDetails(&errdetails.ErrorInfo{
+		Reason:   "INDEX_ENTRIES_COUNT_LIMIT_EXCEEDED",
+		Domain:   "firestore.googleapis.com",
+		Metadata: map[string]string{"docPath": docPath},
+	})
+}
+
 // IndexError is FAILED_PRECONDITION (HTTP 400) with the needs-index message of package index,
 // byte for byte (indexes-105.json, f0-explain.json). REST carries no details (as recorded); gRPC
 // carries the console link as a google.rpc.Help, which the Go and Node clients decode (ADR-027

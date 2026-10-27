@@ -318,6 +318,98 @@ func (q *Queries) CatalogOverrides(ctx context.Context, arg CatalogOverridesPara
 	return items, nil
 }
 
+const changedSince = `-- name: ChangedSince :many
+SELECT DISTINCT ON (c.name_key) c.name, c.before
+FROM documents.changelog c
+WHERE c.project_number = $1 AND c.database_id = $2 AND c.seq > $3
+    AND c.name >= $4 AND c.name < $5
+ORDER BY c.name_key, c.seq
+`
+
+type ChangedSinceParams struct {
+	ProjectNumber int64
+	DatabaseID    string
+	AfterSeq      int64
+	Lo            []byte
+	Hi            []byte
+}
+
+type ChangedSinceRow struct {
+	Name   []byte
+	Before []byte
+}
+
+// The documents with a whole name in [@lo, @hi) that the commits after @after_seq changed, each
+// once, with its image before the first of those commits (NULL when it did not exist then), in
+// name order: what an index read continued in a later snapshot reads instead of their entries.
+func (q *Queries) ChangedSince(ctx context.Context, arg ChangedSinceParams) ([]ChangedSinceRow, error) {
+	rows, err := q.db.Query(ctx, changedSince,
+		arg.ProjectNumber,
+		arg.DatabaseID,
+		arg.AfterSeq,
+		arg.Lo,
+		arg.Hi,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ChangedSinceRow{}
+	for rows.Next() {
+		var i ChangedSinceRow
+		if err := rows.Scan(&i.Name, &i.Before); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const changelogFloor = `-- name: ChangelogFloor :many
+SELECT c.seq, (c.commit_time > now() - make_interval(secs => $1::float8))::boolean AS young
+FROM documents.changelog c
+WHERE c.project_number = $2 AND c.database_id = $3
+ORDER BY c.seq, c.name_key
+LIMIT 1
+`
+
+type ChangelogFloorParams struct {
+	MinSecs       float64
+	ProjectNumber int64
+	DatabaseID    string
+}
+
+type ChangelogFloorRow struct {
+	Seq   int64
+	Young bool
+}
+
+// The oldest changelog row of a database, and whether it is younger than @min_secs, which no
+// retention prunes: retention deletes a prefix of (seq, name_key), so the changelog holds every
+// row after the floor's seq, and every row of that seq when the row is young.
+func (q *Queries) ChangelogFloor(ctx context.Context, arg ChangelogFloorParams) ([]ChangelogFloorRow, error) {
+	rows, err := q.db.Query(ctx, changelogFloor, arg.MinSecs, arg.ProjectNumber, arg.DatabaseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ChangelogFloorRow{}
+	for rows.Next() {
+		var i ChangelogFloorRow
+		if err := rows.Scan(&i.Seq, &i.Young); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const compositeBySpec = `-- name: CompositeBySpec :one
 SELECT id FROM documents.indexes
 WHERE project_number = $1 AND database_id = $2 AND collection_group = $3
@@ -456,6 +548,72 @@ func (q *Queries) GetComposite(ctx context.Context, arg GetCompositeParams) (Get
 	return i, err
 }
 
+const getDocumentsWithin = `-- name: GetDocumentsWithin :many
+WITH k AS (
+    SELECT u.key, u.ord FROM unnest($4::bytea[]) WITH ORDINALITY AS u(key, ord)
+), s AS (
+    SELECT k.key, k.ord,
+        sum(coalesce(d.size, 0)) OVER (ORDER BY k.ord) - coalesce(d.size, 0) AS before
+    FROM k LEFT JOIN documents.documents d ON d.project_number = $1
+        AND d.database_id = $2 AND d.name_key = k.key
+)
+SELECT s.ord::bigint AS ord, d.name, d.doc, d.create_time, d.update_time
+FROM s LEFT JOIN documents.documents d ON d.project_number = $1
+    AND d.database_id = $2 AND d.name_key = s.key
+WHERE s.ord = 1 OR s.before < $3::bigint
+ORDER BY s.ord
+`
+
+type GetDocumentsWithinParams struct {
+	ProjectNumber int64
+	DatabaseID    string
+	Budget        int64
+	NameKeys      [][]byte
+}
+
+type GetDocumentsWithinRow struct {
+	Ord        int64
+	Name       []byte
+	Doc        []byte
+	CreateTime *time.Time
+	UpdateTime *time.Time
+}
+
+// The documents of @name_keys in their order, as far as @budget bytes of them (by size) go: the
+// first key always, then each key while the documents before it hold less than @budget. A key
+// without a document comes with a NULL name and costs nothing. The sizes are read first, so a
+// document past the budget is not read.
+func (q *Queries) GetDocumentsWithin(ctx context.Context, arg GetDocumentsWithinParams) ([]GetDocumentsWithinRow, error) {
+	rows, err := q.db.Query(ctx, getDocumentsWithin,
+		arg.ProjectNumber,
+		arg.DatabaseID,
+		arg.Budget,
+		arg.NameKeys,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDocumentsWithinRow{}
+	for rows.Next() {
+		var i GetDocumentsWithinRow
+		if err := rows.Scan(
+			&i.Ord,
+			&i.Name,
+			&i.Doc,
+			&i.CreateTime,
+			&i.UpdateTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOperation = `-- name: GetOperation :one
 SELECT kind, metadata, done, result, create_time FROM documents.operations
 WHERE project_number = $1 AND database_id = $2 AND id = $3
@@ -485,6 +643,30 @@ func (q *Queries) GetOperation(ctx context.Context, arg GetOperationParams) (Get
 		&i.Result,
 		&i.CreateTime,
 	)
+	return i, err
+}
+
+const indexReadHead = `-- name: IndexReadHead :one
+SELECT seq, last_ts, catalog_version FROM documents.sequencer
+WHERE project_number = $1 AND database_id = $2
+`
+
+type IndexReadHeadParams struct {
+	ProjectNumber int64
+	DatabaseID    string
+}
+
+type IndexReadHeadRow struct {
+	Seq            int64
+	LastTs         time.Time
+	CatalogVersion int64
+}
+
+// The commit an index read's snapshot is at, and its catalogue version (core/indexread.go).
+func (q *Queries) IndexReadHead(ctx context.Context, arg IndexReadHeadParams) (IndexReadHeadRow, error) {
+	row := q.db.QueryRow(ctx, indexReadHead, arg.ProjectNumber, arg.DatabaseID)
+	var i IndexReadHeadRow
+	err := row.Scan(&i.Seq, &i.LastTs, &i.CatalogVersion)
 	return i, err
 }
 

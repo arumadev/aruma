@@ -176,7 +176,7 @@ type conjunct struct {
 	contains []heldLeaf
 	// ranges are the range leaves by field.
 	ranges map[string][]*Filter
-	// names are the range leaves on __name__.
+	// names are the range and equality leaves on __name__.
 	names []*Filter
 	// tail is the query's order without the fields held to one value.
 	tail []Order
@@ -228,6 +228,11 @@ func (p *planner) read(leaves []*Filter) (conjunct, bool) {
 				return conjunct{}, false
 			}
 			if l.Path.IsDocumentID() {
+				// A name's equality (an in's member too, expandMembers) bounds a scan on
+				// __name__ as a range does.
+				if l.Op == index.OpEqual {
+					c.names = append(c.names, l)
+				}
 				continue
 			}
 			h := heldLeaf{leaf: l, path: path, value: l.Value}
@@ -366,10 +371,14 @@ func unused(ls []heldLeaf, used []bool, path string) int {
 
 // addRange bounds the scan by a range leaf on the field after its prefix, desc when that field
 // descends. A field's range spans its operand's class (value.InRange); a range on __name__ is a
-// name's.
+// name's, and an equality on __name__ the entries of that name.
 func (s *Scan) addRange(l *Filter, name, desc bool) {
 	at := func(after bool) Bound {
 		return Bound{Parts: []Part{{Value: l.Value, Name: name, Desc: desc}}, After: after}
+	}
+	if l.Op == index.OpEqual {
+		s.Lo, s.Hi = append(s.Lo, at(false)), append(s.Hi, at(true))
+		return
 	}
 	lower := l.Op == index.OpGreaterThan || l.Op == index.OpGreaterThanOrEqual
 	inclusive := l.Op == index.OpGreaterThanOrEqual || l.Op == index.OpLessThanOrEqual

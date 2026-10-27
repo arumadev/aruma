@@ -47,6 +47,13 @@ type Options struct {
 type Service struct {
 	o   Options
 	log *slog.Logger
+
+	// Tests' hooks into the index paths (export_test.go): indexBatch, when set, is the results
+	// of every batch; afterBatch runs after a batch is sent, before the next snapshot begins;
+	// observePeak is told the most bytes of documents a query held.
+	indexBatch  int
+	afterBatch  func()
+	observePeak func(int)
 }
 
 // New returns the service.
@@ -179,9 +186,13 @@ func (s *Service) fail(ctx context.Context, err error) error {
 	if nf, ok := errors.AsType[*core.DatabaseNotFoundError](err); ok {
 		return wire.MissingDatabase(wire.Database{Project: nf.ProjectID, ID: nf.DatabaseID})
 	}
+	// The core errors production answers with details (f0-errors.json name_bytes_6127,
+	// f3-index-entries.json fields.n_20001).
 	if errors.Is(err, core.ErrIndexEntryTooLarge) {
-		// The one core error production answers with details (f0-errors.json name_bytes_6127).
 		return wire.IndexEntryTooLarge()
+	}
+	if te, ok := errors.AsType[*core.TooManyIndexEntriesError](err); ok {
+		return wire.TooManyIndexEntries(te.DocPath())
 	}
 	if ce, ok := errors.AsType[*core.Error](err); ok {
 		return wire.NewError(wire.Code(ce.Code), ce.Message)

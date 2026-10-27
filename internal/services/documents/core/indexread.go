@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"slices"
@@ -10,20 +11,32 @@ import (
 
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/queries"
+	"github.com/arumadev/aruma/internal/services/documents/value"
 )
 
-// IndexRead is one query's read of index entries and of their documents, all in one snapshot of
-// the database (ADR-025 §1): a read-only REPEATABLE READ transaction, so a commit is in all of it
-// or none of it, entries and documents alike, and the catalogue it plans with is the one of that
-// snapshot. Index entries hold the latest state alone: a read at a read_time, or in a
-// transaction, takes the reference path. Close ends it.
+// IndexRead is one snapshot of an index path's read (ADR-025 §1): a read-only REPEATABLE READ
+// transaction, so a commit is in all of it or none of it, entries and documents alike, and the
+// catalogue it plans with is the one of that snapshot. Index entries hold the latest state alone:
+// a read at a read_time, or in a transaction, takes the reference path. Close ends it.
+//
+// A query holds a snapshot only while it reads a bounded batch, never while it sends results to
+// its client (api/indexpath.go), and continues in a later snapshot at the first one's commit:
+// there an entry is the first snapshot's when its document did not change since (its
+// update_time is at or before the first's read time), and ChangedSince gives the documents that
+// did change as they were at the first commit, from the changelog.
 type IndexRead struct {
 	tx       pgx.Tx
 	q        *queries.Queries
 	db       DB
 	cat      *catalog
 	readTime time.Time
+	seq      int64
 }
+
+// ErrIndexReadTooLong is a query continued in a later snapshot after the changelog retention
+// pruned commits it would read: it can no longer answer at its read time. The changelog keeps
+// at least MinChangelogRetention, which the index path's batches never approach.
+var ErrIndexReadTooLong = &Error{Aborted, "The query ran too long to finish at its read time. Run it again."}
 
 // BeginIndexRead begins an index read of db at its latest commit.
 func (s *PGStore) BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error) {
@@ -39,7 +52,7 @@ func (s *PGStore) BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error)
 		return nil, err
 	}
 	r := &IndexRead{tx: tx, q: queries.New(tx), db: db}
-	head, err := r.q.ReadCatalog(ctx, queries.ReadCatalogParams{ProjectNumber: db.Project, DatabaseID: db.ID})
+	head, err := r.q.IndexReadHead(ctx, queries.IndexReadHeadParams{ProjectNumber: db.Project, DatabaseID: db.ID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = &DatabaseNotFoundError{ProjectID: db.ProjectID, DatabaseID: db.ID}
 	}
@@ -51,7 +64,7 @@ func (s *PGStore) BeginIndexRead(ctx context.Context, db DB) (*IndexRead, error)
 		r.Close(ctx)
 		return nil, err
 	}
-	r.cat, r.readTime = cached, head.LastTs
+	r.cat, r.readTime, r.seq = cached, head.LastTs, head.Seq
 	return r, nil
 }
 
@@ -60,6 +73,13 @@ func (r *IndexRead) Close(ctx context.Context) { _ = r.tx.Rollback(context.Witho
 
 // ReadTime is the commit_time of the commit the read is at.
 func (r *IndexRead) ReadTime() time.Time { return r.readTime }
+
+// Seq is the seq of the commit the read is at.
+func (r *IndexRead) Seq() int64 { return r.seq }
+
+// CatalogVersion is the version of the read's catalogue: the same in two reads when no index
+// commits write changed between them.
+func (r *IndexRead) CatalogVersion() int64 { return r.cat.version }
 
 // Catalog is the index configuration of the read's snapshot, as IndexCatalog returns it.
 func (r *IndexRead) Catalog() *index.Catalog { return r.cat.planner }
@@ -93,35 +113,91 @@ func (r *IndexRead) Scan(ctx context.Context, ir IndexRange) ([]IndexHit, int, e
 	return scanEntries(ctx, r.q, r.db, ir)
 }
 
-// Documents returns the documents of paths in the read's snapshot, in the order asked; one that
-// does not exist has its Path alone.
-func (r *IndexRead) Documents(ctx context.Context, paths []Path) ([]Document, error) {
+// DocumentsWithin returns the documents of the first of paths, in their order, as far as budget
+// bytes of them (by value.DocumentSize, as stored) go: the first always, then each while those
+// before it hold less than budget. A path without a document has its Path alone and costs
+// nothing. The caller asks again for the paths past those returned.
+func (r *IndexRead) DocumentsWithin(ctx context.Context, paths []Path, budget int) ([]Document, error) {
 	keys := make([][]byte, len(paths))
 	for i, p := range paths {
 		keys[i] = storedKey(nameKey(p))
 	}
-	rows, err := r.q.GetDocuments(ctx, queries.GetDocumentsParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID, NameKeys: keys})
+	rows, err := r.q.GetDocumentsWithin(ctx, queries.GetDocumentsWithinParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID,
+		Budget: int64(budget), NameKeys: keys})
 	if err != nil {
 		return nil, err
 	}
-	found := make(map[string]Document, len(rows))
-	for _, x := range rows {
+	out := make([]Document, len(rows))
+	for i, x := range rows {
+		p := paths[x.Ord-1]
 		if x.Name == nil {
+			out[i] = Document{Path: p}
 			continue
 		}
 		d, err := docRow{name: x.Name, doc: x.Doc, createTime: *x.CreateTime, updateTime: *x.UpdateTime}.document()
 		if err != nil {
 			return nil, err
 		}
-		found[string(x.Name)] = d
-	}
-	out := make([]Document, len(paths))
-	for i, p := range paths {
-		d, ok := found[string(nameKey(p))]
-		if !ok {
-			d = Document{Path: p}
-		}
 		out[i] = d
 	}
+	return out, nil
+}
+
+// ChangeScope is the documents a query reads: those of the collection CollectionID under Parent,
+// or with Group those of every collection of that id in the database.
+type ChangeScope struct {
+	Parent       Path
+	CollectionID string
+	Group        bool
+}
+
+func (c ChangeScope) holds(p Path) bool {
+	return p.CollectionID() == c.CollectionID && (c.Group || slices.Equal(p.Parent(), c.Parent))
+}
+
+// ChangedSince returns the documents of scope that the commits after seq, up to the read's,
+// changed: each once, as it was before the first of those commits, in name order; one that did
+// not exist then has its Path alone. It fails with ErrIndexReadTooLong when the changelog may no
+// longer hold every such commit.
+func (r *IndexRead) ChangedSince(ctx context.Context, seq int64, scope ChangeScope) ([]Document, error) {
+	if r.seq == seq {
+		return nil, nil
+	}
+	floor, err := r.q.ChangelogFloor(ctx, queries.ChangelogFloorParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID,
+		MinSecs: MinChangelogRetention.Seconds()})
+	if err != nil {
+		return nil, err
+	}
+	if len(floor) == 0 || floor[0].Seq > seq+1 || floor[0].Seq == seq+1 && !floor[0].Young {
+		return nil, ErrIndexReadTooLong
+	}
+	lo, hi := []byte{value.KeyVersion}, []byte{value.KeyVersion + 1}
+	if !scope.Group {
+		lo = collectionPrefix(scope.Parent, scope.CollectionID)
+		hi = IndexPrefixEnd(lo)
+	}
+	rows, err := r.q.ChangedSince(ctx, queries.ChangedSinceParams{ProjectNumber: r.db.Project, DatabaseID: r.db.ID,
+		AfterSeq: seq, Lo: lo, Hi: hi})
+	if err != nil {
+		return nil, err
+	}
+	var out []Document
+	for _, x := range rows {
+		p, err := pathOfKey(x.Name)
+		if err != nil {
+			return nil, err
+		}
+		if !scope.holds(p) {
+			continue
+		}
+		d := Document{Path: p}
+		if x.Before != nil {
+			if d.Fields, d.CreateTime, d.UpdateTime, err = decodeDocument(x.Before); err != nil {
+				return nil, err
+			}
+		}
+		out = append(out, d)
+	}
+	slices.SortFunc(out, func(a, b Document) int { return bytes.Compare(nameKey(a.Path), nameKey(b.Path)) })
 	return out, nil
 }

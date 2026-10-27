@@ -3,6 +3,8 @@ package core
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"math"
 	"math/rand/v2"
 	"slices"
@@ -236,39 +238,95 @@ func TestCompositeEntries(t *testing.T) {
 	}
 }
 
-// A document's entries are held to production's limits: a name of 6,144 bytes (recorded), an
-// entry over 7.5 KiB, more than 40,000 entries.
+// recordedName is the recorder's document of f3-index-entries.json named with l bytes below
+// documents/: aruma-ref-f3-ix/<id1>/c/<id2>/c/<id3>/c/<id4>/c/<id5>, the ids sharing the
+// length, the first starting with the tag.
+func recordedName(l int, tag string) Path {
+	const ix = "aruma-ref-f3-ix"
+	sum := l - (len(ix) + 5 + 8)
+	ids := make([]string, 5)
+	for i := range ids {
+		n := sum / 5
+		if i < sum%5 {
+			n++
+		}
+		ids[i] = strings.Repeat("n", n)
+		if i == 0 {
+			ids[i] = tag + "-" + strings.Repeat("n", n-len(tag)-1)
+		}
+	}
+	return ParsePath(ix + "/" + strings.Join(ids, "/c/"))
+}
+
+// A document's entries are held to production's limits as f3-index-entries.json recorded them:
+// the entry size against the name's length (no field, one integer, a 1,500- or 3,000-byte
+// string, a 1,500-byte field name), 40,000 entries with an array element counting two, and a
+// name of 6,144 bytes at any depth (f0-errors.json).
 func TestIndexEntryLimits(t *testing.T) {
+	check := func(p Path, fields value.Value) error {
+		return entriesOf(emptyCatalog(), fieldConfigs{}, p, fields, true).check()
+	}
+	for _, c := range []struct {
+		kind   string
+		fields value.Value
+		max    int // the longest name accepted; one byte more is refused
+	}{
+		{"entry_no_fields", value.Map(), 4496},
+		{"entry_int", fieldsOf("f", value.Int(1)), 2877},
+		{"entry_string_1500", fieldsOf("f", value.String(strings.Repeat("s", 1500))), 2341},
+		{"entry_string_3000", fieldsOf("f", value.String(strings.Repeat("s", 3000))), 2341},
+		{"entry_long_field_name", fieldsOf(strings.Repeat("x", 1500), value.Int(1)), 2341},
+	} {
+		if p := recordedName(c.max, c.kind); len(p.String()) != c.max {
+			t.Fatalf("%s: a name of %d bytes", c.kind, len(p.String()))
+		}
+		if err := check(recordedName(c.max, c.kind), c.fields); err != nil {
+			t.Errorf("%s at %d: %v", c.kind, c.max, err)
+		}
+		if err := check(recordedName(c.max+1, c.kind), c.fields); err != ErrIndexEntryTooLarge {
+			t.Errorf("%s at %d: %v", c.kind, c.max+1, err)
+		}
+	}
 	long := ParsePath("c/" + strings.Repeat("n", 6144-16-2-1))
 	if value.NameSize(long.String()) != 6144 {
 		t.Fatalf("name size %d", value.NameSize(long.String()))
 	}
-	if err := entriesOf(emptyCatalog(), fieldConfigs{}, long, value.Map(), true).check(); err != ErrIndexEntryTooLarge {
+	if err := check(long, value.Map()); err != ErrIndexEntryTooLarge {
 		t.Errorf("6144-byte name: %v", err)
 	}
-	if err := entriesOf(emptyCatalog(), fieldConfigs{}, ParsePath("c/"+strings.Repeat("n", 6000)), fieldsOf("s", value.String(strings.Repeat("s", 2000))), true).check(); err != nil {
-		t.Errorf("a long name with one long field: %v", err)
+
+	ints := func(n int) []value.Value {
+		out := make([]value.Value, n)
+		for i := range out {
+			out[i] = value.Int(int64(i))
+		}
+		return out
 	}
-	ix := &composite{id: 9, group: "c", scope: index.ScopeCollection, fields: []compositeField{
-		{path: value.FieldPath{"a"}, mode: index.Ascending}, {path: value.FieldPath{"b"}, mode: index.Ascending},
-		{path: value.FieldPath{"__name__"}, mode: index.Ascending}}}
-	cat := &catalog{found: true, fields: fieldConfigs{}, composites: []*composite{ix}}
-	two := fieldsOf("a", value.String(strings.Repeat("a", 1500)), "b", value.String(strings.Repeat("b", 1500)))
-	if err := entriesOf(cat, cat.fields, ParsePath("c/"+strings.Repeat("n", 4700)), two, true).check(); err != ErrIndexEntryTooLarge {
-		t.Errorf("a composite entry over 7.5 KiB: %v", err)
+	scalars := func(n int) value.Value {
+		fs := make([]value.Field, n)
+		for i := range fs {
+			fs[i] = value.Field{Name: fmt.Sprintf("f%05d", i), Value: value.Int(int64(i))}
+		}
+		return value.Map(fs...)
 	}
-	if err := entriesOf(cat, cat.fields, ParsePath("c/d"), two, true).check(); err != nil {
-		t.Errorf("a short name: %v", err)
-	}
-	els := make([]value.Value, 40_000)
-	for i := range els {
-		els[i] = value.Int(int64(i))
-	}
-	if err := entriesOf(emptyCatalog(), fieldConfigs{}, ParsePath("c/d"), fieldsOf("t", value.Array(els...)), true).check(); err != ErrTooManyIndexEntries {
-		t.Errorf("40,002 entries: %v", err)
-	}
-	if err := entriesOf(emptyCatalog(), fieldConfigs{}, ParsePath("c/d"), fieldsOf("t", value.Array(els[:39_998]...)), true).check(); err != nil {
-		t.Errorf("40,000 entries: %v", err)
+	for _, c := range []struct {
+		kind string
+		of   func(n int) value.Value
+		max  int
+	}{
+		{"fields", scalars, 20_000},
+		{"array", func(n int) value.Value { return fieldsOf("a", value.Array(ints(n)...)) }, 19_999},
+		{"map", func(n int) value.Value { return fieldsOf("m", scalars(n)) }, 19_999},
+	} {
+		p := ParsePath(fmt.Sprintf("aruma-ref-f3-ix/%s-%d", c.kind, c.max))
+		if err := check(p, c.of(c.max)); err != nil {
+			t.Errorf("%s %d: %v", c.kind, c.max, err)
+		}
+		p = ParsePath(fmt.Sprintf("aruma-ref-f3-ix/%s-%d", c.kind, c.max+1))
+		err := check(p, c.of(c.max+1))
+		if te, ok := errors.AsType[*TooManyIndexEntriesError](err); !ok || te.DocPath() != "/"+p.String() {
+			t.Errorf("%s %d: %v", c.kind, c.max+1, err)
+		}
 	}
 }
 
