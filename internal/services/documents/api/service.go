@@ -12,6 +12,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/httpx"
 	"github.com/arumadev/aruma/internal/services/documents/core"
+	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
 
@@ -32,7 +33,10 @@ type Options struct {
 	// DevOpenRules is documents.dev_open_rules: callers that are not admins reach the data from
 	// a loopback peer. Config accepts it only on a loopback deployment (ADR-025 §8).
 	DevOpenRules bool
-	Logger       *slog.Logger
+	// IndexEnforcement is documents.index_enforcement, the composite-index enforcement of every
+	// database that sets none of its own (ADR-025 §4.4); the zero value is index.Enforce.
+	IndexEnforcement index.Mode
+	Logger           *slog.Logger
 }
 
 // Service serves the Document Database's methods for every transport. It is safe for

@@ -56,6 +56,11 @@ var allowed = map[string][]string{
 	"internal/services/documents/core": {"internal/services/documents/value", "internal/services/documents/index",
 		"internal/services/documents/queries", "internal/services/documents/wire/pb",
 		"internal/tenancy", "internal/store", "internal/events", "internal/platform", "internal/config"},
+	// Its query engine checks and runs a StructuredQuery over the candidates the service layer
+	// reads from core: the value model, the index rule, wire's names and errors, the protos.
+	// Never core, so the planner's index paths plug in at the service layer (api/query.go).
+	"internal/services/documents/query": {"internal/services/documents/value", "internal/services/documents/index",
+		"internal/services/documents/wire"},
 	// The Firestore and Storage rules language imports nothing internal: the services feed it
 	// values and documents through its own types, and app wires it (ADR-021, rules-layout.md).
 	"internal/platform/rules": {},
@@ -339,6 +344,11 @@ func TestRulesThemselves(t *testing.T) {
 		{"internal/services/documents/wire", "internal/services/documents/api", false},
 		{"internal/services/documents/wire", "internal/platform/httpx", false},
 		{"internal/services/documents/wire/pb", "internal/services/documents/wire", false},
+		{"internal/services/documents/query", "internal/services/documents/wire/pb/firestorepb", true},
+		{"internal/services/documents/query", "internal/services/documents/core", false},
+		{"internal/services/documents/query", "internal/services/documents/api", false},
+		{"internal/services/documents/core", "internal/services/documents/query", false},
+		{"internal/services/documents/api", "internal/services/documents/query", true},
 		// The service layer and the transports above core (ADR-027): they may use core, wire and
 		// authn; core may use none of them, nor authn.
 		{"internal/services/documents/api", "internal/services/documents/core", true},

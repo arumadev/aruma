@@ -161,7 +161,7 @@ func Defaults() Config {
 			ReadRows:                    1_000_000,
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
-		Documents: Documents{Limits: DocumentsLimits{
+		Documents: Documents{IndexEnforcement: "enforce", Limits: DocumentsLimits{
 			MessageBytes:        17 << 20,
 			StreamFirstMessage:  10 * time.Second,
 			StreamWriteStall:    30 * time.Second,
@@ -222,6 +222,11 @@ type Documents struct {
 	// listen are loopback addresses, and it applies only to connections whose peer is a
 	// loopback address (ADR-029 §6). Off, owner is refused as on every other surface.
 	DevOwnerToken bool `yaml:"dev_owner_token"`
+	// IndexEnforcement is how queries meet production's composite-index rule (ADR-025 §4.4):
+	// enforce (the default) refuses a query production refuses, with its error and console
+	// link; warn serves it and logs the index it needs; off serves every query, as the
+	// emulator does. A database's own setting overrides it.
+	IndexEnforcement string `yaml:"index_enforcement"`
 	// Limits bound what the Document Database's transports accept and hold.
 	Limits DocumentsLimits `yaml:"limits"`
 }
@@ -526,6 +531,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	boolean("ARUMA_DOCUMENTS_ENABLED", &c.Documents.Enabled)
 	boolean("ARUMA_DOCUMENTS_DEV_OPEN_RULES", &c.Documents.DevOpenRules)
 	boolean("ARUMA_DOCUMENTS_DEV_OWNER_TOKEN", &c.Documents.DevOwnerToken)
+	str("ARUMA_DOCUMENTS_INDEX_ENFORCEMENT", &c.Documents.IndexEnforcement)
 	dl := &c.Documents.Limits
 	integer("ARUMA_DOCUMENTS_MESSAGE_BYTES", &dl.MessageBytes)
 	duration("ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE", &dl.StreamFirstMessage)
@@ -713,6 +719,11 @@ func (c *Config) validateDocuments() []error {
 	}
 	if d.DevOpenRules && !c.LoopbackDeployment() {
 		errs = append(errs, errors.New("documents.dev_open_rules lets anyone read and write every database; it is accepted only when public_url and listen are loopback addresses"))
+	}
+	switch d.IndexEnforcement {
+	case "enforce", "warn", "off":
+	default:
+		errs = append(errs, fmt.Errorf("documents.index_enforcement must be enforce, warn or off, not %q", d.IndexEnforcement))
 	}
 	l := d.Limits
 	if l.MessageBytes < 1<<20 {

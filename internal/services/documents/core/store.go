@@ -36,6 +36,7 @@ type Store interface {
 	// every write applies, or none does.
 	Commit(ctx context.Context, db DB, writes []Write) (CommitResult, error)
 	Transactions
+	Queries
 }
 
 // Transactions is the transactions' part of the store (ADR-025 §7; txn.go). Reads in a

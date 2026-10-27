@@ -121,9 +121,6 @@ var notReplayed = map[string]string{
 	"f1-delete.json rest.update_time_stale":        "state from an unrecorded commit",
 }
 
-// unserved are the custom methods of later phases: their cases are not sent.
-var unserved = []string{":runQuery", ":runAggregationQuery", ":partitionQuery"}
-
 // beginCases are the recorded BeginTransaction cases whose transaction later cases of the same
 // file name by a placeholder.
 var beginCases = map[string]string{
@@ -201,8 +198,7 @@ func TestCorpusReplay(t *testing.T) {
 				path = strings.ReplaceAll(path, "<readTime: the setup commitTime>", setupTime)
 				body = strings.ReplaceAll(body, "<readTime: RFC 3339>", setupTime)
 			}
-			if c.Transport != "rest" || markedOnly && !c.Replay || strings.Contains(path, "<") || strings.Contains(body, "<") ||
-				slices.ContainsFunc(unserved, func(v string) bool { return strings.Contains(path, v) }) {
+			if c.Transport != "rest" || markedOnly && !c.Replay || strings.Contains(path, "<") || strings.Contains(body, "<") {
 				skipped++
 				continue
 			}
@@ -444,8 +440,6 @@ var wireGaps = map[string]string{
 	"admin.name_other_prefix":                   "the Admin API is F3; Google's front end answers an unbound path with its HTML 404 page",
 	"admin.database_get_bad_id":                 "the Admin API is F3",
 	"admin.database_get_missing":                "the Admin API is F3",
-	"json.bad_enum_number":                      "a query's meaning is checked by RunQuery, F3: this server answers it UNIMPLEMENTED",
-	"value.no_type_in_filter":                   "a query's meaning is checked by RunQuery, F3: this server answers it UNIMPLEMENTED",
 }
 
 // TestWireErrorsReplay replays every REST case of f1-wire-errors.json: production's answers to
