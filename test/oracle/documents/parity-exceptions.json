@@ -124,7 +124,7 @@
       "summary": "Production repeats Listen frames unasked, on its own timing; Aruma sends each frame once, when something changed.",
       "production": "After a target's CURRENT and its global snapshot, two or three more global NO_CHANGE (each with a new read_time and token) within about 50 ms, sometimes a NO_CHANGE naming one target; a query target's ExistenceFilter (count and bloom) repeated after CURRENT even on a fresh add; a missing document's document_delete repeated with them; a limit target's RESET and whole window sent again right after its first CURRENT or after a member left; a resumed target's ADD followed by a global NO_CHANGE at the resumed time before its documents (corpus/f4-listen.json listen.query-target, listen.limit-target, listen.resume-token, refused-targets streams 2, 29, 30).",
       "emulator": "Not recorded.",
-      "aruma": "Sends a global snapshot only after something was sent since the last one, once every target has reached its commit, and never at a time earlier than the last; a filter only on a resume; RESET only when a window lost a member or the hub resynced. Every SDK tolerates both. The replay drops production's repeats by rule (listen_replay_test.go listenRepeats) and compares the rest per target.",
+      "aruma": "Sends a global snapshot only after something was sent since the last one, once every target has reached its commit, and never at a time earlier than the last; a filter only on a resume; RESET only when a window lost a member or the hub resynced. Every SDK tolerates both. The replay drops production's repeats by rule (listen_replay_test.go listenRepeats) and compares the rest per target. It leaves out every NO_CHANGE, production's and Aruma's, global or per target: it only waits for a global snapshot where production sent one, so a missing one fails the case, but where Aruma places its global snapshots, how many and at which read_time is not compared with production; apitest.ListenChecker holds them to the protocol's rules instead (ADR-026 §1.2).",
       "follows": "production",
       "evidence": [
         "corpus/f4-listen.json"
@@ -150,7 +150,20 @@
       "summary": "A query target resumed within the changelog gets a document_delete for each document deleted since its token; production sometimes relies on the filter's count instead.",
       "production": "Resumed after a delete alone: an explicit document_delete (listen.resume-token streams 8, 9). Resumed from an older token after an insert, a leave by a change and the same delete: the inserted document and ExistenceFilter{count}, no document_delete (streams 10, 11).",
       "emulator": "Not recorded.",
-      "aruma": "Sends the document_delete whenever the changelog holds the delete, then the count: the client ends with the same documents, without the query again that the count alone costs it. The replay lists streams 10 and 11 as differing (listen_replay_test.go listenDiffers).",
+      "aruma": "Sends the document_delete whenever the changelog holds the delete, then the count. The delete saves the client its query again only when no document left the result by a change since the token: a document that left by a change gets no frame, so the client still holds it, the count disagrees and it queries again. In streams 10 and 11 one did (x2), so there the delete saves nothing; it is harmless, and the client ends with the same documents after its query again. The replay lists streams 10 and 11 as differing (listen_replay_test.go listenDiffers).",
+      "follows": "production",
+      "evidence": [
+        "corpus/f4-listen.json"
+      ],
+      "test": "test/differential/documents/listen_replay_test.go:TestReplayListenInProcess"
+    },
+    {
+      "id": "listen-resume-count",
+      "kind": "restriction",
+      "summary": "A query target resumed without expected_count gets an ExistenceFilter with its count before CURRENT; production sent none in the recorded cases.",
+      "production": "Resumed by token without expected_count, after an insert or after a delete: the changed documents and CURRENT, no ExistenceFilter (corpus/f4-listen.json listen.resume-token streams 3, 9).",
+      "emulator": "Not recorded.",
+      "aruma": "Counts every resumed query unless the client's own expected_count proves it right: without the count a client cannot tell a document that left by a change while it was away. When its count agrees nothing changes; else it queries again. The replay tolerates Aruma's filters before CURRENT on a target where production sent no filter at all (listen_replay_test.go eventDiff); streams 3 and 9 pass by that rule.",
       "follows": "production",
       "evidence": [
         "corpus/f4-listen.json"
