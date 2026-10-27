@@ -22,15 +22,12 @@
       "summary": "Query Explain (explain_options on RunQuery and RunAggregationQuery) is rejected in v0.4.0; production supports it on Standard.",
       "production": "Supports it on REST and gRPC alike (corpus/f0-explain.json). analyze false, or {}: one response element holding only explainMetrics.planSummary, with no document and no readTime. analyze true: the documents as usual, with explainMetrics (planSummary, executionStats with string counts, debugStats as a Struct) on the last document's response. Aggregation: planSummary only, or one element with result, explainMetrics and readTime. A query that needs a composite index gets the normal needs-index error and no metrics.",
       "emulator": "Not recorded. The Go client's integration suite skips explain and query profiling on the emulator (firestore-clients.md §6).",
-      "aruma": "v0.4.0 answers UNIMPLEMENTED (HTTP 501) with an English message naming Query Explain, after index enforcement, so a query that needs an index gets production's needs-index error first (ADR-025 §5). Ignoring explain_options would crash Node's explain() with \"No explain results\". Query Explain comes in v0.4.x and must then reproduce the recorded responses. F3 writes the test of the rejection (planned).",
+      "aruma": "v0.4.0 answers UNIMPLEMENTED (HTTP 501) with an English message naming Query Explain, after index enforcement, so a query that needs an index gets production's needs-index error first (ADR-025 §5). Ignoring explain_options would crash Node's explain() with \"No explain results\". Query Explain comes in v0.4.x and must then reproduce the recorded responses. TestExplainOptionsRejected proves the rejection and its order.",
       "follows": "production",
       "evidence": [
         "corpus/f0-explain.json"
       ],
-      "planned": {
-        "test": "internal/services/documents/grpc/unimplemented_test.go:TestExplainOptionsRejected",
-        "phase": "F3"
-      }
+      "test": "internal/services/documents/grpc/unimplemented_test.go:TestExplainOptionsRejected"
     },
     {
       "id": "find-nearest-with-vector-index",
@@ -38,15 +35,12 @@
       "summary": "findNearest is answered with production's exact error when no matching vector index exists, and with UNIMPLEMENTED when one does; production serves it then.",
       "production": "With no matching vector index: HTTP 400 FAILED_PRECONDITION (gRPC 9), the same text on REST and gRPC, array-wrapped on REST: \"Missing vector index configuration. Please create the required index with the following gcloud command: gcloud firestore indexes composite create --project=<p> --collection-group=<cg> --query-scope=COLLECTION --field-config=vector-config='{\"dimension\":\"<n>\",\"flat\": \"{}\"}',field-path=<f>\", with --field-config=order=ASCENDING,field-path=<k> before it for each equality prefilter; the measure and distance options do not appear; a never-written collection gets the same text (corpus/f0-find-nearest.json). With a matching vector index production runs the search (docs; not recorded, since the oracle may not create indexes).",
       "emulator": "Not recorded.",
-      "aruma": "No matching vector index: production's status and message byte for byte. Matching vector index (stored and returned by the Admin API since v0.4.0): UNIMPLEMENTED (HTTP 501) naming findNearest. An exact-scan implementation comes in v0.4.x (ADR-025 §5, ADR-028 §3). F3 writes the test (planned).",
+      "aruma": "No matching vector index: production's status and message byte for byte. Matching vector index (stored and returned by the Admin API since v0.4.0): UNIMPLEMENTED (HTTP 501) naming findNearest. An exact-scan implementation comes in v0.4.x (ADR-025 §5, ADR-028 §3). TestFindNearestWithVectorIndexRejected proves both answers through the Admin API.",
       "follows": "production",
       "evidence": [
         "corpus/f0-find-nearest.json"
       ],
-      "planned": {
-        "test": "internal/services/documents/grpc/unimplemented_test.go:TestFindNearestWithVectorIndexRejected",
-        "phase": "F3"
-      }
+      "test": "internal/services/documents/grpc/unimplemented_test.go:TestFindNearestWithVectorIndexRejected"
     },
     {
       "id": "coarse-query-locks",
@@ -176,30 +170,24 @@
       "summary": "A query that needs a composite index which exists but is still CREATING gets the needs-index error until production's answer is recorded.",
       "production": "Not recorded: the oracle may not create indexes on the production project. Production answers such a query with its own index-building response, to be recorded with R18 to R22 in a project where indexes may be created (ADR-025 §4.2, ADR-028 §7.6).",
       "emulator": "Enforces no index (see emulator-index-enforcement), so it serves the query.",
-      "aruma": "An index is created CREATING; from then every commit also writes its entries, the existing documents are backfilled in key-range batches, and it becomes READY only after the backfill (ADR-024 §2.5). The planner never uses a CREATING index; until production's response is recorded the query gets the needs-index error (template 1). F3's index tests cover it (planned).",
+      "aruma": "An index is created CREATING; from then every commit also writes its entries, the existing documents are backfilled in key-range batches, and it becomes READY only after the backfill (ADR-024 §2.5). The planner never uses a CREATING index; until production's response is recorded the query gets the needs-index error (template 1). TestCreatingIndexNotUsed proves it.",
       "follows": "production",
       "evidence": [],
-      "planned": {
-        "test": "internal/services/documents/index/state_test.go:TestCreatingIndexNotUsed",
-        "phase": "F3"
-      }
+      "test": "internal/services/documents/index/state_test.go:TestCreatingIndexNotUsed"
     },
     {
       "id": "mixed-project-resource-names",
       "kind": "provisional",
       "summary": "A Listen target or a later Write-stream message naming another database than the stream's is refused with Aruma's modelled answer until production's is recorded; for unary RPCs Aruma matches production's recorded text.",
-      "production": "Recorded for unary RPCs (corpus/f1-resource-names.json): a Commit write or a BatchGet document of another project, or of another database of the same project, is refused with HTTP 400 INVALID_ARGUMENT (gRPC 3) \"The request was for database 'projects/<p>/databases/<d>' but was attempting to access database 'projects/<q>/databases/<e>'\", on REST and gRPC alike; a commit holding one good write and one foreign write is refused whole, naming the foreign database; a google-cloud-resource-prefix naming another project is ignored when the body names the database (gRPC Commit and GetDocument succeed). Not recorded: a Listen add_target, or a Write-stream message after the first, naming another database (F4, ADR-028 §7.6).",
+      "production": "Recorded for unary RPCs (corpus/f1-resource-names.json): a Commit write or a BatchGet document of another project, or of another database of the same project, is refused with HTTP 400 INVALID_ARGUMENT (gRPC 3) \"The request was for database 'projects/<p>/databases/<d>' but was attempting to access database 'projects/<q>/databases/<e>'\", on REST and gRPC alike; a commit holding one good write and one foreign write is refused whole, naming the foreign database; a google-cloud-resource-prefix naming another project is ignored when the body names the database (gRPC Commit and GetDocument succeed). Listen add_target naming another project or database: see corpus/f4-listen.json. Not recorded: a Write-stream message after the first naming another database (ADR-028 §7.6).",
       "emulator": "Not recorded.",
-      "aruma": "Unary RPCs match production: wire.Bind takes the request's database from its first name (the REST path's, or the database field), refuses one the caller is not entitled to with PERMISSION_DENIED (ADR-029 §3 rule 6), and answers every later name of another database with production's INVALID_ARGUMENT text; google-cloud-resource-prefix is never bound against the body, as production ignores it (TestBindResourceNamesF1 replays every recorded case). Provisional part: a Listen target naming another database is REMOVE with that INVALID_ARGUMENT as its cause, the stream staying open (ADR-026 §1.3, ADR-027 §2.2), and a later Write-stream message naming another database is refused with the same INVALID_ARGUMENT (TestBindIsolation); F4 records production's answers and replays them (planned).",
+      "aruma": "Unary RPCs match production: wire.Bind takes the request's database from its first name (the REST path's, or the database field), refuses one the caller is not entitled to with PERMISSION_DENIED (ADR-029 §3 rule 6), and answers every later name of another database with production's INVALID_ARGUMENT text; google-cloud-resource-prefix is never bound against the body, as production ignores it (TestBindResourceNamesF1 replays every recorded case). Listen is recorded (corpus/f4-listen.json): a target naming another project or another database of the project is REMOVE with INVALID_ARGUMENT \"Cannot add a target for a different database.\", the stream staying open (TestListenRefusals, TestListenForeignDatabaseTarget). Provisional part: a later Write-stream message naming another database is refused with the INVALID_ARGUMENT mismatch text above (TestBindStreamNamesF4 binds the stream's names; TestBindIsolation the rest), until production's answer to it is recorded.",
       "follows": "production",
       "evidence": [
-        "corpus/f1-resource-names.json"
+        "corpus/f1-resource-names.json",
+        "corpus/f4-listen.json"
       ],
-      "test": "internal/services/documents/wire/names_test.go:TestBindResourceNamesF1",
-      "planned": {
-        "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4",
-        "phase": "F4"
-      }
+      "test": "internal/services/documents/wire/names_test.go:TestBindStreamNamesF4"
     },
     {
       "id": "inequality-fields-order",

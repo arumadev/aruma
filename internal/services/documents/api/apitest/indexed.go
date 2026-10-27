@@ -233,4 +233,8 @@ func createRequired(t *testing.T, e *Env, db documents.DB, r index.Required) {
 	if _, err := e.Store.CreateIndex(t.Context(), db, ix.CollectionGroup, spec); err != nil {
 		t.Fatalf("index %v: %v", ix, err)
 	}
+	// A CREATING index serves nothing (R21), so a later case that needs it would ask for it again.
+	if err := e.Store.BuildIndexes(t.Context(), documents.IndexBuildOptions{}); err != nil {
+		t.Fatal(err)
+	}
 }
