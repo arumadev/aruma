@@ -1,6 +1,6 @@
 // Package webchannel is the Document Database's WebChannel surface (ADR-027 §5): the protocol the
 // full web SDK speaks for Listen and Write, at /google.firestore.v1.Firestore/{Listen,Write}/channel,
-// on top of the same streams as gRPC (grpc.Handler.ServeListen), so a stream has the same
+// on top of the same streams as gRPC (grpc.Handler.ServeListen and ServeWrite), so a stream has the same
 // semantics, limits, identity and rules on both.
 //
 // A session is opened by a handshake POST, which carries the client's headers in its body
@@ -51,6 +51,7 @@ const (
 // Streams runs the streams: *grpc.Handler.
 type Streams interface {
 	ServeListen(ctx context.Context, p grpc.Peer, c api.Call, conn grpc.ListenConn) *wire.Error
+	ServeWrite(ctx context.Context, p grpc.Peer, c api.Call, conn grpc.WriteConn) *wire.Error
 }
 
 // Keys resolves a client API key (ADR-027 §5.3): *tenancy/core.Service.
@@ -144,16 +145,20 @@ const maxMaps = 1000
 // ServeHTTP serves a request of a channel path. CORS is the mount's (rest.cors).
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	if r.URL.Path != ListenPath {
-		// Write over WebChannel is a later step's: its handshake answers as before.
-		wire.WriteREST(w, wire.Unimplemented("WebChannel"), false)
-		return
-	}
-	hd := w.Header()
-	hd.Set("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate")
 	switch {
 	case q.Get("TYPE") == "terminate":
 		h.terminate(w, q)
+	case !q.Has("VER"):
+		// Production answers a request without a version, a probe, with an empty 200 (and a
+		// cookie, which no request of the surface sets) (f6-webchannel-errors.json).
+		hd := w.Header()
+		hd.Set("Cache-Control", "private")
+		hd.Set("Content-Type", contentType)
+		hd.Set("Content-Length", "0")
+		if r.Header.Get("Origin") != "" {
+			hd.Set("Access-Control-Expose-Headers", "x-client-wire-protocol")
+		}
+		w.WriteHeader(http.StatusOK)
 	case q.Get("VER") != "8":
 		fail(w, http.StatusBadRequest, "Unsupported WebChannel version.")
 	case r.Method == http.MethodGet && q.Get("RID") == "rpc":
@@ -202,14 +207,11 @@ func unknownSID(w http.ResponseWriter) {
 	_, _ = io.WriteString(w, body)
 }
 
-// writeChunks answers a request with chunks of the given texts. A handshake's and a forward
-// POST's answers end with a newline in production, a backchannel's records do not.
-func writeChunks(w http.ResponseWriter, texts ...[]byte) {
-	var b []byte
-	for _, t := range texts {
-		b = chunk(b, t)
-	}
-	b = append(b, '\n')
+// writeChunks answers a request with one chunk of text. A handshake's and a forward POST's chunk
+// end with a newline in production, counted in its length ("51\n[[0,[…]]]\n",
+// f6-webchannel-*.json); a backchannel's do not.
+func writeChunks(w http.ResponseWriter, text []byte) {
+	b := chunk(nil, append(text, '\n'))
 	hd := w.Header()
 	hd.Set("Content-Type", contentType)
 	hd.Set("Content-Length", strconv.Itoa(len(b)))
@@ -290,9 +292,14 @@ func (h *Handler) handshake(w http.ResponseWriter, r *http.Request, q url.Values
 		ResourcePrefix: headers.Get("Google-Cloud-Resource-Prefix"),
 		RequestParams:  cmp.Or(headers.Get("X-Goog-Request-Params"), "database="+url.QueryEscape(database)),
 	}
-	peer := grpc.Peer{Procedure: ListenPath, Client: client, Transport: c.Transport, Deadlines: s}
+	peer := grpc.Peer{Procedure: r.URL.Path, Client: client, Transport: c.Transport, Deadlines: s}
 	go func() {
-		status := h.streams.ServeListen(s.ctx, peer, c, listenConn{s})
+		var status *wire.Error
+		if r.URL.Path == WritePath {
+			status = h.streams.ServeWrite(s.ctx, peer, c, writeConn{s})
+		} else {
+			status = h.streams.ServeListen(s.ctx, peer, c, listenConn{s})
+		}
 		s.end(status)
 	}()
 	writeHandshake(w, s, hello)
@@ -311,7 +318,11 @@ func writeHandshake(w http.ResponseWriter, s *session, hello []byte, more ...[]b
 	for i, m := range more {
 		as = append(as, array{id: i + 1, payload: m})
 	}
-	w.Header().Set("X-HTTP-Session-Id", s.http)
+	hd := w.Header()
+	hd.Set("X-HTTP-Session-Id", s.http)
+	// Production exposes x-client-wire-protocol too, which this server does not send (ADR-027
+	// §5.5).
+	hd.Set("Access-Control-Expose-Headers", "x-client-wire-protocol,x-http-session-id")
 	writeChunks(w, arrays(as))
 }
 
@@ -401,9 +412,13 @@ func (h *Handler) lookup(q url.Values) *session {
 	return s
 }
 
-// forward takes a forward channel POST's requests, and answers with the backchannel's state:
-// whether one is attached, the last array id sent, and the bytes not acknowledged
-// (WebChannelBase.handlePostResponse_).
+// forward takes a forward channel POST's requests, and answers with the backchannel's state
+// (WebChannelBase.handlePostResponse_): whether there is one, the last array id sent, and the
+// bytes not acknowledged. Production answers 1 and 7 there in every recorded state, streamed or
+// long polled, all arrays acknowledged or not (f6-webchannel-*.json): a backchannel counts as
+// there once one was attached, a long poll's being between two GETs most of the time, and the
+// bytes are production's 7, below the 37500 under which the client watches a buffered
+// backchannel as it would for 0.
 func (h *Handler) forward(w http.ResponseWriter, r *http.Request, q url.Values) {
 	s := h.lookup(q)
 	if s == nil {
@@ -429,10 +444,10 @@ func (h *Handler) forward(w http.ResponseWriter, r *http.Request, q url.Values) 
 	}
 	s.mu.Lock()
 	present := 0
-	if s.back != nil {
+	if s.back != nil || s.backed {
 		present = 1
 	}
-	state, _ := json.Marshal([]any{present, s.nextID - 1, s.outBytes})
+	state, _ := json.Marshal([]any{present, s.nextID - 1, 7})
 	s.mu.Unlock()
 	writeChunks(w, state)
 }
@@ -447,10 +462,14 @@ func (h *Handler) terminate(w http.ResponseWriter, q url.Values) {
 		return
 	}
 	h.remove(s, errTerminated)
+	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }
 
-// listenConn is a Listen stream's messages on a session: requests and responses in proto3 JSON,
-// as the SDK sends and reads them.
-type listenConn struct{ s *session }
+// listenConn and writeConn are a stream's messages on a session: requests and responses in
+// proto3 JSON, as the SDK sends and reads them.
+type (
+	listenConn struct{ s *session }
+	writeConn  struct{ s *session }
+)

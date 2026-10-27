@@ -27,48 +27,57 @@ var (
 // request, answered in order. Each request is handled before the next is read, so the HTTP/2
 // window bounds a client that pipelines.
 func (f firestore) Write(ctx context.Context, conn *connect.BidiStream[pb.WriteRequest, pb.WriteResponse]) error {
-	h := f.h
-	s, err := h.openServerStream(ctx, 0)
+	s, err := f.h.openServerStream(ctx, 0)
 	if err != nil {
 		return connectError(err)
 	}
-	return s.run(func() error {
-		defer s.cutReadsAtEnd()()
-		send := func(r *pb.WriteResponse) error { return s.send(func() error { return conn.Send(r) }) }
+	return s.run(func() error { return f.h.write(s, call(ctx, conn.RequestHeader()), conn) })
+}
 
-		// The handshake, within stream_first_message (its deadline is set by ServeHTTP).
-		req, err := receive(s, conn.Receive, errFirstMessage)
+// WriteConn is a Write stream's messages on its transport: gRPC's bidi stream, or a WebChannel
+// session (ServeWrite), with ListenConn's contract.
+type WriteConn interface {
+	Receive() (*pb.WriteRequest, error)
+	Send(*pb.WriteResponse) error
+}
+
+// write is a Write stream's work on s, for either transport.
+func (h *Handler) write(s *serverStream, c api.Call, conn WriteConn) error {
+	defer s.cutReadsAtEnd()()
+	send := func(r *pb.WriteResponse) error { return s.send(func() error { return conn.Send(r) }) }
+
+	// The handshake, within stream_first_message (its deadline is set by the transport).
+	req, err := receive(s, conn.Receive, errFirstMessage)
+	if err != nil {
+		return endOfRequests(err)
+	}
+	ws, res, err := h.svc.OpenWriteStream(s.ctx, c, req)
+	if err != nil {
+		return err
+	}
+	release, err := h.watchWriteStream(s, ws)
+	if err != nil {
+		return err
+	}
+	defer release()
+	s.admitted()
+	if err := send(res); err != nil {
+		return err
+	}
+	for {
+		_ = s.info.rc.SetReadDeadline(time.Now().Add(h.limits.StreamIdle))
+		req, err := receive(s, conn.Receive, errStreamIdle)
 		if err != nil {
 			return endOfRequests(err)
 		}
-		ws, res, err := h.svc.OpenWriteStream(s.ctx, call(ctx, conn.RequestHeader()), req)
+		res, err := ws.Write(s.ctx, req)
 		if err != nil {
 			return err
 		}
-		release, err := h.watchWriteStream(s, ws)
-		if err != nil {
-			return err
-		}
-		defer release()
-		s.admitted()
 		if err := send(res); err != nil {
 			return err
 		}
-		for {
-			_ = s.info.rc.SetReadDeadline(time.Now().Add(h.limits.StreamIdle))
-			req, err := receive(s, conn.Receive, errStreamIdle)
-			if err != nil {
-				return endOfRequests(err)
-			}
-			res, err := ws.Write(s.ctx, req)
-			if err != nil {
-				return err
-			}
-			if err := send(res); err != nil {
-				return err
-			}
-		}
-	})
+	}
 }
 
 // watchWriteStream joins an admitted Write stream to the handler's watch (watch.go): its count

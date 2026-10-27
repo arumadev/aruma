@@ -170,7 +170,7 @@ func handshake(t *testing.T, base string, headers map[string]string, msgs ...str
 		t.Fatalf("handshake: %d %s", res.StatusCode, b)
 	}
 	if res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" || res.Header.Get("Access-Control-Allow-Credentials") != "true" ||
-		!strings.Contains(res.Header.Get("Access-Control-Expose-Headers"), "X-HTTP-Session-Id") {
+		res.Header.Get("Access-Control-Expose-Headers") != "x-client-wire-protocol,x-http-session-id" {
 		t.Errorf("handshake CORS: %v", res.Header)
 	}
 	c.gsid = res.Header.Get("X-HTTP-Session-Id")
@@ -448,8 +448,8 @@ func TestListenStreamed(t *testing.T) {
 	b.want(t, "ADD[1004]", "delete aruma-ref-wc/missing", "CURRENT[1004]", "global")
 	c.send(removeTarget(1004))
 	b.want(t, "REMOVE[1004]")
-	// The forward answer counts the arrays sent and the bytes not acknowledged.
-	if state := c.send(); state[1] != int64(c.aid) || state[2] != 0 {
+	// The forward answer counts the arrays sent, and production's 7 bytes.
+	if state := c.send(); state[1] != int64(c.aid) || state[2] != 7 {
 		t.Errorf("forward answer %v, last array %d", state, c.aid)
 	}
 
@@ -653,17 +653,112 @@ func TestProtocolErrors(t *testing.T) {
 	c, _ := handshake(t, x.url, admin(t, x), `{"database":"`+db+`","addTarget":{"targetId":"x"}}`)
 	c.back("0").wantStatus(t, "INVALID_ARGUMENT ")
 
-	// The preflight of a channel path.
+	// The preflight of a channel path, as production's (f6-cors.json).
 	req, _ := http.NewRequest(http.MethodOptions, x.url, nil)
 	req.Header.Set("Origin", "https://app.example")
 	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "content-type,authorization")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	res.Body.Close()
-	if res.StatusCode != http.StatusNoContent || res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
-		res.Header.Get("Access-Control-Allow-Credentials") != "true" {
+	if res.StatusCode != http.StatusOK || res.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
+		res.Header.Get("Access-Control-Allow-Credentials") != "true" || res.Header.Get("Access-Control-Allow-Methods") != "GET,POST" ||
+		res.Header.Get("Access-Control-Allow-Headers") != "content-type,authorization" || res.Header.Get("Access-Control-Max-Age") != "" {
 		t.Errorf("preflight: %d %v", res.StatusCode, res.Header)
+	}
+
+	// A request without a version is production's empty 200; it sets no cookie, and no answer
+	// names the wire protocol (parity-exceptions.json webchannel-probe-cookie, -wire-protocol).
+	res = post(t, x.url+"?RID=30000&zx=a", "count=0")
+	b, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK || len(b) != 0 || res.Header.Get("Set-Cookie") != "" || res.Header.Get("X-HTTP-Session-Id") != "" ||
+		res.Header.Get("X-Client-Wire-Protocol") != "" {
+		t.Errorf("no version: %d %v %q", res.StatusCode, res.Header, b)
+	}
+}
+
+// writeReq is a WriteRequest in proto3 JSON: the handshake when token is empty, else a batch of
+// an update per document carrying the stream's last token.
+func writeReq(token string, docs ...string) string {
+	r := &pb.WriteRequest{Database: db}
+	if token != "" {
+		r = new(pb.WriteRequest)
+		if err := protojson.Unmarshal([]byte(`{"streamToken":"`+token+`"}`), r); err != nil {
+			panic(err)
+		}
+	}
+	for _, d := range docs {
+		r.Writes = append(r.Writes, &pb.Write{Operation: &pb.Write_Update{Update: &pb.Document{Name: root + "/" + d,
+			Fields: map[string]*pb.Value{"n": {ValueType: &pb.Value_IntegerValue{IntegerValue: 1}}}}}})
+	}
+	b, _ := protojson.Marshal(r)
+	return string(b)
+}
+
+// writeResponse reads the next message of a Write session, skipping noops, as a JSON object; nil
+// for a payload that is not a message, such as a status. The array is returned too.
+func (b *backReader) writeResponse(wait time.Duration) (map[string]any, warray) {
+	b.c.t.Helper()
+	for {
+		a, ok := b.next(wait)
+		if !ok {
+			b.c.t.Fatalf("backchannel ended: %v", b.err)
+		}
+		if string(a.payload) == `["noop"]` {
+			continue
+		}
+		var data []map[string]any
+		if json.Unmarshal(a.payload, &data) != nil || len(data) != 1 {
+			return nil, a
+		}
+		return data[0], a
+	}
+}
+
+// Write over WebChannel is gRPC's Write stream: the handshake's stream id and token, one batch per
+// request carrying the last token, answered with its results and commit time; a batch the rules
+// deny ends the session with the status and a close, as production does
+// (f6-webchannel-write.json, f6-webchannel-errors.json).
+func TestWrite(t *testing.T) {
+	x := newHarness(t, options{})
+	wurl := strings.Replace(x.url, webchannel.ListenPath, webchannel.WritePath, 1)
+	c, _ := handshake(t, wurl, admin(t, x), writeReq(""))
+	b := c.back("0")
+	hello, _ := b.writeResponse(10 * time.Second)
+	token, _ := hello["streamToken"].(string)
+	if hello["streamId"] != "0" || token == "" || len(hello) != 2 {
+		t.Fatalf("handshake response %v", hello)
+	}
+	for i, docs := range [][]string{{"aruma-ref-wc-w/a"}, {"aruma-ref-wc-w/b", "aruma-ref-wc-w/c"}} {
+		c.send(writeReq(token, docs...))
+		res, a := b.writeResponse(10 * time.Second)
+		results, _ := res["writeResults"].([]any)
+		if res["commitTime"] == nil || res["streamToken"] == nil || res["streamToken"] == token || len(results) != len(docs) {
+			t.Fatalf("batch %d: %s", i, a.payload)
+		}
+		token = res["streamToken"].(string)
+	}
+
+	// A user the rules deny: the status, then the close, in production's form.
+	x.env.PublishFirestoreRules(t, `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /aruma-ref-wc-w/{doc} { allow read; }
+  }
+}`)
+	user := map[string]string{"Authorization": "Bearer " + apitest.UserToken(t, "u1", nil)}
+	c, _ = handshake(t, wurl, user, writeReq(""))
+	b = c.back("0")
+	hello, _ = b.writeResponse(10 * time.Second)
+	c.send(writeReq(hello["streamToken"].(string), "aruma-ref-wc-w/d"))
+	_, a := b.writeResponse(10 * time.Second)
+	if want := `{"__sm__":{"status":[[{"error":{"code":403,"message":"Missing or insufficient permissions.","status":"PERMISSION_DENIED"}}]]}}`; string(a.payload) != want {
+		t.Errorf("denied batch: %s", a.payload)
+	}
+	if a, _ := b.next(5 * time.Second); string(a.payload) != `["close"]` {
+		t.Errorf("after the status: %s", a.payload)
 	}
 }

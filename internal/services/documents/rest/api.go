@@ -106,7 +106,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	for _, c := range ChannelPaths {
 		if path == c {
-			if cors(w, r) {
+			if cors(w, r, true) {
 				return
 			}
 			if h.channel != nil {
@@ -124,7 +124,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.admin(w, r)
 		return
 	}
-	if cors(w, r) {
+	if cors(w, r, false) {
 		return
 	}
 	switch {
