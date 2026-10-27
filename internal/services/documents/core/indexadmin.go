@@ -32,8 +32,9 @@ import (
 // gRPC; resource names are production's: projects/{p}/databases/{d}/collectionGroups/{g}/
 // indexes/{id}, …/fields/{path} and projects/{p}/databases/{d}/operations/{id}.
 //
-// Every text here is provisional: the oracle may not create indexes on the production project
-// (ADR-025 §4.2, R21), so none of these answers is recorded.
+// The answers to reads are production's (f3-admin.json, recorded by an owner); the rest is
+// provisional: the oracle may not create or change indexes on the production project (ADR-025
+// §4.2, R21).
 
 // IndexLimits bounds a database's index configuration (documents.limits.composite_indexes and
 // field_overrides).
@@ -60,10 +61,11 @@ func (l IndexLimits) withDefaults() IndexLimits {
 // ResourceExhausted is the code of a request over a quota.
 const ResourceExhausted Code = 8
 
-// The Admin API's errors. Provisional texts.
+// The Admin API's errors: errIndexNotFound is recorded (f3-admin.json indexes.get_missing_docs_id),
+// the others provisional.
 var (
 	errIndexExists       = &Error{AlreadyExists, "index already exists"}
-	errIndexNotFound     = &Error{NotFound, "index not found"}
+	errIndexNotFound     = &Error{NotFound, "index not found."}
 	errOperationNotFound = &Error{NotFound, "operation not found"}
 	errIndexUnnecessary  = &Error{InvalidArgument, "this index is not necessary, configure using single field index controls"}
 )
@@ -111,10 +113,19 @@ func ParseIndexID(s string) (id int64, ok bool) {
 }
 
 // normalizeComposite checks a composite index as the Admin API receives it (ADR-025 §3): 2 to
-// 100 fields once __name__ ends them (Normalize adds it in the last field's direction), each
-// path valid and once, __name__ ordered and last, at most one array-contains field and one
-// vector field, and not an index every field has (one field and __name__ in its direction, at
+// 100 fields once __name__ is in, each path valid and once, at most one array-contains field and
+// one vector field, and not an index every field has (one field and __name__ in its direction, at
 // collection scope). It returns the index as stored.
+//
+// __name__ is the last field, or the last but a vector field, which ends the index; when absent
+// it is added there in the direction of the last ordered field, ascending when none is. That is
+// the form firebase-tools 15 compares a deployed index with (FirestoreApi.processIndex) to keep
+// a redeploy from creating it again; Google's proto comment says the direction of the last field.
+// Provisional until production's answer to a created index is recorded (ADR-025 §4.2).
+//
+// The output-only and Enterprise settings are refused but in their Standard form: api_scope
+// ANY_API, density unset or SPARSE_ALL (which an exported firestore.indexes.json carries back),
+// multikey and unique false, no shard count and no search options.
 func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 	scope := in.GetQueryScope()
 	if scope != adminpb.Index_COLLECTION && scope != adminpb.Index_COLLECTION_GROUP {
@@ -123,10 +134,18 @@ func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 	if in.GetApiScope() != adminpb.Index_ANY_API {
 		return nil, invalidIndex("api_scope must be ANY_API.")
 	}
+	if d := in.GetDensity(); d != adminpb.Index_DENSITY_UNSPECIFIED && d != adminpb.Index_SPARSE_ALL {
+		return nil, invalidIndex("density must be SPARSE_ALL on a Standard edition database.")
+	}
+	if in.GetMultikey() || in.GetUnique() || in.GetShardCount() != 0 || in.GetSearchIndexOptions() != nil {
+		return nil, invalidIndex("multikey, unique, shard_count and search_index_options are not supported on a Standard edition database.")
+	}
 	out := &adminpb.Index{QueryScope: scope}
+	fields := in.GetFields()
+	var vectorField *adminpb.Index_IndexField
 	seen := map[string]bool{}
 	contains, vectors := 0, 0
-	for i, f := range in.GetFields() {
+	for i, f := range fields {
 		path, err := value.ParseFieldPath(f.GetFieldPath())
 		if err != nil {
 			return nil, invalidIndex("%s", err.Error())
@@ -136,6 +155,7 @@ func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 			return nil, invalidIndex("Field %s appears more than once in the index.", canon)
 		}
 		seen[canon] = true
+		last := i == len(fields)-1
 		g := &adminpb.Index_IndexField{FieldPath: canon}
 		switch {
 		case f.GetVectorConfig() != nil:
@@ -143,8 +163,13 @@ func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 			if d := vc.GetDimension(); d < 1 || d > 2048 || vc.GetFlat() == nil {
 				return nil, invalidIndex("A vector field needs a dimension from 1 to 2048 and a flat index.")
 			}
+			if !last || path.IsDocumentID() {
+				return nil, invalidIndex("A vector field must be the last field of an index.")
+			}
 			vectors++
 			g.ValueMode = &adminpb.Index_IndexField_VectorConfig_{VectorConfig: proto.CloneOf(vc)}
+			vectorField = g
+			continue
 		case f.GetArrayConfig() == adminpb.Index_IndexField_CONTAINS:
 			contains++
 			g.ValueMode = &adminpb.Index_IndexField_ArrayConfig_{ArrayConfig: adminpb.Index_IndexField_CONTAINS}
@@ -153,7 +178,8 @@ func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 		default:
 			return nil, invalidIndex("Field %s needs an order, an array_config or a vector_config.", canon)
 		}
-		if path.IsDocumentID() && (i != len(in.GetFields())-1 || g.GetOrder() == adminpb.Index_IndexField_ORDER_UNSPECIFIED) {
+		beforeVector := i == len(fields)-2 && fields[len(fields)-1].GetVectorConfig() != nil
+		if path.IsDocumentID() && (!last && !beforeVector || g.GetOrder() == adminpb.Index_IndexField_ORDER_UNSPECIFIED) {
 			return nil, invalidIndex("__name__ must be the last field of an index, ordered.")
 		}
 		out.Fields = append(out.Fields, g)
@@ -161,16 +187,21 @@ func normalizeComposite(in *adminpb.Index) (*adminpb.Index, error) {
 	if contains > 1 {
 		return nil, invalidIndex("An index may have at most one array_config field.")
 	}
-	if vectors > 1 || vectors == 1 && contains == 1 {
+	if vectors == 1 && contains == 1 {
 		return nil, invalidIndex("An index may have at most one vector_config field, and none with an array_config field.")
 	}
 	if n := len(out.Fields); n == 0 || out.Fields[n-1].GetFieldPath() != index.NameField {
 		order := adminpb.Index_IndexField_ASCENDING
-		if n > 0 && out.Fields[n-1].GetOrder() == adminpb.Index_IndexField_DESCENDING {
-			order = adminpb.Index_IndexField_DESCENDING
+		for _, f := range out.Fields {
+			if o := f.GetOrder(); o != adminpb.Index_IndexField_ORDER_UNSPECIFIED {
+				order = o
+			}
 		}
 		out.Fields = append(out.Fields, &adminpb.Index_IndexField{FieldPath: index.NameField,
 			ValueMode: &adminpb.Index_IndexField_Order_{Order: order}})
+	}
+	if vectorField != nil {
+		out.Fields = append(out.Fields, vectorField)
 	}
 	if n := len(out.Fields); n < 2 || n > 100 {
 		return nil, invalidIndex("An index has 2 to 100 fields, __name__ included; this one has %d.", n)
@@ -250,8 +281,7 @@ func (s *PGStore) CreateIndex(ctx context.Context, db DB, group string, ix *admi
 		id := rows[0].ID
 		md := &adminpb.IndexOperationMetadata{StartTime: timestamppb.New(rows[0].CreateTime), Index: db.IndexName(group, id),
 			State: adminpb.OperationState_PROCESSING}
-		out := proto.CloneOf(spec)
-		out.Name, out.State = db.IndexName(group, id), adminpb.Index_CREATING
+		out := db.indexOutput(spec, group, id, false)
 		var result []byte
 		if vector {
 			md.State, md.EndTime = adminpb.OperationState_SUCCESSFUL, md.StartTime
@@ -302,9 +332,16 @@ func operationOf(db DB, id string, metadata []byte, done bool, result []byte) (*
 
 // indexProto is a composite index as the Admin API shows it.
 func (db DB) indexProto(c *composite) *adminpb.Index {
-	out := proto.CloneOf(c.spec)
-	out.Name, out.State = db.IndexName(c.group, c.id), adminpb.Index_CREATING
-	if c.ready {
+	return db.indexOutput(c.spec, c.group, c.id, c.ready)
+}
+
+// indexOutput is a stored spec with the output-only fields: its name, its state, and the
+// density every index of a Standard edition database has, SPARSE_ALL (provisional: production's
+// listing is recorded in f3-admin.json).
+func (db DB) indexOutput(spec *adminpb.Index, group string, id int64, ready bool) *adminpb.Index {
+	out := proto.CloneOf(spec)
+	out.Name, out.State, out.Density = db.IndexName(group, id), adminpb.Index_CREATING, adminpb.Index_SPARSE_ALL
+	if ready {
 		out.State = adminpb.Index_READY
 	}
 	return out
@@ -472,14 +509,18 @@ func canonicalField(group, path string) (string, error) {
 		return path, nil
 	}
 	if group == index.DefaultCollectionGroup {
-		return "", invalidIndex("The collection group __default__ has the field * alone.")
+		// f3-admin.json fields.get_default_other, word for word.
+		return "", invalidIndex(`Field path must the default selector "*" or a non-default collection ID must be provided.`)
 	}
 	p, err := value.ParseFieldPath(path)
 	if err != nil {
 		return "", invalidIndex("%s", err.Error())
 	}
-	if p.IsDocumentID() {
-		return "", invalidIndex("__name__ has no single-field index configuration.")
+	for _, seg := range p {
+		// __name__ and every other reserved name (f3-admin.json fields.get_name, get_reserved).
+		if len(seg) >= 4 && strings.HasPrefix(seg, "__") && strings.HasSuffix(seg, "__") {
+			return "", invalidIndex(`Field path id "%s" is invalid because it is reserved.`, path)
+		}
 	}
 	return p.String(), nil
 }

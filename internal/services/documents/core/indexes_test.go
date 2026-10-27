@@ -276,6 +276,56 @@ func TestCreateIndexValidation(t *testing.T) {
 	}
 }
 
+// normalizeComposite puts __name__ where firebase-tools 15 expects it (processIndex): last, or
+// before a vector field, in the direction of the last ordered field; and takes an exported
+// file's density back.
+func TestNormalizeComposite(t *testing.T) {
+	vector := &adminpb.Index_IndexField{FieldPath: "v", ValueMode: &adminpb.Index_IndexField_VectorConfig_{
+		VectorConfig: &adminpb.Index_IndexField_VectorConfig{Dimension: 3, Type: &adminpb.Index_IndexField_VectorConfig_Flat{Flat: &adminpb.Index_IndexField_VectorConfig_FlatIndex{}}}}}
+	show := func(ix *adminpb.Index) string {
+		var parts []string
+		for _, f := range ix.GetFields() {
+			mode := f.GetOrder().String()
+			switch {
+			case f.GetVectorConfig() != nil:
+				mode = "VECTOR"
+			case f.GetArrayConfig() != adminpb.Index_IndexField_ARRAY_CONFIG_UNSPECIFIED:
+				mode = "CONTAINS"
+			}
+			parts = append(parts, f.GetFieldPath()+" "+mode)
+		}
+		return strings.Join(parts, ", ")
+	}
+	for _, c := range []struct {
+		ix   *adminpb.Index
+		want string
+	}{
+		{compositeSpec(adminpb.Index_COLLECTION, asc("a"), desc("b")), "a ASCENDING, b DESCENDING, __name__ DESCENDING"},
+		{compositeSpec(adminpb.Index_COLLECTION, desc("a"), contains("t")), "a DESCENDING, t CONTAINS, __name__ DESCENDING"},
+		{compositeSpec(adminpb.Index_COLLECTION, contains("t"), desc("a")), "t CONTAINS, a DESCENDING, __name__ DESCENDING"},
+		{compositeSpec(adminpb.Index_COLLECTION, desc("k"), vector), "k DESCENDING, __name__ DESCENDING, v VECTOR"},
+		{compositeSpec(adminpb.Index_COLLECTION, vector), "__name__ ASCENDING, v VECTOR"},
+		{compositeSpec(adminpb.Index_COLLECTION, asc("k"), asc("__name__"), vector), "k ASCENDING, __name__ ASCENDING, v VECTOR"},
+		{&adminpb.Index{QueryScope: adminpb.Index_COLLECTION, Density: adminpb.Index_SPARSE_ALL, Fields: []*adminpb.Index_IndexField{asc("a"), asc("b")}},
+			"a ASCENDING, b ASCENDING, __name__ ASCENDING"},
+	} {
+		got, err := normalizeComposite(c.ix)
+		if err != nil || show(got) != c.want || got.GetDensity() != adminpb.Index_DENSITY_UNSPECIFIED {
+			t.Errorf("%s: %s %v, want %s", show(c.ix), show(got), err, c.want)
+		}
+	}
+	for _, ix := range []*adminpb.Index{
+		compositeSpec(adminpb.Index_COLLECTION, vector, asc("a")),
+		compositeSpec(adminpb.Index_COLLECTION, contains("t"), vector),
+		{QueryScope: adminpb.Index_COLLECTION, Density: adminpb.Index_DENSE, Fields: []*adminpb.Index_IndexField{asc("a"), asc("b")}},
+		{QueryScope: adminpb.Index_COLLECTION, Unique: true, Fields: []*adminpb.Index_IndexField{asc("a"), asc("b")}},
+	} {
+		if _, err := normalizeComposite(ix); err == nil {
+			t.Errorf("%v: accepted", ix)
+		}
+	}
+}
+
 // Field updates: an exemption removes a field's entries, its removal restores them, a
 // collection-group override adds them across collections of the group, and each change shows in
 // the Field resource with its inheritance.

@@ -109,8 +109,8 @@ func New(o Options) *Handler {
 	}
 	h.mux = http.NewServeMux()
 	h.mux.Handle(firestorepbconnect.NewFirestoreHandler(firestore{h: h}, opts...))
-	h.mux.Handle(adminpbconnect.NewFirestoreAdminHandler(adminpbconnect.UnimplementedFirestoreAdminHandler{}, opts...))
-	h.mux.Handle(longrunningpbconnect.NewOperationsHandler(longrunningpbconnect.UnimplementedOperationsHandler{}, opts...))
+	h.mux.Handle(adminpbconnect.NewFirestoreAdminHandler(firestoreAdmin{h: h}, opts...))
+	h.mux.Handle(longrunningpbconnect.NewOperationsHandler(operations{h: h}, opts...))
 	return h
 }
 

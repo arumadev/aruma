@@ -76,9 +76,23 @@ type admitted struct {
 // the rules' default. primary is the name the request's database comes from; empty, the
 // resource prefix stands for it.
 func (s *Service) admit(ctx context.Context, c Call, req proto.Message, primary func() (wire.Database, error)) (admitted, error) {
+	return s.admitAs(ctx, c, req, primary, false)
+}
+
+// admitAs is admit; with adminOnly, the Admin API's: the caller must be an admin, whatever
+// documents.dev_open_rules says, and is refused before its names are looked at
+// (wire.ErrAdminUnauthenticated without a credential, wire.ErrAdminPermissionDenied for an end
+// user).
+func (s *Service) admitAs(ctx context.Context, c Call, req proto.Message, primary func() (wire.Database, error), adminOnly bool) (admitted, error) {
 	caller, err := s.o.Auth.Resolve(ctx, c.Authorization, c.Transport)
 	if err != nil {
 		return admitted{}, s.fail(ctx, err)
+	}
+	if adminOnly && caller.Role != authn.RoleAdmin {
+		if caller.Role == authn.RoleAnonymous {
+			return admitted{}, wire.ErrAdminUnauthenticated
+		}
+		return admitted{}, wire.ErrAdminPermissionDenied
 	}
 	first, err := primary()
 	if err != nil {
@@ -161,6 +175,10 @@ func (s *Service) fail(ctx context.Context, err error) error {
 	}
 	if nf, ok := errors.AsType[*core.DatabaseNotFoundError](err); ok {
 		return wire.MissingDatabase(wire.Database{Project: nf.ProjectID, ID: nf.DatabaseID})
+	}
+	if errors.Is(err, core.ErrIndexEntryTooLarge) {
+		// The one core error production answers with details (f0-errors.json name_bytes_6127).
+		return wire.IndexEntryTooLarge()
 	}
 	if ce, ok := errors.AsType[*core.Error](err); ok {
 		return wire.NewError(wire.Code(ce.Code), ce.Message)
