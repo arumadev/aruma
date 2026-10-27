@@ -239,6 +239,99 @@
         "corpus/f5-rules-auth.json"
       ],
       "test": "test/differential/documents/rules_replay_test.go:TestReplayRulesInProcess"
+    },
+    {
+      "id": "webchannel-api-key-validated",
+      "kind": "restriction",
+      "summary": "A WebChannel handshake's API key is validated, as Auth validates one; production ignores it.",
+      "production": "An unknown key (AIzaSyAAAA…) in the handshake's headers= field or in ?key= gets the normal handshake and stream, the rules still applied (corpus/f6-webchannel-errors.json listen.invalid-api-key, raw.channel-errors). The REST data paths ignore it too (getdoc.invalid-api-key).",
+      "emulator": "Not recorded.",
+      "aruma": "ADR-027 §5.3: a key must resolve to an active project, pass its restrictions and name the handshake's project, or the handshake is refused (400 \"API key not valid. Please pass a valid API key.\", 403 for another project's key) before any session exists. No key is accepted, as production accepts none from the mobile clients. The REST data paths ignore a key, as production. The replay lists those exchanges as differing.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-webchannel-errors.json"
+      ],
+      "test": "internal/services/documents/webchannel/webchannel_test.go:TestAPIKey"
+    },
+    {
+      "id": "webchannel-probe-cookie",
+      "kind": "restriction",
+      "summary": "A channel request without VER is answered with production's empty 200, without its cookie.",
+      "production": "A POST without VER and database gets 200, an empty text/plain body, cache-control private, and set-cookie S=firestore=…; no session (corpus/f6-webchannel-errors.json raw.channel-errors).",
+      "emulator": "Not recorded.",
+      "aruma": "The same empty 200 and headers, and no Set-Cookie: no request of the surface sets or reads a cookie (ADR-027 §5.2).",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-webchannel-errors.json"
+      ],
+      "test": "internal/services/documents/webchannel/webchannel_test.go:TestProtocolErrors"
+    },
+    {
+      "id": "webchannel-wire-protocol",
+      "kind": "restriction",
+      "summary": "The channel's answers carry no x-client-wire-protocol header.",
+      "production": "Every handshake answers x-client-wire-protocol: h2 (HTTP/1.1 to an HTTP/1.1 client) and exposes it (corpus/f6-webchannel-*.json).",
+      "emulator": "Not recorded.",
+      "aruma": "Omitted: the SDK reads it to allow several forward requests at once over h2, and Aruma keeps one at a time (ADR-027 §5.5). Access-Control-Expose-Headers still names it, as production's.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-webchannel-listen.json",
+        "corpus/f6-webchannel-errors.json"
+      ],
+      "test": "internal/services/documents/webchannel/webchannel_test.go:TestProtocolErrors"
+    },
+    {
+      "id": "webchannel-unknown-sid-page",
+      "kind": "restriction",
+      "summary": "Unknown SID is answered with a short HTML page of Aruma's, not Google's.",
+      "production": "HTTP 400, text/html; charset=UTF-8, Google's 1566-byte error page whose text holds \"Your client has issued a malformed or illegal request. Unknown SID\", CORS headers kept (corpus/f6-webchannel-errors.json raw.channel-errors).",
+      "emulator": "Not recorded.",
+      "aruma": "The same status, Content-Type and CORS headers, and a short page with the same sentence, which the client looks for past index 0 (ChannelRequest).",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-webchannel-errors.json"
+      ],
+      "test": "internal/services/documents/webchannel/webchannel_test.go:TestListenStreamed"
+    },
+    {
+      "id": "webchannel-long-poll-batching",
+      "kind": "provisional",
+      "summary": "A long poll (CI=1) returns once it has written an array, where production's carried every array its stream had at once.",
+      "production": "The first long poll of a Listen carried the ADD, the documents, CURRENT and the global snapshot in one record; later polls return after their leading noop and the next record (corpus/f6-webchannel-longpoll.json).",
+      "emulator": "Not recorded.",
+      "aruma": "Returns after the first write that has arrays, often the ADD alone; the client polls again at once and receives the rest, in the same order and ids. Only the number of polls differs.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-webchannel-longpoll.json"
+      ],
+      "test": "internal/services/documents/webchannel/webchannel_test.go:TestListenLongPoll"
+    },
+    {
+      "id": "cors-unknown-request-header",
+      "kind": "restriction",
+      "summary": "A preflight echoes every header it asks for; production refuses some it does not know.",
+      "production": "A REST preflight asking for x-made-up-header gets 403 and a Google HTML page without CORS headers; the SDKs' headers are echoed (corpus/f6-cors.json). Production's list is not published.",
+      "emulator": "Not recorded.",
+      "aruma": "Every requested header is echoed: refusing one production accepts would break a client, accepting one it refuses gives a page nothing, since no request of these paths reads a cookie.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-cors.json"
+      ],
+      "test": "internal/services/documents/rest/rest_test.go:TestCORS"
+    },
+    {
+      "id": "rest-json-compact",
+      "kind": "restriction",
+      "summary": "REST answers are compact JSON; production pretty-prints them.",
+      "production": "Bodies are indented two spaces with a final newline (corpus/f6-cors.json, f6-lite.json, and every REST recording); a document's fields come in the server's own order.",
+      "emulator": "Not recorded.",
+      "aruma": "The same JSON values, compact: every client parses them. The replays compare REST bodies as JSON.",
+      "follows": "production",
+      "evidence": [
+        "corpus/f6-lite.json",
+        "corpus/f6-cors.json"
+      ],
+      "test": "test/differential/documents/webchannel_replay_test.go:TestReplayWebChannelInProcess"
     }
   ]
 }

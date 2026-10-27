@@ -669,11 +669,13 @@ func TestProtocolErrors(t *testing.T) {
 		t.Errorf("preflight: %d %v", res.StatusCode, res.Header)
 	}
 
-	// A request without a version is production's empty 200, and sets no cookie.
+	// A request without a version is production's empty 200; it sets no cookie, and no answer
+	// names the wire protocol (parity-exceptions.json webchannel-probe-cookie, -wire-protocol).
 	res = post(t, x.url+"?RID=30000&zx=a", "count=0")
 	b, _ := io.ReadAll(res.Body)
 	res.Body.Close()
-	if res.StatusCode != http.StatusOK || len(b) != 0 || res.Header.Get("Set-Cookie") != "" || res.Header.Get("X-HTTP-Session-Id") != "" {
+	if res.StatusCode != http.StatusOK || len(b) != 0 || res.Header.Get("Set-Cookie") != "" || res.Header.Get("X-HTTP-Session-Id") != "" ||
+		res.Header.Get("X-Client-Wire-Protocol") != "" {
 		t.Errorf("no version: %d %v %q", res.StatusCode, res.Header, b)
 	}
 }
