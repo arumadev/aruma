@@ -43,11 +43,12 @@ func (NoDocuments) Get(context.Context, int64, []string, bool) (Value, bool, err
 // second write alone looks up 11); the request counts each document once against its limit. A
 // document the request writes (Exempt) counts against neither (commit.peer-a-peer-b,
 // write.self-after). The limits are not the budget's: Evaluate takes them from the ruleset
-// (lookupLimits), so a budget made for one service cannot give another service's limits; a
-// pooled budget only lifts the operation's limit to the request's.
+// (lookupLimits), so a budget made for one service cannot give another service's limits. A read
+// budget counts against an operation's limit only the documents no earlier operation of the
+// request looked up; a pooled budget lifts the operation's limit to the request's.
 type Budget struct {
 	mu      sync.Mutex
-	pooled  bool
+	mode    budgetMode
 	counted map[string]bool // the documents the request has counted, by encoded path
 	exempt  map[string]bool // the documents the request writes, which count against no limit
 	cache   map[lookupKey]lookupResult
@@ -73,14 +74,32 @@ func NewBudget() *Budget {
 	return &Budget{counted: map[string]bool{}, exempt: map[string]bool{}, cache: map[lookupKey]lookupResult{}}
 }
 
-// NewPooledBudget returns an empty budget for one request whose operations have the request's
-// limit alone: a read of several documents (batch-get-r1a-r20a: 10 and 20 lookups, 20
-// distinct, allowed), a list query (run-query-20).
-func NewPooledBudget() *Budget {
+// NewReadBudget returns an empty budget for one request reading documents: each document has
+// the operation's limit, counting only the documents no earlier one looked up, and the request
+// its own (f5-rules-lookups.json limit.batch-get-g11x2 and g20x2 denied: the first document
+// alone makes 11 or 20; lookup-limits batch-get-r1a-r20a allowed: the second makes 10 new).
+func NewReadBudget() *Budget {
 	b := NewBudget()
-	b.pooled = true
+	b.mode = budgetRead
 	return b
 }
+
+// NewPooledBudget returns an empty budget for one request whose operations have the request's
+// limit alone: a list query (run-query-20).
+func NewPooledBudget() *Budget {
+	b := NewBudget()
+	b.mode = budgetPooled
+	return b
+}
+
+// budgetMode is how a Budget counts an operation's lookups against the operation's limit.
+type budgetMode int
+
+const (
+	budgetEach   budgetMode = iota // every document the operation looks up (NewBudget)
+	budgetRead                     // only the documents new to the request (NewReadBudget)
+	budgetPooled                   // none: the request's limit alone (NewPooledBudget)
+)
 
 // Exempt makes the lookups of the document at path (databases/(default)/documents/...) free:
 // one the request writes.
@@ -156,8 +175,9 @@ func isDocumentPath(segs []string) bool {
 }
 
 // read reads a document through the request's budget. A document the request writes is free;
-// any other counts once against the operation's limit and once against the request's, before
-// it is first looked up by each, and is read from Documents once per state. Going past a limit
+// any other counts once against the operation's limit (under a read budget, only when no
+// earlier operation counted it) and once against the request's, before it is first looked up
+// by each, and is read from Documents once per state. Going past a limit
 // is an evaluation error, as production's is (lookup-limits miss-exists, live-after: absorbed by
 // ||), and is not cached: nothing was read. A lookup that failed with ErrNoDocuments counts
 // once, as a document does.
@@ -170,10 +190,10 @@ func (ev *evaluator) read(segs []string, after bool) (Value, bool, error) {
 	key := lookupKey{after: after, path: path}
 	perOperation, perRequest := lookupLimits(ev.rs.service, &ev.rs.lim)
 	b.mu.Lock()
-	if b.pooled {
+	if b.mode == budgetPooled {
 		perOperation = perRequest
 	}
-	if !b.exempt[path] && !ev.lookups[path] {
+	if !b.exempt[path] && !ev.lookups[path] && (b.mode != budgetRead || !b.counted[path]) {
 		if len(ev.lookups) >= perOperation {
 			b.mu.Unlock()
 			return Value{}, false, errorf("evaluation exceeded the limit of %d document lookups", perOperation)

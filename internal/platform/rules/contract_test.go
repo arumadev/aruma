@@ -269,7 +269,7 @@ func TestLookupLimits(t *testing.T) {
 	if op, req := lookupLimits("cloud.unknown", &lim); op != 0 || req != 0 {
 		t.Error("an unknown service allows lookups")
 	}
-	if b := NewBudget(); len(b.counted) != 0 || b.cache == nil || b.pooled {
+	if b := NewBudget(); len(b.counted) != 0 || b.cache == nil || b.mode != budgetEach {
 		t.Error("a new budget is not empty")
 	}
 }

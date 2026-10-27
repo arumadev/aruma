@@ -196,15 +196,11 @@ type ruleOp struct {
 	budget  *rules.Budget
 }
 
-// readBudget is the lookup budget of a request reading n documents: one document has the
-// operation's limit of 10, several share the request's 20 with no limit each
-// (f5-rules-lookup-limits.json batch-get-r20a denied, batch-get-r1a-r20a allowed).
-func readBudget(n int) *rules.Budget {
-	if n > 1 {
-		return rules.NewPooledBudget()
-	}
-	return rules.NewBudget()
-}
+// readBudget is the lookup budget of a request reading documents: each has the operation's
+// limit of 10, counting only the documents no earlier one looked up, and the request has 20
+// (f5-rules-lookup-limits.json batch-get-r20a denied, batch-get-r1a-r20a allowed;
+// f5-rules-lookups.json limit.batch-get-g11x2 denied).
+func readBudget() *rules.Budget { return rules.NewReadBudget() }
 
 // allowReads decides a read of docs (get), as read at readTime (zero: the latest), under budget,
 // the request's (readBudget). The request is denied whole when any document is.
@@ -228,7 +224,7 @@ func (s *Service) allowReads(ctx context.Context, a admitted, docs []core.Docume
 }
 
 // judged returns ctx with the rules' judgement of a's commits (core.WithAuthorizer): each commit
-// is denied whole when any of the documents it writes is.
+// is denied whole when any of the documents it writes or verifies is.
 func (s *Service) judged(ctx context.Context, a admitted) (context.Context, error) {
 	if a.guard == nil {
 		return ctx, nil
@@ -246,11 +242,17 @@ func (s *Service) judged(ctx context.Context, a admitted) (context.Context, erro
 		// commit writes are free to look up (lookup-limits commit.peer-a-peer-b, write.self-get).
 		budget := rules.NewBudget()
 		for _, p := range proposals {
-			budget.Exempt(documentPath(a.db, p.Path))
+			if !p.Verifies {
+				budget.Exempt(documentPath(a.db, p.Path))
+			}
 		}
 		for _, p := range proposals {
 			op := ruleOp{path: p.Path, before: p.Before, after: p.After, now: now, lookups: l, budget: budget}
 			switch {
+			case p.Verifies:
+				// A verify tells whether the document exists, and its update_time: a get of it
+				// (unrecorded, ADR-021 F5 review amendment).
+				op.method = rules.MethodGet
 			case !p.After.Exists():
 				op.method = rules.MethodDelete
 			case p.Asserts != nil && *p.Asserts, p.Asserts == nil && p.Before.Exists():

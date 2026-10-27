@@ -241,7 +241,7 @@ func (s *PGStore) Get(ctx context.Context, db DB, p Path, o ReadOptions) (Docume
 		return Document{}, time.Time{}, err
 	}
 	if !docs[0].Exists() {
-		return Document{}, time.Time{}, documentNotFound(db.DocumentName(p))
+		return Document{}, readTime, documentNotFound(db.DocumentName(p))
 	}
 	return docs[0], readTime, nil
 }

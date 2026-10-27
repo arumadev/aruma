@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
@@ -241,6 +243,10 @@ func TestRulesLookupBudget(t *testing.T) {
 		{"16 lookups", []string{"eight/a", "eight/b"}, wire.CodeOK},
 		{"24 lookups", []string{"eight/a", "eight/b", "eight/c"}, wire.CodePermissionDenied},
 		{"8 lookups, cached for the rest", []string{"shared/a", "shared/b", "shared/c", "shared/d"}, wire.CodeOK},
+		// Each document keeps its limit of 10: the first makes 11 new lookups (f5-rules-lookups.json
+		// limit.batch-get-g11x2).
+		{"11 lookups each, shared", []string{"eleven/a", "eleven/b"}, wire.CodePermissionDenied},
+		{"10 lookups, cached for the second", []string{"ten/a", "ten/b"}, wire.CodeOK},
 		{"one denied, all denied", []string{"open/a", "owned/x"}, wire.CodePermissionDenied},
 	} {
 		if got := codeOf(batch(c.paths...)); got != c.want {
@@ -367,5 +373,100 @@ func TestRulesTransactionsAndStreams(t *testing.T) {
 	if _, err := w.Write(ctx, &pb.WriteRequest{StreamToken: h.GetStreamToken(), Writes: []*pb.Write{
 		update(r.name("owned/bob"), map[string]*pb.Value{"owner": str("bob"), "n": num(6)})}}); codeOf(err) != wire.CodePermissionDenied {
 		t.Fatalf("denied stream write: %v", err)
+	}
+}
+
+// A commit that only verifies a document is judged as a get of it: its preconditions would tell
+// anyone whether the document exists and its update_time (F5 review; unrecorded).
+func TestRulesVerify(t *testing.T) {
+	r := newRulesEnv(t, apitest.Options{})
+	r.env.PublishFirestoreRules(t, bindingRules)
+	r.seed(t, "owned/alice", map[string]value.Value{"owner": value.String("alice"), "n": value.Int(1)})
+	res, err := r.env.Store.Commit(t.Context(), r.db, []core.Write{{Kind: core.WriteUpdate, Path: core.Path{"owned", "bob"},
+		Fields: value.MapOf(map[string]value.Value{"owner": value.String("bob")})}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, ctx := r.env.Service, t.Context()
+	alice := apitest.UserToken(t, "alice", nil)
+	verify := func(path string, pre *pb.Precondition) *pb.Write {
+		return &pb.Write{Operation: &pb.Write_Verify{Verify: r.name(path)}, CurrentDocument: pre}
+	}
+	exists := func(b bool) *pb.Precondition {
+		return &pb.Precondition{ConditionType: &pb.Precondition_Exists{Exists: b}}
+	}
+	updated := &pb.Precondition{ConditionType: &pb.Precondition_UpdateTime{UpdateTime: timestamppb.New(res.CommitTime)}}
+	for _, c := range []struct {
+		name   string
+		token  string
+		writes []*pb.Write
+		want   wire.Code
+	}{
+		{"a stored document", alice, []*pb.Write{verify("owned/bob", exists(true))}, wire.CodePermissionDenied},
+		{"a missing document", alice, []*pb.Write{verify("owned/carol", exists(true))}, wire.CodePermissionDenied},
+		{"its update_time", alice, []*pb.Write{verify("owned/bob", updated)}, wire.CodePermissionDenied},
+		{"beside an allowed write", alice, []*pb.Write{update(r.name("open/w"), nil), verify("owned/carol", exists(true))}, wire.CodePermissionDenied},
+		{"no credential", "", []*pb.Write{verify("owned/carol", exists(true))}, wire.CodePermissionDenied},
+		{"a document the caller may get", alice, []*pb.Write{verify("owned/alice", exists(true))}, wire.CodeOK},
+		{"then its precondition", alice, []*pb.Write{verify("owned/alice", exists(false))}, wire.CodeAlreadyExists},
+	} {
+		_, err := s.Commit(ctx, call(c.token), &pb.CommitRequest{Database: r.db.Name(), Writes: c.writes})
+		if got := codeOf(err); got != c.want {
+			t.Errorf("%s: %v, want %v", c.name, err, c.want)
+		}
+	}
+}
+
+// A BatchGet past one chunk is judged whole before anything is sent: a denial in a later chunk
+// sends nothing.
+func TestRulesBatchGetDeniedWhole(t *testing.T) {
+	r := newRulesEnv(t, apitest.Options{})
+	r.env.PublishFirestoreRules(t, bindingRules)
+	var names []string
+	for i := range 150 {
+		p := fmt.Sprintf("open/%03d", i)
+		r.seed(t, p, map[string]value.Value{})
+		names = append(names, r.name(p))
+	}
+	names = append(names, r.name("owned/bob")) // last in name order
+	for _, c := range []struct {
+		names []string
+		want  wire.Code
+		sent  int
+	}{
+		{names, wire.CodePermissionDenied, 0},
+		{names[:150], wire.CodeOK, 150},
+	} {
+		sent := 0
+		err := r.env.Service.BatchGetDocuments(t.Context(), call(""), &pb.BatchGetDocumentsRequest{Database: r.db.Name(), Documents: c.names},
+			func(*pb.BatchGetDocumentsResponse) error { sent++; return nil })
+		if codeOf(err) != c.want || sent != c.sent {
+			t.Errorf("%d names: %v after %d sent, want %v after %d", len(c.names), err, sent, c.want, c.sent)
+		}
+	}
+}
+
+// The rules' lookups for a missing document read in a transaction read at its snapshot.
+func TestRulesMissingReadInTransaction(t *testing.T) {
+	r := newRulesEnv(t, apitest.Options{})
+	r.env.PublishFirestoreRules(t, bindingRules)
+	s, ctx := r.env.Service, t.Context()
+	alice := apitest.UserToken(t, "alice", nil)
+	res, err := s.BeginTransaction(ctx, call(alice), &pb.BeginTransactionRequest{Database: r.db.Name(),
+		Options: &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadOnly_{ReadOnly: &pb.TransactionOptions_ReadOnly{}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := &pb.GetDocumentRequest_Transaction{Transaction: res.GetTransaction()}
+	if _, err := s.GetDocument(ctx, call(alice), &pb.GetDocumentRequest{Name: r.name("open/first"), ConsistencySelector: in}); codeOf(err) != wire.CodeNotFound {
+		t.Fatalf("first read: %v", err)
+	}
+	// lookup/z may be read once open/z says ok, which it says only after the snapshot.
+	r.seed(t, "open/z", map[string]value.Value{"ok": value.Bool(true)})
+	if _, err := s.GetDocument(ctx, call(alice), &pb.GetDocumentRequest{Name: r.name("lookup/z"), ConsistencySelector: in}); codeOf(err) != wire.CodePermissionDenied {
+		t.Errorf("in the transaction: %v, want PERMISSION_DENIED", err)
+	}
+	if _, err := s.GetDocument(ctx, call(alice), &pb.GetDocumentRequest{Name: r.name("lookup/z")}); codeOf(err) != wire.CodeNotFound {
+		t.Errorf("outside it: %v, want NOT_FOUND", err)
 	}
 }

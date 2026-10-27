@@ -129,6 +129,27 @@ func TestLookupBudget(t *testing.T) {
 	if docs.total() != 3 {
 		t.Errorf("%d reads, want 3", docs.total())
 	}
+
+	// A read budget counts against each operation only the documents new to the request
+	// (f5-rules-lookups.json limit.batch-get-g11x2 denied, lookup-limits batch-get-r1a-r20a
+	// allowed), and against the request each document once.
+	budget = NewReadBudget()
+	for i, c := range []struct {
+		request, resource string
+		allow             bool
+	}{
+		{"x/1", "x/2", false}, // two new documents, past the operation's 1
+		{"x/1", "x/1", true},  // counted by the first: free
+		{"x/1", "x/2", true},  // both counted already
+		{"x/3", "x/2", true},  // one new: three for the request
+		{"x/4", "x/4", false}, // the fourth, past the request's 3
+	} {
+		req := lookupRequest(docs, c.request, c.resource)
+		req.Budget = budget
+		if d := evaluate(t, limited(both, 1, 3), req); d.Allow != c.allow {
+			t.Fatalf("read operation %d: %+v", i+1, d)
+		}
+	}
 }
 
 // Storage reads Firestore through firestore.get and firestore.exists, at most two documents in

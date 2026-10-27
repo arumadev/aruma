@@ -45,9 +45,9 @@ var rulesDiffers = map[string]string{
 	"f5-rules-auth.json user.iss": "rules-token-issuer",
 }
 
-// rulesSkipped are the f5-rules files that hold no cases to replay: the deployed source, the
-// first lookups attempt (superseded by lookup-limits: its fixtures overlap), the cleanup log.
-var rulesSkipped = []string{"f5-rules-deployed.json", "f5-rules-lookups.json", "f5-rules-cleanup.json"}
+// rulesSkipped are the f5-rules files that hold no cases to replay: the deployed source and the
+// cleanup log. f5-rules-lookups.json is replayed: each file starts from the fixtures alone.
+var rulesSkipped = []string{"f5-rules-deployed.json", "f5-rules-cleanup.json"}
 
 type rulesFile struct {
 	Rules json.RawMessage `json:"rules"`

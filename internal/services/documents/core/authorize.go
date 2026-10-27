@@ -17,18 +17,22 @@ import (
 
 // Proposal is one document a commit writes, as the rules judge it: Before as stored, After as
 // the commit's writes leave it, folded without their preconditions (the rules decide before
-// whether the document exists does). Exists is false on either side for no document. A document
-// the commit only verifies is not proposed.
+// whether the document exists does). Exists is false on either side for no document.
 //
 // Asserts is whether the first precondition of the commit's writes of it says the document
 // exists (exists, or an update_time) or does not (exists: false); nil when none says. The rules
 // judge such a write by what it asserts, not by what is stored: a create over a stored document
 // is a create, then ALREADY_EXISTS (f5-rules-methods.json order.create-existing-create-only).
+//
+// A document the commit only verifies is proposed with Verifies, After as Before: its
+// preconditions tell whether it exists and its update_time, so the rules judge it as a read
+// (unrecorded; the client SDKs verify only the documents their transactions read).
 type Proposal struct {
-	Path    Path
-	Before  Document
-	After   Document
-	Asserts *bool
+	Path     Path
+	Before   Document
+	After    Document
+	Asserts  *bool
+	Verifies bool
 }
 
 // Authorizer judges a commit's proposals, in lock order; now is the request time the writes'
@@ -98,14 +102,14 @@ func (s *PGStore) authorize(ctx context.Context, db DB, p *plan) error {
 	}
 	proposals := make([]Proposal, 0, len(p.docs))
 	for _, d := range p.docs {
-		if !d.mutates {
-			continue
-		}
-		pr := Proposal{Path: d.path, Before: Document{Path: d.path}, After: Document{Path: d.path}, Asserts: asserts[d]}
+		pr := Proposal{Path: d.path, Before: Document{Path: d.path}, After: Document{Path: d.path}, Asserts: asserts[d], Verifies: !d.mutates}
 		if d.before != nil {
 			pr.Before.Fields, pr.Before.CreateTime, pr.Before.UpdateTime = d.before.fields, d.before.createTime, d.before.updateTime
 		}
-		if d.exists {
+		switch {
+		case pr.Verifies:
+			pr.After = pr.Before
+		case d.exists:
 			pr.After.Fields, pr.After.CreateTime, pr.After.UpdateTime = d.fields, now, now
 			if d.before != nil {
 				pr.After.CreateTime = d.before.createTime
