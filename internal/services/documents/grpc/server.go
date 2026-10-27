@@ -52,6 +52,8 @@ type Limits struct {
 	MessageBytes int64
 	// StreamFirstMessage bounds the wait for a stream's first message (10 s).
 	StreamFirstMessage time.Duration
+	// StreamIdle ends a Write stream that sent no request for this long (5 min).
+	StreamIdle time.Duration
 	// StreamWriteStall bounds each message a server stream writes (30 s).
 	StreamWriteStall time.Duration
 	// ServerStreamMax bounds a server stream without grpc-timeout (5 min).
@@ -94,6 +96,7 @@ func New(o Options) *Handler {
 	l := o.Limits
 	l.MessageBytes = cmp.Or(l.MessageBytes, 17<<20)
 	l.StreamFirstMessage = cmp.Or(l.StreamFirstMessage, 10*time.Second)
+	l.StreamIdle = cmp.Or(l.StreamIdle, 5*time.Minute)
 	l.StreamWriteStall = cmp.Or(l.StreamWriteStall, 30*time.Second)
 	l.ServerStreamMax = cmp.Or(l.ServerStreamMax, 5*time.Minute)
 	l.StreamsPerIP = cmp.Or(l.StreamsPerIP, 500)
@@ -292,6 +295,12 @@ type serverStream struct {
 }
 
 func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
+	return h.openServerStream(ctx, h.limits.ServerStreamMax)
+}
+
+// openServerStream is serverStream with the stream's own bound: a Write stream is bounded by
+// stream_idle and its token (ADR-026 §3, §4), not by server_stream_max, so it passes none.
+func (h *Handler) openServerStream(ctx context.Context, maxLife time.Duration) (*serverStream, error) {
 	info := rpcOf(ctx)
 	release, err := h.openStream(info.client)
 	if err != nil {
@@ -299,7 +308,10 @@ func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
 	}
 	s := &serverStream{info: info, stall: h.limits.StreamWriteStall}
 	// server_stream_max bounds a grpc-timeout too: a client cannot hold a stream for hours.
-	ctx, cancel := context.WithTimeoutCause(ctx, h.limits.ServerStreamMax, errStreamMax)
+	cancel := context.CancelFunc(func() {})
+	if maxLife > 0 {
+		ctx, cancel = context.WithTimeoutCause(ctx, maxLife, errStreamMax)
+	}
 	s.release = func() { cancel(); release() }
 	s.ctx, s.cancel = context.WithCancelCause(ctx)
 	s.stops = []func() bool{

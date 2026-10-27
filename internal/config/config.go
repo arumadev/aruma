@@ -164,6 +164,7 @@ func Defaults() Config {
 		Documents: Documents{IndexEnforcement: "enforce", Limits: DocumentsLimits{
 			MessageBytes:        17 << 20,
 			StreamFirstMessage:  10 * time.Second,
+			StreamIdle:          5 * time.Minute,
 			StreamWriteStall:    30 * time.Second,
 			ServerStreamMax:     5 * time.Minute,
 			StreamsPerIP:        500,
@@ -242,6 +243,9 @@ type DocumentsLimits struct {
 	// StreamFirstMessage bounds the wait for a stream's first message, read and its credential
 	// checked; only then are the server's read and write timeouts lifted (ADR-027 §3.2).
 	StreamFirstMessage time.Duration `yaml:"stream_first_message"`
+	// StreamIdle ends a Write stream that sent no request for this long, with UNAVAILABLE
+	// (ADR-026 §3).
+	StreamIdle time.Duration `yaml:"stream_idle"`
 	// StreamWriteStall bounds each message a server stream writes, so a client that stopped
 	// reading does not hold its stream (BatchGetDocuments, RunQuery, RunAggregationQuery).
 	StreamWriteStall time.Duration `yaml:"stream_write_stall"`
@@ -542,6 +546,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	dl := &c.Documents.Limits
 	integer("ARUMA_DOCUMENTS_MESSAGE_BYTES", &dl.MessageBytes)
 	duration("ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE", &dl.StreamFirstMessage)
+	duration("ARUMA_DOCUMENTS_STREAM_IDLE", &dl.StreamIdle)
 	duration("ARUMA_DOCUMENTS_STREAM_WRITE_STALL", &dl.StreamWriteStall)
 	duration("ARUMA_DOCUMENTS_SERVER_STREAM_MAX", &dl.ServerStreamMax)
 	count("ARUMA_DOCUMENTS_STREAMS_PER_IP", &dl.StreamsPerIP)
@@ -743,6 +748,7 @@ func (c *Config) validateDocuments() []error {
 		v    int64
 	}{
 		{"stream_first_message", int64(l.StreamFirstMessage)},
+		{"stream_idle", int64(l.StreamIdle)},
 		{"stream_write_stall", int64(l.StreamWriteStall)},
 		{"server_stream_max", int64(l.ServerStreamMax)},
 		{"streams_per_ip", int64(l.StreamsPerIP)},
