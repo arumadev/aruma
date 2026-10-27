@@ -114,7 +114,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		Streams: streams, Keys: svc, Logger: logger,
 		Limits: webchannel.Limits{
 			MessageBytes: l.MessageBytes, SessionBytes: l.StreamOutboxBytes, SessionsPerIP: l.StreamsPerIP,
-			SessionsPerProject: l.StreamsPerProject, WriteStall: l.StreamWriteStall,
+			WriteStall: l.StreamWriteStall,
 		},
 	})
 	return &Documents{

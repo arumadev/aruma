@@ -99,7 +99,7 @@ func (h *Handler) backchannel(w http.ResponseWriter, r *http.Request, q url.Valu
 		if len(send) > 0 {
 			bc.next = send[len(send)-1].id + 1
 		}
-		done := bc.replaced || s.removed || s.ended && len(send) == 0
+		done := bc.replaced || s.removed || !s.ended.IsZero() && len(send) == 0
 		ch := s.changed
 		s.mu.Unlock()
 		if len(send) > 0 {

@@ -2,10 +2,12 @@ package webchannel
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -134,21 +136,40 @@ func parseForward(body []byte, maxMaps int) (forward, error) {
 	}
 	ofs := 0
 	if count > 0 {
-		if ofs, err = strconv.Atoi(q.Get("ofs")); err != nil || ofs < 0 {
+		if ofs, err = strconv.Atoi(q.Get("ofs")); err != nil || ofs < 0 || ofs > maxMapID {
 			return f, errBadData
 		}
 	}
-	for i := range count {
-		data, ok := q["req"+strconv.Itoa(i)+"___data__"]
-		if !ok || len(data) != 1 {
+	// A map's key is reqN, its id ofs + N. The keys need not run from 0: the maps of a retried
+	// request are sent again with the new ones, whose ids need not follow them, and ofs is then
+	// some id at most 100 below the lowest (WireV8.encodeMessageQueue).
+	for key, data := range q {
+		rest, ok := strings.CutPrefix(key, "req")
+		if !ok {
+			continue
+		}
+		n, field, _ := strings.Cut(rest, "_")
+		i, err := strconv.Atoi(n)
+		if err != nil || i < 0 || i > maxMapKey || field != "__data__" || len(data) != 1 {
 			// A map that is not raw JSON: the SDK always sends raw JSON (sendRawJson), and a map
 			// the client failed to encode comes as type=_badmap.
 			return f, errBadData
 		}
 		f.maps = append(f.maps, fmap{id: ofs + i, data: []byte(data[0])})
 	}
+	if len(f.maps) != count {
+		return f, errBadData
+	}
+	slices.SortFunc(f.maps, func(a, b fmap) int { return cmp.Compare(a.id, b.id) })
 	return f, nil
 }
+
+// maxMapKey and maxMapID bound a map's key and id, far past what a client sends, so that ofs + N
+// cannot overflow.
+const (
+	maxMapKey = 1 << 20
+	maxMapID  = 1 << 40
+)
 
 // parseHeaders reads the "Name:value\r\n" lines of a headers= field
 // (goog.net.rpc.HttpCors.generateHttpHeadersOverwriteParam).

@@ -13,9 +13,10 @@
 // cookie: no request of the surface reads one.
 //
 // Every bound a stream has on gRPC holds (ADR-026 §3); since opening a session costs a client
-// one request, sessions are bounded too: per client address, per project as the handshake names
-// it, and in all; the bytes a session holds for its client; and its idle life without a
-// backchannel.
+// one request, sessions are bounded too: per client address and in all; the bytes a session
+// holds for its client; and its idle life without a backchannel, or after its stream ended. Per
+// project, a session counts as its stream does once the stream admitted its caller
+// (streams_per_project): the project a handshake names is not checked before.
 package webchannel
 
 import (
@@ -24,6 +25,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -69,8 +71,6 @@ type Limits struct {
 	SessionBytes int64
 	// SessionsPerIP caps the sessions of one client address (streams_per_ip, 500).
 	SessionsPerIP int
-	// SessionsPerProject caps the sessions naming one project (streams_per_project, 10000).
-	SessionsPerProject int
 	// Sessions caps the sessions in all (100000).
 	Sessions int
 	// WriteStall bounds a write to a backchannel, and a forward POST waiting for the stream to
@@ -113,10 +113,9 @@ type Handler struct {
 	timing  Timing
 	log     *slog.Logger
 
-	mu        sync.Mutex
-	sessions  map[string]*session
-	byIP      map[netip.Addr]int
-	byProject map[string]int
+	mu       sync.Mutex
+	sessions map[string]*session
+	byIP     map[netip.Addr]int
 }
 
 // New returns the handler.
@@ -125,7 +124,6 @@ func New(o Options) *Handler {
 	l.MessageBytes = cmp.Or(l.MessageBytes, 17<<20)
 	l.SessionBytes = cmp.Or(l.SessionBytes, 64<<20)
 	l.SessionsPerIP = cmp.Or(l.SessionsPerIP, 500)
-	l.SessionsPerProject = cmp.Or(l.SessionsPerProject, 10_000)
 	l.Sessions = cmp.Or(l.Sessions, 100_000)
 	l.WriteStall = cmp.Or(l.WriteStall, 30*time.Second)
 	t := o.Timing
@@ -135,7 +133,7 @@ func New(o Options) *Handler {
 	t.Expiry = cmp.Or(t.Expiry, time.Minute)
 	return &Handler{
 		streams: o.Streams, keys: o.Keys, limits: l, timing: t, log: cmp.Or(o.Logger, slog.Default()),
-		sessions: map[string]*session{}, byIP: map[netip.Addr]int{}, byProject: map[string]int{},
+		sessions: map[string]*session{}, byIP: map[netip.Addr]int{},
 	}
 }
 
@@ -267,8 +265,8 @@ func (h *Handler) handshake(w http.ResponseWriter, r *http.Request, q url.Values
 		return
 	}
 
-	s := &session{h: h, id: randomID(16), http: randomID(40), client: client, project: project,
-		changed: make(chan struct{}), lastMap: -1, nextID: 1, active: time.Now()}
+	s := &session{h: h, id: randomID(16), http: randomID(40), client: client,
+		changed: make(chan struct{}), forwarding: make(chan struct{}, 1), lastMap: -1, nextID: 1, active: time.Now()}
 	// The stream outlives the request: its context is the session's.
 	ctx := context.WithoutCancel(r.Context())
 	s.ctx, s.cancel = context.WithCancelCause(ctx)
@@ -340,8 +338,6 @@ func projectOf(database string) string {
 var (
 	errTooManyIP = wire.NewError(wire.CodeResourceExhausted,
 		"Too many streams are open from this address.")
-	errTooManyProject = wire.NewError(wire.CodeResourceExhausted,
-		"Too many streams are open on this project.")
 	errTooMany = wire.NewError(wire.CodeResourceExhausted,
 		"Too many streams are open on this server.")
 )
@@ -357,13 +353,9 @@ func (h *Handler) add(s *session) *wire.Error {
 	case h.byIP[s.client] >= h.limits.SessionsPerIP:
 		h.log.Warn("documents: stream limit reached", "limit", "streams_per_ip", "client_ip", s.client.String())
 		return errTooManyIP
-	case h.byProject[s.project] >= h.limits.SessionsPerProject:
-		h.log.Warn("documents: stream limit reached", "limit", "streams_per_project", "client_ip", s.client.String())
-		return errTooManyProject
 	}
 	h.sessions[s.id] = s
 	h.byIP[s.client]++
-	h.byProject[s.project]++
 	return nil
 }
 
@@ -374,9 +366,6 @@ func (h *Handler) remove(s *session, cause error) {
 		delete(h.sessions, s.id)
 		if h.byIP[s.client]--; h.byIP[s.client] <= 0 {
 			delete(h.byIP, s.client)
-		}
-		if h.byProject[s.project]--; h.byProject[s.project] <= 0 {
-			delete(h.byProject, s.project)
 		}
 	}
 	h.mu.Unlock()
@@ -395,7 +384,8 @@ func (h *Handler) Sessions() int {
 	return len(h.sessions)
 }
 
-// lookup finds the session a request names by SID and gsessionid, and marks it active.
+// lookup finds the session a request names by SID and gsessionid, and marks it active, unless its
+// stream ended: then nothing keeps it longer.
 func (h *Handler) lookup(q url.Values) *session {
 	h.mu.Lock()
 	s := h.sessions[q.Get("SID")]
@@ -404,7 +394,9 @@ func (h *Handler) lookup(q url.Values) *session {
 		return nil
 	}
 	s.mu.Lock()
-	s.touchLocked()
+	if s.ended.IsZero() {
+		s.touchLocked()
+	}
 	if aid, err := strconv.Atoi(q.Get("AID")); err == nil {
 		s.ackLocked(aid)
 	}
@@ -418,28 +410,29 @@ func (h *Handler) lookup(q url.Values) *session {
 // long polled, all arrays acknowledged or not (f6-webchannel-*.json): a backchannel counts as
 // there once one was attached, a long poll's being between two GETs most of the time, and the
 // bytes are production's 7, below the 37500 under which the client watches a buffered
-// backchannel as it would for 0.
+// backchannel as it would for 0. The answer is the same whether the maps were queued for the
+// stream or held for a map before them (ADR-027 §5.5): the client asks nothing more of it.
+//
+// The POSTs of a session read their bodies one at a time, so that those waiting for the stream
+// to read hold no more than one body. After the stream ended, a body is discarded unread and
+// answered as any: the client reads the stream's status on the backchannel.
 func (h *Handler) forward(w http.ResponseWriter, r *http.Request, q url.Values) {
 	s := h.lookup(q)
 	if s == nil {
 		unknownSID(w)
 		return
 	}
-	body, ok := readBody(w, r)
-	if !ok {
-		return
-	}
-	f, err := parseForward(body, maxMaps)
-	if err != nil {
-		fail(w, http.StatusBadRequest, "Bad request.")
-		return
-	}
-	if err := s.take(f.maps, h.limits.WriteStall); err != nil {
-		if err == errBusy {
+	if err := s.acquireForward(r.Context(), h.limits.WriteStall); err != nil {
+		if errors.Is(err, errBusy) {
 			fail(w, http.StatusServiceUnavailable, "The stream is not reading its requests.")
 		} else {
 			unknownSID(w)
 		}
+		return
+	}
+	ok := h.takeForward(w, r, s)
+	<-s.forwarding
+	if !ok {
 		return
 	}
 	s.mu.Lock()
@@ -450,6 +443,35 @@ func (h *Handler) forward(w http.ResponseWriter, r *http.Request, q url.Values) 
 	state, _ := json.Marshal([]any{present, s.nextID - 1, 7})
 	s.mu.Unlock()
 	writeChunks(w, state)
+}
+
+// takeForward reads a forward body and takes its maps, or answers the refusal itself.
+func (h *Handler) takeForward(w http.ResponseWriter, r *http.Request, s *session) bool {
+	s.mu.Lock()
+	ended := !s.ended.IsZero()
+	s.mu.Unlock()
+	if ended {
+		_, _ = io.Copy(io.Discard, r.Body)
+		return true
+	}
+	body, ok := readBody(w, r)
+	if !ok {
+		return false
+	}
+	f, err := parseForward(body, maxMaps)
+	if err != nil {
+		fail(w, http.StatusBadRequest, "Bad request.")
+		return false
+	}
+	if err := s.take(f.maps, h.limits.WriteStall); err != nil {
+		if errors.Is(err, errBusy) {
+			fail(w, http.StatusServiceUnavailable, "The stream is not reading its requests.")
+		} else {
+			unknownSID(w)
+		}
+		return false
+	}
+	return true
 }
 
 // terminate ends a session (WebChannelBase.disconnect): sent by navigator.sendBeacon, an image or
