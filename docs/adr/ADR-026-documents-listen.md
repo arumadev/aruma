@@ -89,6 +89,18 @@ Listen طريق القراءة الأساسي في الويب والجوال: ح
 
 العميل يرسل `limitToLast` معكوسًا فلا معاملة خاصة به (CL §1.9). والهدف ذو `limit` يحفظ نافذته: **حين يخرج عضو منها تُرسل إزالته والمستند التالي الداخل قبل اللقطة الشاملة** (MUST 9)، والملء باستعلام كما يفعل الإنتاج («issues a polling query to fill in the gap»، OF §1b). وأهداف `offset` يُعاد استعلامها عند أي تغيير في مجموعتها.
 
+#### 1.8 ما حسمه تسجيل الإنتاج في F4 (يعلو ما سبق حيث يخالفه)
+
+سُجّل الإنتاج في `test/oracle/documents/corpus/f4-listen.json`، ويُعاد تشغيله في كل `go test` (`test/differential/documents/listen_replay_test.go`). والنفاذ في `api/listen.go` و`grpc/listen.go`.
+
+- **المعرّفات (1.1):** `target_id` صفر يعيّنه الخادم: 1 على بث جديد، وإلا أكبر معرّف + 1 (`listen.remove-target`). وينهي البثَّ بحالته: معرّف سالب، وطلب بلا `target_change`، وقاعدة غير قاعدة الترويسة، وإزالة معرّف مجهول (`NOT_FOUND`)، ومعرّف يدوي بعد معيَّن (`refused-targets` البثوث 23 و26 و27). و`once`: ADD، النتيجة، CURRENT، اللقطة الشاملة، ثم REMOVE (البثّان 24 و25).
+- **التسلسل (1.2):** CURRENT يحمل `read_time` والرمز معًا، واللقطة الشاملة بالرمز نفسه. ولا `NO_CHANGE` لهدف بعينه (`listen.two-targets`). والمستند الغائب `document_delete` قبل CURRENT لا «لا مستند» (`listen.doc-missing`). والخارج بتغيير حقل `document_change` بجسمه الجديد و`removed_target_ids` (`listen.query-target`).
+- **الرفض (1.3):** رفض ما في الطلب نفسه REMOVE وحده، ورفض القاعدة (فهرس ناقص، `find_nearest`، `__name__` تنازليًا، `read_time` في المستقبل) ADD ثم REMOVE. والهدف لقاعدة أخرى **`INVALID_ARGUMENT` «Cannot add a target for a different database.» لا `PERMISSION_DENIED`**. والنصوص كلها نصوص الإنتاج (`refused-targets`). و`offset` و`limit` مع `offset` مقبولان.
+- **RESET (1.4):** يحمل الرمز `0a 00`. وهو أيضًا الرد العادي على نافذة `limit` فقدت عضوًا بحذف أو بخروجه منها: RESET والنافذة كاملة ثم CURRENT؛ أما المستند الداخل في المقدمة فـ`document_remove` للمُزاح و`document_change` للداخل (`listen.limit-target`). فقائمة 1.4 ليست حصرية، والبند 1.7 «إزالته والمستند التالي» لا يطابق الإنتاج.
+- **الاستئناف (1.5):** الرمز وقتٌ فقط: `0a 09 08 <varint ميكروثانية>`، يُقبل على أي هدف، فلا «رمز غريب». والرمز الذي لا يُحلَّل `REMOVE` بالسبب 3 «bad resume token» والبث باقٍ، لا RESET (`listen.resume-bad-token`). و`read_time` قديم مهما قدم يُخدم بلا خطأ بمسار العدد (`listen.resume-read-time`). وداخل النافذة: الحذف صريح، والخروج بتغيير حقل يحمله العدد وحده (`listen.resume-token`). ويُحذف المرشح حين لم يُرسل إلا الحذف وعدد العميل ناقصًا المحذوف يساوي العدد الحالي (البثّان 8 و12)، وإلا أُرسل.
+- **الفروق المقصودة** في `parity-exceptions.json`: `listen-heartbeats` (الإنتاج يكرر اللقطات الشاملة والمرشحات وRESET بتوقيته، ولا نكرر)، و`listen-no-bloom`، و`listen-resume-explicit-deletes` (البثّان 10 و11).
+- **تخمينات لم تُسجَّل:** معرّف هدف مكرر ينهي البث بـ`INVALID_ARGUMENT` بنصنا؛ ورمز RESET (`0a 00`) إضافة جديدة؛ ورمز وقته في المستقبل «bad resume token»؛ والاستعلام بلا معرّف مجموعة يُرفض بنص «All-collection queries…»؛ واستئناف هدف `limit` أو `offset`: يُقارن بنتيجته عند T ما دامت النسخ تحفظها، وإلا RESET والنتيجة كاملة.
+
 ### 2. الموزّع داخل العملية
 
 `listen/hub.go`، خلف واجهة قارئ لقطات يعرّفها `listen/` (`reader.go`) وينفذها `core` (PL §8؛ RV، layout).
