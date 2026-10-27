@@ -46,17 +46,25 @@ const (
 )
 
 type harness struct {
-	env    *apitest.Env
-	h      *docgrpc.Handler
-	url    string
-	client firestorepbconnect.FirestoreClient
+	env     *apitest.Env
+	h       *docgrpc.Handler
+	metrics *docgrpc.Metrics
+	url     string
+	client  firestorepbconnect.FirestoreClient
 }
 
 func newHarness(t *testing.T, o apitest.Options, limits docgrpc.Limits) *harness {
 	t.Helper()
+	return newHarnessWith(t, o, docgrpc.Options{Limits: limits})
+}
+
+// newHarnessWith is newHarness with the handler's options; the service, metrics and logger are
+// the harness's.
+func newHarnessWith(t *testing.T, o apitest.Options, ho docgrpc.Options) *harness {
+	t.Helper()
 	env := apitest.New(t, o)
-	h := docgrpc.New(docgrpc.Options{Service: env.Service, Limits: limits, Metrics: docgrpc.NewMetrics(),
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	ho.Service, ho.Metrics, ho.Logger = env.Service, docgrpc.NewMetrics(), slog.New(slog.NewTextHandler(io.Discard, nil))
+	h := docgrpc.New(ho)
 	ts := httptest.NewUnstartedServer(h)
 	var p http.Protocols
 	p.SetHTTP1(true)
@@ -66,7 +74,7 @@ func newHarness(t *testing.T, o apitest.Options, limits docgrpc.Limits) *harness
 	ts.Config.ReadTimeout, ts.Config.WriteTimeout = 60*time.Second, 60*time.Second
 	ts.Start()
 	t.Cleanup(ts.Close)
-	return &harness{env: env, h: h, url: ts.URL,
+	return &harness{env: env, h: h, metrics: ho.Metrics, url: ts.URL,
 		client: firestorepbconnect.NewFirestoreClient(h2c(0), ts.URL, connect.WithGRPC())}
 }
 

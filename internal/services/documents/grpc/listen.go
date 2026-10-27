@@ -101,10 +101,8 @@ func (f firestore) Listen(ctx context.Context, conn *connect.BidiStream[pb.Liste
 				err = ferr
 			}
 		}
-		if errors.Is(err, errOutboxFull) {
+		if out.overflowed.Load() {
 			h.overflow(s, "stream_outbox_bytes")
-			// The sender is stuck on the client: the stream's end cuts its write.
-			s.cancel(errOutboxFull)
 		}
 		return err
 	})
@@ -155,6 +153,8 @@ type outbox struct {
 	queue []queued
 	bytes int64 // queued and not yet sent, the response being sent included
 	err   error // the sender's failure
+
+	overflowed atomic.Bool // the client left the outbox full for stall
 
 	ready chan struct{} // tells the sender of a push
 	room  chan struct{} // tells a waiting push or flush of a response sent
@@ -225,6 +225,10 @@ func (o *outbox) wait(try func() bool) error {
 		case <-o.room:
 			stalled.Reset(o.stall)
 		case <-stalled.C:
+			// The stream ends now, whatever its work makes of the error: that cuts the sender's
+			// write stuck on the client, and finish answers with the cause.
+			o.overflowed.Store(true)
+			o.s.cancel(errOutboxFull)
 			return errOutboxFull
 		case <-o.s.ctx.Done():
 			return context.Cause(o.s.ctx)

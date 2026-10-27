@@ -66,10 +66,14 @@ func (m *Metrics) closed(reason string) {
 }
 
 // Overflows is the count of the limit's overflows, for tests.
-func (m *Metrics) Overflows(limit string) float64 { return counterValue(m.overflows.WithLabelValues(limit)) }
+func (m *Metrics) Overflows(limit string) float64 {
+	return counterValue(m.overflows.WithLabelValues(limit))
+}
 
 // Closes is the count of the streams closed for reason, for tests.
-func (m *Metrics) Closes(reason string) float64 { return counterValue(m.closes.WithLabelValues(reason)) }
+func (m *Metrics) Closes(reason string) float64 {
+	return counterValue(m.closes.WithLabelValues(reason))
+}
 
 func counterValue(c prometheus.Counter) float64 {
 	var out dto.Metric

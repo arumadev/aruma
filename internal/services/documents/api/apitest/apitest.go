@@ -157,6 +157,17 @@ func (e *Env) JWT(t testing.TB) string {
 	})
 }
 
+// ShortJWT is JWT with an exp lifetime after now, for a stream that must close at it.
+func (e *Env) ShortJWT(t testing.TB, lifetime time.Duration) string {
+	t.Helper()
+	now := time.Now()
+	return e.sign(t, map[string]any{
+		"iss": e.SAEmail, "sub": e.SAEmail, "aud": "",
+		"scope": authn.ScopeCloudPlatform + " " + authn.ScopeDatastore,
+		"iat":   now.Unix(), "exp": now.Add(lifetime).Unix(),
+	})
+}
+
 func (e *Env) sign(t testing.TB, claims map[string]any) string {
 	t.Helper()
 	block, _ := pem.Decode([]byte(e.Key.PrivateKeyPEM))
