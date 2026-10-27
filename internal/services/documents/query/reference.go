@@ -107,7 +107,8 @@ func (r *Runner) Skipped() int { return r.skipped }
 // Add considers one candidate, the next in name order, and reports whether the scan can stop:
 // the limit is reached, or the candidate is past every bound on __name__.
 func (r *Runner) Add(d *Doc) (done bool, err error) {
-	if r.q.Limit == 0 {
+	if r.q.Limit == 0 && r.skipped >= r.q.Offset {
+		// limit 0 still counts what the offset skips (f3-run-query.json limit.0_offset).
 		return true, nil
 	}
 	if r.upper != nil && r.upper.past(value.Reference(d.Name)) {

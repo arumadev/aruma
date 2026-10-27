@@ -1,6 +1,9 @@
 package query
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
@@ -34,27 +37,34 @@ type Query struct {
 
 // Parse checks a StructuredQuery under a parent, as production checks it, and returns the
 // query it runs. parent is the request's parent, the documents root or a document. A failure
-// is a *wire.Error with production's text, or a provisional one (validate.go).
+// is a *wire.Error with production's text (validate.go). A query with no from selector, or an
+// empty one, is kindless: it reads the collections directly under the parent
+// (f3-query-limits.json from.empty, from.empty_id).
 func Parse(sq *pb.StructuredQuery, parent wire.Name) (*Query, error) {
 	if sq == nil {
 		return nil, errNoQuery
 	}
-	if len(sq.GetFrom()) != 1 {
-		return nil, errNoFrom
+	if len(sq.GetFrom()) > 1 {
+		return nil, errTwoFrom
 	}
-	from := sq.GetFrom()[0]
-	q := &Query{CollectionID: from.GetCollectionId(), AllDescendants: from.GetAllDescendants(), Limit: -1}
+	q := &Query{Limit: -1}
+	if len(sq.GetFrom()) == 1 {
+		from := sq.GetFrom()[0]
+		q.CollectionID, q.AllDescendants = from.GetCollectionId(), from.GetAllDescendants()
+	}
 	if q.CollectionID != "" {
-		if err := wire.CheckID(q.CollectionID, false); err != nil {
+		if err := checkCollectionID(q.CollectionID); err != nil {
 			return nil, err
 		}
 	}
 	if sq.GetWhere() != nil {
-		f, err := filterOf(sq.GetWhere())
+		f, empty, err := filterOf(sq.GetWhere(), parent.Database)
 		if err != nil {
 			return nil, err
 		}
-		q.Where = &f
+		if !empty {
+			q.Where = &f
+		}
 	}
 	var err error
 	if q.Explicit, err = ordersOf(sq.GetOrderBy()); err != nil {
@@ -68,10 +78,12 @@ func Parse(sq *pb.StructuredQuery, parent wire.Name) (*Query, error) {
 	if q.Order, err = normalizeOrder(q.Explicit, q.Where); err != nil {
 		return nil, err
 	}
-	if err := checkFilter(q.Where, len(q.Order), len(parent.Path)); err != nil {
+	if err := checkFilter(q.Where, len(q.Explicit), !parent.IsRoot()); err != nil {
 		return nil, err
 	}
-	if sel := sq.GetSelect(); sel != nil && len(sel.GetFields()) > 0 {
+	if sel := sq.GetSelect(); sel != nil {
+		// An empty projection, or __name__ alone, keeps no field (f3-run-query.json
+		// select.empty_fields, select.empty_object, select.name_only).
 		q.Projected = true
 		for _, r := range sel.GetFields() {
 			p, err := fieldPathOf(r)
@@ -86,10 +98,10 @@ func Parse(sq *pb.StructuredQuery, parent wire.Name) (*Query, error) {
 			}
 		}
 	}
-	if q.Start, err = cursorOf(sq.GetStartAt(), q.Order); err != nil {
+	if q.Start, err = cursorOf(sq.GetStartAt(), q.Explicit, q.Order); err != nil {
 		return nil, err
 	}
-	if q.End, err = cursorOf(sq.GetEndAt(), q.Order); err != nil {
+	if q.End, err = cursorOf(sq.GetEndAt(), q.Explicit, q.Order); err != nil {
 		return nil, err
 	}
 	if sq.GetOffset() < 0 {
@@ -110,14 +122,25 @@ func Parse(sq *pb.StructuredQuery, parent wire.Name) (*Query, error) {
 	return q, nil
 }
 
+// checkCollectionID checks a from selector's collection id with wire's rules, in production's
+// words: a "Collection id", not a "Resource id" (from.slash, from.reserved).
+func checkCollectionID(id string) error {
+	err := wire.CheckID(id, false)
+	if e, ok := errors.AsType[*wire.Error](err); ok {
+		if rest, ok := strings.CutPrefix(e.Message, "Resource id "); ok {
+			return wire.InvalidArgument("Collection id " + rest)
+		}
+	}
+	return err
+}
+
 // checkKindless checks a query without a collection id, or a collection group query under a
 // document: production serves them from the key alone. Under a document, a filter or an order
-// on a field is "collection group queries are only allowed at the root parent"
-// (f0-descendants.json rest.kindless_with_field_filter, rest.kindless_order_by_field); at the
-// root an order other than __name__ ascending is "kind is required for all orders except
-// __key__ ascending", as ListDocuments answers it (f1-list-documents.json; provisional for a
-// query). A filter on a field at the root is served (provisional: production's answer is not
-// recorded), and package index logs it as unprobed.
+// on a field of a collection group query is "collection group queries are only allowed at the
+// root parent" (f0-descendants.json rest.kindless_with_field_filter, rest.kindless_order_by_field).
+// A kindless query's filter on a field is "kind is required for filter: a" (f3-query-limits.json
+// from.none), and an order other than __name__ ascending "kind is required for all orders except
+// __key__ ascending", as ListDocuments answers it (f1-list-documents.json).
 func checkKindless(q *Query, parent wire.Name) error {
 	onField := q.Where != nil && hasFieldFilter(q.Where)
 	ordered := false
@@ -129,10 +152,23 @@ func checkKindless(q *Query, parent wire.Name) error {
 	switch {
 	case !parent.IsRoot() && q.AllDescendants && (onField || ordered):
 		return errGroupNotAtRoot
+	case q.CollectionID == "" && onField:
+		return errKindlessFilter(firstFieldFilter(q.Where))
 	case q.CollectionID == "" && ordered:
 		return errKindlessOrder
 	}
 	return nil
+}
+
+// firstFieldFilter is the path of the tree's first filter on a field other than __name__.
+func firstFieldFilter(f *Filter) value.FieldPath {
+	var out value.FieldPath
+	walk(f, func(l *Filter) {
+		if out == nil && !l.composite() && !l.Path.IsDocumentID() {
+			out = l.Path
+		}
+	})
+	return out
 }
 
 // hasFieldFilter reports whether the tree filters on a field other than __name__.

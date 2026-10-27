@@ -187,7 +187,12 @@ func TestCursors(t *testing.T) {
 		{`"startAt":{"values":[{"integerValue":"3"},{"referenceValue":"` + root + `/c/c"}]}`, "d e f g h i j"},
 		{`"startAt":{"values":[{"integerValue":"3"}],"before":true},"offset":2,"limit":3`, "e f g"},
 	} {
-		ids, _ := run(t, `{"from":[{"collectionId":"c"}],`+order+`,`+c.cursor+`}`)
+		// A cursor holds a value per explicit order at most: __name__ is ordered explicitly.
+		o := order
+		if strings.Contains(c.cursor, "referenceValue") {
+			o = `"orderBy":[{"field":{"fieldPath":"n"}},{"field":{"fieldPath":"__name__"}}]`
+		}
+		ids, _ := run(t, `{"from":[{"collectionId":"c"}],`+o+`,`+c.cursor+`}`)
 		if got := strings.Join(ids, " "); got != c.want {
 			t.Errorf("%s: %q, want %q", c.cursor, got, c.want)
 		}
@@ -236,7 +241,7 @@ func TestLimits(t *testing.T) {
 		{`{"compositeFilter":{"op":"AND","filters":[` + field("IN", values(6)) + `,` +
 			`{"fieldFilter":{"field":{"fieldPath":"g"},"op":"IN","value":` + values(6) + `}}]}}`,
 			"Too many disjunctions after normalization. Result had 36 disjunctions which is more than the maximum of 30"},
-		{field("IN", `{"arrayValue":{}}`), "'IN' requires a non-empty ArrayValue."},
+		{field("IN", `{"arrayValue":{}}`), "'IN' requires an non-empty ArrayValue."},
 		{`{"compositeFilter":{"op":"AND","filters":[` + field("NOT_IN", values(1)) + `,` + field("NOT_EQUAL", `{"integerValue":"1"}`) + `]}}`,
 			wire.From(errTwoNotEqual).Message},
 	} {
@@ -284,7 +289,26 @@ func TestAggregator(t *testing.T) {
 	if s := a.Result()["s"]; s.Kind() != value.KindDouble {
 		t.Errorf("an overflowing sum: %v, want a double", s)
 	}
-	a = NewAggregator([]Aggregation{{Op: index.AggCount, UpTo: 3, Alias: "c"}})
+	// A sum is exact in any order (f3-aggregations.json set.dbl, set.ovf-back): the index paths
+	// and the reference path read the documents in different orders and agree.
+	for _, set := range []struct {
+		vals     []value.Value
+		sum, avg value.Value
+	}{
+		{[]value.Value{value.Double(0.1), value.Double(0.2), value.Double(0.3)}, value.Double(0.6), value.Double(0.19999999999999998)},
+		{[]value.Value{value.Int(math.MaxInt64), value.Int(1), value.Int(-2)}, value.Int(math.MaxInt64 - 1), value.Double(float64(math.MaxInt64-1) / 3)},
+	} {
+		for _, perm := range [][]int{{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}} {
+			a = NewAggregator([]Aggregation{{Op: index.AggSum, Field: n, Alias: "s"}, {Op: index.AggAvg, Field: n, Alias: "a"}})
+			for _, i := range perm {
+				a.Add(&Doc{Name: root + "/c/x", Fields: value.MapOf(map[string]value.Value{"n": set.vals[i]})})
+			}
+			if r := a.Result(); !value.Equal(r["s"], set.sum) || !value.Equal(r["a"], set.avg) {
+				t.Errorf("sum and avg of %v in order %v: %v, want %v and %v", set.vals, perm, r, set.sum, set.avg)
+			}
+		}
+	}
+	a = NewAggregator([]Aggregation{{Op: index.AggCount, UpTo: 3, Bounded: true, Alias: "c"}})
 	added := 0
 	for _, d := range candidates(t) {
 		added++

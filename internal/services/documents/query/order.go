@@ -33,7 +33,7 @@ func (o Order) compare(a, b value.Value) int {
 func ordersOf(os []*pb.StructuredQuery_Order) ([]Order, error) {
 	out := make([]Order, 0, len(os))
 	for _, o := range os {
-		p, err := fieldPathOf(o.GetField())
+		p, err := filterPathOf(o.GetField())
 		if err != nil {
 			return nil, err
 		}
@@ -53,12 +53,14 @@ func ordersOf(os []*pb.StructuredQuery_Order) ([]Order, error) {
 // normalizeOrder is the whole order a query runs in (query.proto, StructuredQuery.order_by;
 // the SDKs' queryNormalizedOrderBy): the explicit orders; then every inequality field not
 // ordered, in field path order, in the direction of the last explicit order (ascending without
-// one); then __name__ in that direction unless ordered. A field ordered twice keeps its first
-// place: the second compares what the first did.
+// one); then __name__ in that direction unless ordered. A field ordered twice, in either
+// direction, is production's "order by clause cannot contain duplicate fields v"
+// (f3-run-query.json order.v_twice, order.v_asc_v_desc).
 //
-// __name__ is the key and ends every index: an order after it is production's "order by clause
-// cannot contain more fields after the key", which an explicit __name__ before an inequality
-// field's implicit order meets too (f0-descendants.json rest.partition.with_filter).
+// __name__ is the key and ends every index: an order after it, __name__ again included, is
+// production's "order by clause cannot contain more fields after the key", which an explicit
+// __name__ before an inequality field's implicit order meets too (f0-descendants.json
+// rest.partition.with_filter).
 func normalizeOrder(explicit []Order, where *Filter) ([]Order, error) {
 	out := make([]Order, 0, len(explicit)+2)
 	seen := func(p value.FieldPath) bool {
@@ -70,7 +72,7 @@ func normalizeOrder(explicit []Order, where *Filter) ([]Order, error) {
 			return nil, errAfterKey
 		}
 		if seen(o.Path) {
-			continue
+			return nil, errOrderDuplicate(o.Path)
 		}
 		out = append(out, o)
 		named = o.Path.IsDocumentID()

@@ -13,13 +13,16 @@ type Cursor struct {
 	Before bool
 }
 
-// cursorOf reads a cursor against the query's whole order: at most one value per order, and a
-// reference for __name__.
-func cursorOf(c *pb.Cursor, order []Order) (*Cursor, error) {
+// cursorOf reads a cursor against the query's whole order. Production bounds its values by the
+// explicit orders alone, not by the implicit ones that follow (f3-run-query.json
+// cursor.with_name, cursor.name_only, cursor.inequality_implicit: "Cursor has too many
+// values."), so a cursor holds one value per explicit order at most, and a reference for
+// __name__.
+func cursorOf(c *pb.Cursor, explicit, order []Order) (*Cursor, error) {
 	if c == nil {
 		return nil, nil
 	}
-	if len(c.GetValues()) > len(order) {
+	if len(c.GetValues()) > len(explicit) {
 		return nil, errCursorValues
 	}
 	out := &Cursor{Before: c.GetBefore(), Values: make([]value.Value, len(c.GetValues()))}
