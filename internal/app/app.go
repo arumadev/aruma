@@ -199,7 +199,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{
-		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, RulesLimits: rulesLimits,
+		RTDB: rtdbSvc != nil, Storage: storageSvc != nil, Documents: docs != nil, RulesLimits: rulesLimits,
 	})
 	dashboard, err := web.New(web.Embedded())
 	if err != nil {

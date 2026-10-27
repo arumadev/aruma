@@ -123,6 +123,17 @@ func TestDocumentsWithTheFirebaseCLI(t *testing.T) {
 	if countHops(cli, "POST ", ":runQuery") == 0 {
 		t.Errorf("firestore:delete -r sent no query:\n  %s", strings.Join(cli.sentHops(), "\n  "))
 	}
+
+	// firestore:rules with Storage off: the firebaserules API answers for the Document
+	// Database, and the release cloud.firestore names the ruleset deployed.
+	cli.write(proj, "firebase.json", `{"firestore": {"rules": "firestore.rules", "indexes": "firestore.indexes.json"}}`)
+	cli.write(proj, "firestore.rules", "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n"+
+		"    match /pub/{d} {\n      allow read: if true;\n    }\n  }\n}\n")
+	cli.ok(proj, "deploy", "--only", "firestore:rules", "--project", "cli-app", "--non-interactive")
+	if code, b := documentsCall(t, e, pat, http.MethodGet, "/v1/projects/cli-app/releases/cloud.firestore", ""); code != 200 ||
+		!strings.Contains(string(b), `"rulesetName":"projects/cli-app/rulesets/`) {
+		t.Errorf("after deploy --only firestore:rules, the release: %d %s", code, b)
+	}
 }
 
 const cliIndexes = `{
