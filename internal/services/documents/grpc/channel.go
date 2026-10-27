@@ -30,7 +30,18 @@ type Peer struct {
 // ServeListen runs one Listen stream for p until it ends, as the gRPC route's Listen does, and
 // returns its status: nil when the client ended it, otherwise a *wire.Error, REST's message
 // included. ctx is the stream's life: its end ends the stream.
-func (h *Handler) ServeListen(ctx context.Context, p Peer, c api.Call, conn ListenConn) (status *wire.Error) {
+func (h *Handler) ServeListen(ctx context.Context, p Peer, c api.Call, conn ListenConn) *wire.Error {
+	return h.serve(ctx, p, func(s *serverStream) error { return h.listen(s, c, conn) })
+}
+
+// ServeWrite runs one Write stream for p until it ends, as the gRPC route's Write does, and
+// returns its status as ServeListen does.
+func (h *Handler) ServeWrite(ctx context.Context, p Peer, c api.Call, conn WriteConn) *wire.Error {
+	return h.serve(ctx, p, func(s *serverStream) error { return h.write(s, c, conn) })
+}
+
+// serve runs a stream's work for p, counted, logged and measured as the gRPC route's streams.
+func (h *Handler) serve(ctx context.Context, p Peer, work func(*serverStream) error) (status *wire.Error) {
 	start := time.Now()
 	info := &rpc{transport: p.Transport, client: p.Client, rc: p.Deadlines}
 	ctx = context.WithValue(ctx, rpcKey{}, info)
@@ -58,7 +69,7 @@ func (h *Handler) ServeListen(ctx context.Context, p Peer, c api.Call, conn List
 	if err != nil {
 		return wire.From(err)
 	}
-	err = s.runTo(func() error { return h.listen(s, c, conn) }, s.status)
+	err = s.runTo(func() error { return work(s) }, s.status)
 	if err == nil {
 		return nil
 	}

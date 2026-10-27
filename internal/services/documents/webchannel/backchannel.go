@@ -1,6 +1,7 @@
 package webchannel
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -63,6 +64,10 @@ func (h *Handler) backchannel(w http.ResponseWriter, r *http.Request, q url.Valu
 	hd.Set("Content-Type", contentType)
 	hd.Set("Cache-Control", "private, no-store")
 	hd.Set("X-Accel-Buffering", "no")
+	if bc.first {
+		// As production's first backchannel of a session varies (f6-webchannel-*.json).
+		hd["Vary"] = append([]string{"Referer"}, hd["Vary"]...)
+	}
 	w.WriteHeader(http.StatusOK)
 	write := func(text []byte) bool {
 		_ = rc.SetWriteDeadline(time.Now().Add(h.limits.WriteStall))
@@ -168,6 +173,61 @@ func (c listenConn) Receive() (*pb.ListenRequest, error) {
 
 // Send queues a response for the backchannel.
 func (c listenConn) Send(r *pb.ListenResponse) error {
+	var b []byte
+	var err error
+	if dd := r.GetDocumentDelete(); dd != nil {
+		b, err = documentDelete(dd)
+	} else {
+		b, err = wire.MarshalREST(r)
+	}
+	if err != nil {
+		return err
+	}
+	return c.s.send(message(b))
+}
+
+// documentDelete is a DocumentDelete response in production's order of its fields, their
+// numbers' (f6-webchannel-errors.json): document, readTime, removedTargetIds, where protojson
+// writes them as the proto declares them, removedTargetIds before readTime.
+func documentDelete(dd *pb.DocumentDelete) ([]byte, error) {
+	var readTime json.RawMessage
+	if dd.ReadTime != nil {
+		b, err := wire.MarshalREST(dd.ReadTime)
+		if err != nil {
+			return nil, err
+		}
+		readTime = b
+	}
+	type body struct {
+		Document         string          `json:"document,omitempty"`
+		ReadTime         json.RawMessage `json:"readTime,omitempty"`
+		RemovedTargetIDs []int32         `json:"removedTargetIds,omitempty"`
+	}
+	return json.Marshal(struct {
+		DocumentDelete body `json:"documentDelete"`
+	}{body{dd.GetDocument(), readTime, dd.GetRemovedTargetIds()}})
+}
+
+// Receive reads the stream's next request.
+func (c writeConn) Receive() (*pb.WriteRequest, error) {
+	b, err := c.s.receive()
+	if err != nil {
+		return nil, err
+	}
+	req := new(pb.WriteRequest)
+	if err := wire.UnmarshalREST(b, req); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+// Send queues a response for the backchannel. The handshake's stream id is "0", as production
+// answers every Write session (f6-webchannel-write.json, f6-webchannel-errors.json); no client
+// reads it back, a stream being never resumed.
+func (c writeConn) Send(r *pb.WriteResponse) error {
+	if r.GetStreamId() != "" {
+		r.StreamId = "0"
+	}
 	b, err := wire.MarshalREST(r)
 	if err != nil {
 		return err

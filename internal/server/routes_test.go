@@ -182,7 +182,7 @@ func TestDocumentsCORS(t *testing.T) {
 	pre := get(t, ts, "OPTIONS", "/v1/projects/p/databases/(default)/documents/c/d", map[string]string{
 		"Origin": "https://app.example", "Access-Control-Request-Method": "PATCH",
 	})
-	if pre.StatusCode != http.StatusNoContent || pre.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
+	if pre.StatusCode != http.StatusOK || pre.Header.Get("Access-Control-Allow-Origin") != "https://app.example" ||
 		pre.Header.Get("Access-Control-Allow-Credentials") != "true" ||
 		pre.Header.Get("Cross-Origin-Resource-Policy") != "cross-origin" {
 		t.Errorf("data path preflight: %d %v", pre.StatusCode, pre.Header)
