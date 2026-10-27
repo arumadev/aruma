@@ -175,9 +175,6 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 	if err != nil {
 		return nil, err
 	}
-	if err := a.requireBypass(); err != nil {
-		return nil, err
-	}
 	parent, err := wire.ParseParentName(req.GetParent())
 	if err != nil {
 		return nil, err
@@ -212,6 +209,14 @@ func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumen
 	}
 	ro, err := readOptions(req.GetReadTime(), txn)
 	if err != nil {
+		return nil, err
+	}
+	// A list without filters (q1.list-documents). The page size as the limit is unrecorded.
+	lq := listQuery{parent: pathOf(parent), collection: req.GetCollectionId(), orders: len(order)}
+	if ps := req.GetPageSize(); ps > 0 {
+		lq.limit = new(int64(ps))
+	}
+	if err := s.allowList(ctx, a, lq, ro.ReadTime); err != nil {
 		return nil, err
 	}
 	listing := listingDigest(parent.String(), req.GetCollectionId(), order.String(), req.GetShowMissing())

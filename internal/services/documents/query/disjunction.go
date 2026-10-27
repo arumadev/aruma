@@ -62,6 +62,11 @@ func disjuncts(f *Filter) [][]*Filter {
 	return [][]*Filter{{f}}
 }
 
+// Disjuncts are the conjunctions of f's disjunctive normal form, an in or array-contains-any
+// left whole: the ways the security rules judge a list by (api/rules_list.go). f is a parsed
+// query's, whose disjuncts Parse has bounded.
+func Disjuncts(f *Filter) [][]*Filter { return disjuncts(f) }
+
 // inequalityPaths are the fields under a range or inequality filter anywhere in the tree, but
 // __name__, in field path order, each once: the fields an order must hold (query.proto,
 // StructuredQuery.order_by).

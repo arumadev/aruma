@@ -281,7 +281,7 @@ func TestRulesCallers(t *testing.T) {
 			t.Errorf("%s: %v, want %v", c.name, got, c.want)
 		}
 	}
-	// What the rules do not bind yet stays an admin's.
+	// Lists are bound (rules_list.go); ListCollectionIds stays an admin's.
 	r.env.PublishFirestoreRules(t, `rules_version = '2';
 service cloud.firestore { match /databases/{d}/documents { match /{p=**} { allow read, write: if true; } } }`)
 	if err := get(call(user)); err != nil {
@@ -289,11 +289,14 @@ service cloud.firestore { match /databases/{d}/documents { match /{p=**} { allow
 	}
 	q := &pb.RunQueryRequest{Parent: docsRoot, QueryType: &pb.RunQueryRequest_StructuredQuery{StructuredQuery: &pb.StructuredQuery{
 		From: []*pb.StructuredQuery_CollectionSelector{{CollectionId: "c"}}}}}
-	if err := s.RunQuery(t.Context(), call(user), q, func(*pb.RunQueryResponse) error { return nil }); codeOf(err) != wire.CodePermissionDenied {
+	if err := s.RunQuery(t.Context(), call(user), q, func(*pb.RunQueryResponse) error { return nil }); err != nil {
 		t.Errorf("RunQuery of an end user: %v", err)
 	}
-	if _, err := s.ListDocuments(t.Context(), call(user), &pb.ListDocumentsRequest{Parent: docsRoot, CollectionId: "c"}); codeOf(err) != wire.CodePermissionDenied {
+	if _, err := s.ListDocuments(t.Context(), call(user), &pb.ListDocumentsRequest{Parent: docsRoot, CollectionId: "c"}); err != nil {
 		t.Errorf("ListDocuments of an end user: %v", err)
+	}
+	if _, err := s.ListCollectionIds(t.Context(), call(user), &pb.ListCollectionIdsRequest{Parent: docsRoot}); codeOf(err) != wire.CodePermissionDenied {
+		t.Errorf("ListCollectionIds of an end user: %v", err)
 	}
 	if err := s.RunQuery(t.Context(), loopback(call(r.env.JWT(t))), q, func(*pb.RunQueryResponse) error { return nil }); err != nil {
 		t.Errorf("RunQuery of an admin: %v", err)
