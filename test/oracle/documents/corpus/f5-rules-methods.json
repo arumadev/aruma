@@ -1,0 +1,5393 @@
+{
+  "cases": [
+    {
+      "actor": "user",
+      "description": "get of a document the rule allows (allow read, write)",
+      "id": "read-write.get-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of a document the rule denies",
+      "id": "read-write.get-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/bad-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of a missing document whose rule denies it",
+      "id": "read-write.get-denied-missing",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-none": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-none"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-none": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-none"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of a missing document whose rule allows it",
+      "id": "read-write.get-allowed-missing",
+      "outcome": {
+        "grpc": "NOT_FOUND",
+        "rest": "NOT_FOUND"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-none": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "code": 5,
+                "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none\" not found.",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-none": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "http": 404,
+                "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none\" not found.",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 404,
+                    "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none\" not found.",
+                    "status": "NOT_FOUND"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 404
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "listDocuments of a collection whose rule depends on the document id",
+      "id": "read-write.list-documents",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m1",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/ListDocuments"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "runQuery over a collection whose rule depends on the document id",
+      "id": "read-write.run-query",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m1"
+                      }
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunQuery"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m1"
+                      }
+                    ]
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "error": {
+                      "code": 403,
+                      "message": "Missing or insufficient permissions.",
+                      "status": "PERMISSION_DENIED"
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "batchGet of two documents the rule allows",
+      "id": "read-write.batch-get-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        },
+        "aruma-ref-f5-m1/ok-2": {
+          "a": 2
+        }
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-2"
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  },
+                  {
+                    "found": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "2"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-2",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-2"
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:batchGet"
+              },
+              "response": {
+                "body": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  },
+                  {
+                    "found": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "2"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-2",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "batchGet of one allowed and one denied document",
+      "id": "read-write.batch-get-one-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/bad-1": {
+          "a": 2
+        },
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:batchGet"
+              },
+              "response": {
+                "body": [
+                  {
+                    "error": {
+                      "code": 403,
+                      "message": "Missing or insufficient permissions.",
+                      "status": "PERMISSION_DENIED"
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "createDocument the rule allows",
+      "id": "read-write.create-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-new": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m1",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  "documentId": "ok-new",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-new",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-new": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1?documentId=ok-new"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-new",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "createDocument the rule denies",
+      "id": "read-write.create-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-new": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m1",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  "documentId": "bad-new",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-new": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1?documentId=bad-new"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "commit of a write that creates a document the rule allows",
+      "id": "read-write.commit-set-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-set": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-set"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "message": {
+                  "commitTime": "<commitTime: Timestamp>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: Timestamp>"
+                    }
+                  ]
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-set": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-set"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "commitTime": "<commitTime: RFC 3339>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: RFC 3339>"
+                    }
+                  ]
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "commit of a write that creates a document the rule denies",
+      "id": "read-write.commit-set-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-set": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-set"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-set": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-set"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "updateDocument of an existing document the rule allows",
+      "id": "read-write.patch-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "updateDocument of an existing document the rule denies",
+      "id": "read-write.patch-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/bad-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "deleteDocument the rule allows",
+      "id": "read-write.delete-allowed",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "message": {},
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-1": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-1"
+              },
+              "response": {
+                "body": {},
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "deleteDocument the rule denies",
+      "id": "read-write.delete-denied",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m1/bad-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-1"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "deleteDocument of a missing document whose rule denies delete",
+      "id": "read-write.delete-denied-missing",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/bad-none": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-none"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/bad-none": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-none"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "deleteDocument of a missing document whose rule allows delete",
+      "id": "read-write.delete-allowed-missing",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m1/ok-none": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "message": {},
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m1/ok-none": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-none"
+              },
+              "response": {
+                "body": {},
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get/create/delete allowed, no list or update rule: get",
+      "id": "split-gcd.get",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m2/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get/create/delete allowed, no list or update rule: list",
+      "id": "split-gcd.list",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m2/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m2"
+                      }
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunQuery"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m2"
+                      }
+                    ]
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "error": {
+                      "code": 403,
+                      "message": "Missing or insufficient permissions.",
+                      "status": "PERMISSION_DENIED"
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get/create/delete allowed, no list or update rule: create",
+      "id": "split-gcd.create",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m2/ok-new": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m2",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  "documentId": "ok-new",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-new",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m2/ok-new": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2?documentId=ok-new"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-new",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get/create/delete allowed, no list or update rule: update",
+      "id": "split-gcd.update",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m2/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get/create/delete allowed, no list or update rule: delete",
+      "id": "split-gcd.delete",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m2/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "message": {},
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m2/ok-1": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m2/ok-1"
+              },
+              "response": {
+                "body": {},
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "list/update allowed, no get/create/delete rule: get",
+      "id": "split-lu.get",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m3/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "list/update allowed, no get/create/delete rule: list",
+      "id": "split-lu.list",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m3/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m3"
+                      }
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunQuery"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "document": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m3"
+                      }
+                    ]
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "document": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "list/update allowed, no get/create/delete rule: create",
+      "id": "split-lu.create",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m3/ok-new": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m3",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  "documentId": "ok-new",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m3/ok-new": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3?documentId=ok-new"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "list/update allowed, no get/create/delete rule: update",
+      "id": "split-lu.update",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m3/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "list/update allowed, no get/create/delete rule: delete",
+      "id": "split-lu.delete",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m3/ok-1": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m3/ok-1": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m3/ok-1"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': get",
+      "id": "request-method.get",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/get": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/get": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/get": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': get-wrong-name",
+      "id": "request-method.get-wrong-name",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/list": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/list": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/list": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': batch-get",
+      "id": "request-method.batch-get",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/get": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/get": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get"
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/BatchGetDocuments"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/get": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "database": "projects/{project}/databases/(default)",
+                  "documents": [
+                    "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get"
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:batchGet"
+              },
+              "response": {
+                "body": [
+                  {
+                    "found": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': delete",
+      "id": "request-method.delete",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/delete": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/delete": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/delete"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "message": {},
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/delete": null
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/delete"
+              },
+              "response": {
+                "body": {},
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': update",
+      "id": "request-method.update",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/update": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': update-no-mask",
+      "id": "request-method.update-no-mask",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/update": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': create-via-create",
+      "id": "request-method.create-via-create",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/create": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m4",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "1"
+                      }
+                    }
+                  },
+                  "documentId": "create",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/create": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4?documentId=create"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': create-via-commit-set",
+      "id": "request-method.create-via-commit-set",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/create": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "message": {
+                  "commitTime": "<commitTime: Timestamp>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: Timestamp>"
+                    }
+                  ]
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/create": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "commitTime": "<commitTime: RFC 3339>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: RFC 3339>"
+                    }
+                  ]
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': set-existing-is-update",
+      "id": "request-method.set-existing-is-update",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/update": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "message": {
+                  "commitTime": "<commitTime: Timestamp>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: Timestamp>"
+                    }
+                  ]
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/update": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "commitTime": "<commitTime: RFC 3339>",
+                  "writeResults": [
+                    {
+                      "updateTime": "<updateTime: RFC 3339>"
+                    }
+                  ]
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': set-missing-named-update",
+      "id": "request-method.set-missing-named-update",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/update": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/update": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/update"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': list-run-query",
+      "id": "request-method.list-run-query",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/x": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m4"
+                      }
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunQuery"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "document": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/x",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    "readTime": "<readTime: Timestamp>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "structuredQuery": {
+                    "from": [
+                      {
+                        "collectionId": "aruma-ref-f5-m4"
+                      }
+                    ]
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "document": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  },
+                  {
+                    "document": {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/x",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    "readTime": "<readTime: RFC 3339>"
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': list-documents",
+      "id": "request-method.list-documents",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/x": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m4",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/ListDocuments"
+              },
+              "response": {
+                "message": {
+                  "documents": [
+                    {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list",
+                      "updateTime": "<updateTime: Timestamp>"
+                    },
+                    {
+                      "createTime": "<createTime: Timestamp>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/x",
+                      "updateTime": "<updateTime: Timestamp>"
+                    }
+                  ]
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4"
+              },
+              "response": {
+                "body": {
+                  "documents": [
+                    {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/create",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/get",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/list",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    },
+                    {
+                      "createTime": "<createTime: RFC 3339>",
+                      "fields": {
+                        "a": {
+                          "integerValue": "1"
+                        }
+                      },
+                      "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m4/x",
+                      "updateTime": "<updateTime: RFC 3339>"
+                    }
+                  ]
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "request.method under 'allow get/create/update/delete: if request.method == <doc id>' and 'allow list: if request.method == \"list\"': count",
+      "id": "request-method.count",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m4/x": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "parent": "projects/{project}/databases/(default)/documents",
+                  "structuredAggregationQuery": {
+                    "aggregations": [
+                      {
+                        "alias": "n",
+                        "count": {}
+                      }
+                    ],
+                    "structuredQuery": {
+                      "from": [
+                        {
+                          "collectionId": "aruma-ref-f5-m4"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/RunAggregationQuery"
+              },
+              "response": {
+                "ok": true,
+                "responses": [
+                  {
+                    "readTime": "<readTime: Timestamp>",
+                    "result": {
+                      "aggregateFields": {
+                        "n": {
+                          "integerValue": "4"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m4/x": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "structuredAggregationQuery": {
+                    "aggregations": [
+                      {
+                        "alias": "n",
+                        "count": {}
+                      }
+                    ],
+                    "structuredQuery": {
+                      "from": [
+                        {
+                          "collectionId": "aruma-ref-f5-m4"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:runAggregationQuery"
+              },
+              "response": {
+                "body": [
+                  {
+                    "readTime": "<readTime: RFC 3339>",
+                    "result": {
+                      "aggregateFields": {
+                        "n": {
+                          "integerValue": "4"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "bodyIsArray": true,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "update (no precondition) of an existing document where only create is allowed",
+      "id": "order.update-existing-create-only",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m5/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "update (no precondition) of a missing document where only create is allowed: it is a create",
+      "id": "order.create-missing-create-only",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    },
+                    "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e"
+                  },
+                  "updateMask": {
+                    "fieldPaths": [
+                      "a"
+                    ]
+                  }
+                },
+                "rpc": "google.firestore.v1.Firestore/UpdateDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "PATCH",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e?updateMask.fieldPaths=a"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "create (exists:false) of an existing document where only create is allowed",
+      "id": "order.create-existing-create-only",
+      "outcome": {
+        "grpc": "ALREADY_EXISTS",
+        "rest": "ALREADY_EXISTS"
+      },
+      "seed": {
+        "aruma-ref-f5-m5/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "ALREADY_EXISTS",
+          "steps": [
+            {
+              "error": {
+                "code": 6,
+                "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                "status": "ALREADY_EXISTS"
+              },
+              "outcome": "ALREADY_EXISTS",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "ALREADY_EXISTS",
+          "steps": [
+            {
+              "error": {
+                "http": 409,
+                "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                "status": "ALREADY_EXISTS"
+              },
+              "outcome": "ALREADY_EXISTS",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 409,
+                    "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                    "status": "ALREADY_EXISTS"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 409
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "createDocument with an existing id where only create is allowed",
+      "id": "order.create-document-existing-create-only",
+      "outcome": {
+        "grpc": "ALREADY_EXISTS",
+        "rest": "ALREADY_EXISTS"
+      },
+      "seed": {
+        "aruma-ref-f5-m5/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "ALREADY_EXISTS",
+          "steps": [
+            {
+              "error": {
+                "code": 6,
+                "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                "status": "ALREADY_EXISTS"
+              },
+              "outcome": "ALREADY_EXISTS",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m5",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    }
+                  },
+                  "documentId": "e",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m5/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "ALREADY_EXISTS",
+          "steps": [
+            {
+              "error": {
+                "http": 409,
+                "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                "status": "ALREADY_EXISTS"
+              },
+              "outcome": "ALREADY_EXISTS",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m5?documentId=e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 409,
+                    "message": "Document already exists: projects/{project}/databases/(default)/documents/aruma-ref-f5-m5/e",
+                    "status": "ALREADY_EXISTS"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 409
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "create (exists:false) of an existing document where no write is allowed",
+      "id": "order.create-existing-nothing-allowed",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m6/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "createDocument with an existing id where no write is allowed",
+      "id": "order.create-document-existing-nothing-allowed",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m6/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "collectionId": "aruma-ref-f5-m6",
+                  "document": {
+                    "fields": {
+                      "a": {
+                        "integerValue": "2"
+                      }
+                    }
+                  },
+                  "documentId": "e",
+                  "parent": "projects/{project}/databases/(default)/documents"
+                },
+                "rpc": "google.firestore.v1.Firestore/CreateDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "2"
+                    }
+                  }
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6?documentId=e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "update with exists:true of a missing document where no write is allowed",
+      "id": "order.update-missing-precondition-nothing-allowed",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": true
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      },
+                      "updateMask": {
+                        "fieldPaths": [
+                          "a"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": true
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                      },
+                      "updateMask": {
+                        "fieldPaths": [
+                          "a"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "update with exists:true of a missing document where only update is allowed",
+      "id": "order.update-missing-precondition-update-only",
+      "outcome": {
+        "grpc": "NOT_FOUND",
+        "rest": "NOT_FOUND"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m9/e": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "code": 5,
+                "message": "No document to update: projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": true
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e"
+                      },
+                      "updateMask": {
+                        "fieldPaths": [
+                          "a"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m9/e": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "http": 404,
+                "message": "No document to update: projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": true
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e"
+                      },
+                      "updateMask": {
+                        "fieldPaths": [
+                          "a"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 404,
+                    "message": "No document to update: projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e",
+                    "status": "NOT_FOUND"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 404
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "create (exists:false) of an existing document where only update is allowed",
+      "id": "order.update-existing-exists-false-update-only",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m9/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m9/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m9/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "currentDocument": {
+                        "exists": false
+                      },
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "2"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m9/e"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "delete of a missing document where no write is allowed",
+      "id": "order.delete-missing-nothing-allowed",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "delete with exists:true of a missing document where no write is allowed",
+      "id": "order.delete-missing-precondition-nothing-allowed",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "currentDocument": {
+                    "exists": true
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/DeleteDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m6/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "DELETE",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m6/e?currentDocument.exists=true"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of a missing document under a rule that reads resource.data",
+      "id": "order.get-missing-rule-reads-data",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m7/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m7/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of an existing document whose data satisfies the rule",
+      "id": "order.get-existing-rule-reads-data-true",
+      "outcome": {
+        "grpc": "OK",
+        "rest": "OK"
+      },
+      "seed": {
+        "aruma-ref-f5-m7/e": {
+          "x": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m7/e": {
+              "x": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "message": {
+                  "createTime": "<createTime: Timestamp>",
+                  "fields": {
+                    "x": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e",
+                  "updateTime": "<updateTime: Timestamp>"
+                },
+                "ok": true
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m7/e": {
+              "x": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "OK",
+          "steps": [
+            {
+              "outcome": "OK",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+              },
+              "response": {
+                "body": {
+                  "createTime": "<createTime: RFC 3339>",
+                  "fields": {
+                    "x": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e",
+                  "updateTime": "<updateTime: RFC 3339>"
+                },
+                "bodyIsArray": false,
+                "http": 200
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of an existing document whose data fails the rule",
+      "id": "order.get-existing-rule-reads-data-false",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-m7/e": {
+          "x": 2
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m7/e": {
+              "x": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m7/e": {
+              "x": {
+                "integerValue": "2"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m7/e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get of a missing document under an allow-all get rule",
+      "id": "order.get-missing-rule-allows-all",
+      "outcome": {
+        "grpc": "NOT_FOUND",
+        "rest": "NOT_FOUND"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-m8/e": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "code": 5,
+                "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m8/e\" not found.",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m8/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-m8/e": null
+          },
+          "outcome": "NOT_FOUND",
+          "steps": [
+            {
+              "error": {
+                "http": 404,
+                "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m8/e\" not found.",
+                "status": "NOT_FOUND"
+              },
+              "outcome": "NOT_FOUND",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m8/e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 404,
+                    "message": "Document \"projects/{project}/databases/(default)/documents/aruma-ref-f5-m8/e\" not found.",
+                    "status": "NOT_FOUND"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 404
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "get under no match block at all",
+      "id": "no-match.get",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "seed": {
+        "aruma-ref-f5-nomatch/e": {
+          "a": 1
+        }
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-nomatch/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-nomatch/e"
+                },
+                "rpc": "google.firestore.v1.Firestore/GetDocument"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-nomatch/e": {
+              "a": {
+                "integerValue": "1"
+              }
+            }
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "method": "GET",
+                "path": "projects/{project}/databases/(default)/documents/aruma-ref-f5-nomatch/e"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    },
+    {
+      "actor": "user",
+      "description": "write under no match block at all",
+      "id": "no-match.commit",
+      "outcome": {
+        "grpc": "PERMISSION_DENIED",
+        "rest": "PERMISSION_DENIED"
+      },
+      "transports": {
+        "grpc": {
+          "after": {
+            "aruma-ref-f5-nomatch/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "code": 7,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "message": {
+                  "database": "projects/{project}/databases/(default)",
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-nomatch/e"
+                      }
+                    }
+                  ]
+                },
+                "rpc": "google.firestore.v1.Firestore/Commit"
+              },
+              "response": {
+                "ok": false
+              }
+            }
+          ]
+        },
+        "rest": {
+          "after": {
+            "aruma-ref-f5-nomatch/e": null
+          },
+          "outcome": "PERMISSION_DENIED",
+          "steps": [
+            {
+              "error": {
+                "http": 403,
+                "message": "Missing or insufficient permissions.",
+                "status": "PERMISSION_DENIED"
+              },
+              "outcome": "PERMISSION_DENIED",
+              "request": {
+                "body": {
+                  "writes": [
+                    {
+                      "update": {
+                        "fields": {
+                          "a": {
+                            "integerValue": "1"
+                          }
+                        },
+                        "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-nomatch/e"
+                      }
+                    }
+                  ]
+                },
+                "method": "POST",
+                "path": "projects/{project}/databases/(default)/documents:commit"
+              },
+              "response": {
+                "body": {
+                  "error": {
+                    "code": 403,
+                    "message": "Missing or insufficient permissions.",
+                    "status": "PERMISSION_DENIED"
+                  }
+                },
+                "bodyIsArray": false,
+                "http": 403
+              }
+            }
+          ]
+        }
+      },
+      "transportsAgree": true
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+    "notes": [
+      "Auth: an end-user Firebase Auth ID token (the caller field names the actor: user and userB are email/password users, anon is an anonymous user, none sends the web API key only, owner is the project owner whose token bypasses rules). The owner only seeds and reads back state.",
+      "Rules: f5-rules-deployed.json holds the source every case ran under. Each case names the document ids its rule asserts; \"allow\" and \"deny\" are OK and PERMISSION_DENIED.",
+      "Times, durations and transaction ids are replaced by placeholders; everything else is as returned. A case ran once over REST and once over gRPC, each from the seeded state in \"seed\" (documents in \"touch\" are reset first); \"after\" is the state read back by the owner afterwards."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T16:22:07.096Z .. 2026-10-27T16:29:39.468Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1; security rules deployed by the recorder (f5-rules-deployed.json)",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+      "node": "v24.21.0"
+    }
+  },
+  "rules": "corpus/f5-rules-deployed.json",
+  "schema": "aruma.documents-oracle/v1"
+}

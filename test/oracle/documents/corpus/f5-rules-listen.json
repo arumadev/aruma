@@ -1,0 +1,2484 @@
+{
+  "cases": [
+    {
+      "actor": "user",
+      "description": "document targets the user cannot read (an existing document, a missing one), then a readable one on the same stream",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 300
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-missing"
+                ]
+              },
+              "targetId": 2
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 4,
+          "tMs": 4200
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 5,
+          "tMs": 4300
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1"
+                ]
+              },
+              "targetId": 3
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 6,
+          "tMs": 8000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                3
+              ]
+            }
+          },
+          "seq": 7,
+          "tMs": 8200
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                3
+              ]
+            }
+          },
+          "seq": 8,
+          "tMs": 8300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                3
+              ]
+            }
+          },
+          "seq": 9,
+          "tMs": 8300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 10,
+          "tMs": 8300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 11,
+          "tMs": 8300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 12,
+          "tMs": 8300
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-missing"
+                ]
+              },
+              "targetId": 4
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 13,
+          "tMs": 12000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                4
+              ]
+            }
+          },
+          "seq": 14,
+          "tMs": 12200
+        },
+        {
+          "dir": "recv",
+          "kind": "documentDelete",
+          "msg": {
+            "documentDelete": {
+              "document": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-missing",
+              "readTime": "<readTime: Timestamp>",
+              "removedTargetIds": [
+                4
+              ]
+            }
+          },
+          "seq": 15,
+          "tMs": 12300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                4
+              ]
+            }
+          },
+          "seq": 16,
+          "tMs": 12300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 17,
+          "tMs": 12300
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 18,
+          "tMs": 16000
+        },
+        {
+          "dir": "status",
+          "seq": 19,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 16000
+        },
+        {
+          "dir": "end",
+          "seq": 20,
+          "tMs": 16000
+        }
+      ],
+      "id": "listen.doc-denied",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a readable document target followed by a write of the document while a denied target sits on the same stream",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 300
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1"
+                ]
+              },
+              "targetId": 2
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 4,
+          "tMs": 4200
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 5,
+          "tMs": 4200
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 6,
+          "tMs": 4200
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 7,
+          "tMs": 4200
+        },
+        {
+          "dir": "action",
+          "note": "admin updates ok-1",
+          "seq": 8,
+          "tMs": 8000
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "n": {
+                    "integerValue": "2"
+                  },
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 9,
+          "tMs": 8700
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 10,
+          "tMs": 8700
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 11,
+          "tMs": 12700
+        },
+        {
+          "dir": "status",
+          "seq": 12,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 12700
+        },
+        {
+          "dir": "end",
+          "seq": 13,
+          "tMs": 12700
+        }
+      ],
+      "id": "listen.doc-denied-then-update",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a query target the rule allows (where pub == true), then a document leaves it and another joins",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls"
+                    }
+                  ],
+                  "where": {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "pub"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "booleanValue": true
+                      }
+                    }
+                  }
+                }
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "action",
+          "note": "admin sets ok-1 pub=false and ok-2 pub=true",
+          "seq": 1,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 3,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 4,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 5,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 6,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "filter",
+          "msg": {
+            "filter": {
+              "count": 2,
+              "targetId": 1,
+              "unchangedNames": {
+                "bits": {
+                  "bitmap": "<bytes 5>",
+                  "padding": 3
+                },
+                "hashCount": 13
+              }
+            }
+          },
+          "seq": 7,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 8,
+          "tMs": 4500
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-2",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 9,
+          "tMs": 5400
+        },
+        {
+          "dir": "recv",
+          "kind": "documentRemove",
+          "msg": {
+            "documentRemove": {
+              "document": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+              "readTime": "<readTime: Timestamp>",
+              "removedTargetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 10,
+          "tMs": 5500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 11,
+          "tMs": 5500
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 12,
+          "tMs": 8700
+        },
+        {
+          "dir": "status",
+          "seq": 13,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 8700
+        },
+        {
+          "dir": "end",
+          "seq": 14,
+          "tMs": 8700
+        }
+      ],
+      "id": "listen.query-allowed",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a query target the rule denies (no filter), then a query target the rule allows on the same stream",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls"
+                    }
+                  ]
+                }
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 200
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 200
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls"
+                    }
+                  ],
+                  "where": {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "pub"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "booleanValue": true
+                      }
+                    }
+                  }
+                }
+              },
+              "targetId": 2
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 4,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 5,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 6,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 7,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 8,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "filter",
+          "msg": {
+            "filter": {
+              "count": 2,
+              "targetId": 2,
+              "unchangedNames": {
+                "bits": {
+                  "bitmap": "<bytes 5>",
+                  "padding": 3
+                },
+                "hashCount": 13
+              }
+            }
+          },
+          "seq": 9,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 10,
+          "tMs": 4300
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 11,
+          "tMs": 8000
+        },
+        {
+          "dir": "status",
+          "seq": 12,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 8000
+        },
+        {
+          "dir": "end",
+          "seq": 13,
+          "tMs": 8000
+        }
+      ],
+      "id": "listen.query-denied",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a query target with a filter the rule does not imply (pub == false)",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls"
+                    }
+                  ],
+                  "where": {
+                    "fieldFilter": {
+                      "field": {
+                        "fieldPath": "pub"
+                      },
+                      "op": "EQUAL",
+                      "value": {
+                        "booleanValue": false
+                      }
+                    }
+                  }
+                }
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 500
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "status",
+          "seq": 4,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 4000
+        },
+        {
+          "dir": "end",
+          "seq": 5,
+          "tMs": 4000
+        }
+      ],
+      "id": "listen.query-denied-other-filter",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "remove_target of a target that was refused, then a new target with the same id",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 600
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "removeTarget": 1
+          },
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "status",
+          "seq": 4,
+          "status": {
+            "code": 5,
+            "details": "Target id not found: 1"
+          },
+          "tMs": 4800
+        },
+        {
+          "dir": "end",
+          "seq": 5,
+          "tMs": 4800
+        },
+        {
+          "dir": "note",
+          "note": "stream already closed before this request",
+          "seq": 6,
+          "tMs": 8000
+        }
+      ],
+      "id": "listen.remove-after-denied",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": false,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a query target allowed by a lookup rule (list needs ls2f/flag.open == true); the flag is then set false and a document written",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls2"
+                    }
+                  ]
+                }
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 1000
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "x": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls2/a",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 1100
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 3,
+          "tMs": 1100
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 4,
+          "tMs": 1100
+        },
+        {
+          "dir": "recv",
+          "kind": "filter",
+          "msg": {
+            "filter": {
+              "count": 1,
+              "targetId": 1,
+              "unchangedNames": {
+                "bits": {
+                  "bitmap": "<bytes 3>",
+                  "padding": 7
+                },
+                "hashCount": 12
+              }
+            }
+          },
+          "seq": 5,
+          "tMs": 1100
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 6,
+          "tMs": 1100
+        },
+        {
+          "dir": "action",
+          "note": "admin sets flag.open=false",
+          "seq": 7,
+          "tMs": 5000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 8,
+          "tMs": 7800
+        },
+        {
+          "dir": "action",
+          "note": "admin writes ls2/b",
+          "seq": 9,
+          "tMs": 12800
+        },
+        {
+          "dir": "action",
+          "note": "admin sets flag.open=true again",
+          "seq": 10,
+          "tMs": 20600
+        },
+        {
+          "dir": "action",
+          "note": "admin writes ls2/c",
+          "seq": 11,
+          "tMs": 28400
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 12,
+          "tMs": 37700
+        },
+        {
+          "dir": "status",
+          "seq": 13,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 37700
+        },
+        {
+          "dir": "end",
+          "seq": 14,
+          "tMs": 37700
+        }
+      ],
+      "id": "listen.query-becomes-denied",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls2/a": {
+          "x": 1
+        },
+        "aruma-ref-f5-ls2f/flag": {
+          "open": true
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "the same query target opened while the flag is already false",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls2"
+                    }
+                  ]
+                }
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 900
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 900
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 3,
+          "tMs": 4000
+        },
+        {
+          "dir": "status",
+          "seq": 4,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 4000
+        },
+        {
+          "dir": "end",
+          "seq": 5,
+          "tMs": 4000
+        }
+      ],
+      "id": "listen.query-denied-by-lookup",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls2/a": {
+          "x": 1
+        },
+        "aruma-ref-f5-ls2f/flag": {
+          "open": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "a document target on ok-1 (readable by its id); the document is deleted and rewritten",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 900
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 900
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 3,
+          "tMs": 900
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 4,
+          "tMs": 900
+        },
+        {
+          "dir": "action",
+          "note": "admin deletes ok-1",
+          "seq": 5,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "documentDelete",
+          "msg": {
+            "documentDelete": {
+              "document": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+              "readTime": "<readTime: Timestamp>",
+              "removedTargetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 6,
+          "tMs": 6300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 7,
+          "tMs": 6300
+        },
+        {
+          "dir": "action",
+          "note": "admin rewrites ok-1",
+          "seq": 8,
+          "tMs": 10300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 9,
+          "tMs": 12500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 10,
+          "tMs": 12500
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 11,
+          "tMs": 16500
+        },
+        {
+          "dir": "status",
+          "seq": 12,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 16500
+        },
+        {
+          "dir": "end",
+          "seq": 13,
+          "tMs": 16500
+        }
+      ],
+      "id": "listen.doc-becomes-unreadable",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "none",
+      "description": "unauthenticated document target whose get rule allows request.auth == null",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 800
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "a": {
+                    "integerValue": "1"
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/authnull",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 800
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 3,
+          "tMs": 800
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 4,
+          "tMs": 800
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 5,
+          "tMs": 900
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-a/uid-a"
+                ]
+              },
+              "targetId": 2
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 6,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 7,
+          "tMs": 4500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:REMOVE",
+          "msg": {
+            "targetChange": {
+              "cause": {
+                "code": 7,
+                "message": "Missing or insufficient permissions."
+              },
+              "targetChangeType": "REMOVE",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 8,
+          "tMs": 4500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 9,
+          "tMs": 4500
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 10,
+          "tMs": 8000
+        },
+        {
+          "dir": "status",
+          "seq": 11,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 8000
+        },
+        {
+          "dir": "end",
+          "seq": 12,
+          "tMs": 8000
+        }
+      ],
+      "id": "listen.unauthenticated-allowed",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-a/authnull": {
+          "a": 1
+        },
+        "aruma-ref-f5-a/uid-a": {
+          "a": 1
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "owner",
+      "description": "the same document targets as listen.doc-denied, with the owner token (rules bypassed)",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "documents": {
+                "documents": [
+                  "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1"
+                ]
+              },
+              "targetId": 1
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 1,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 2,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                1
+              ]
+            }
+          },
+          "seq": 3,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 4,
+          "tMs": 500
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 5,
+          "tMs": 500
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "addTarget": {
+              "query": {
+                "parent": "projects/{project}/databases/(default)/documents",
+                "structuredQuery": {
+                  "from": [
+                    {
+                      "collectionId": "aruma-ref-f5-ls"
+                    }
+                  ]
+                }
+              },
+              "targetId": 2
+            },
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 6,
+          "tMs": 4000
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:ADD",
+          "msg": {
+            "targetChange": {
+              "targetChangeType": "ADD",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 7,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/bad-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 8,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": true
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-1",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 9,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "documentChange",
+          "msg": {
+            "documentChange": {
+              "document": {
+                "createTime": "<createTime: Timestamp>",
+                "fields": {
+                  "pub": {
+                    "booleanValue": false
+                  }
+                },
+                "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-ls/ok-2",
+                "updateTime": "<updateTime: Timestamp>"
+              },
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 10,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:CURRENT",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>",
+              "targetChangeType": "CURRENT",
+              "targetIds": [
+                2
+              ]
+            }
+          },
+          "seq": 11,
+          "tMs": 4300
+        },
+        {
+          "dir": "recv",
+          "kind": "target_change:NO_CHANGE:global",
+          "msg": {
+            "targetChange": {
+              "readTime": "<readTime: Timestamp>",
+              "resumeToken": "<bytes 11>"
+            }
+          },
+          "seq": 12,
+          "tMs": 4300
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 13,
+          "tMs": 8000
+        },
+        {
+          "dir": "status",
+          "seq": 14,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 8000
+        },
+        {
+          "dir": "end",
+          "seq": 15,
+          "tMs": 8000
+        }
+      ],
+      "id": "listen.owner-same-targets",
+      "rpc": "google.firestore.v1.Firestore/Listen",
+      "setup": {
+        "aruma-ref-f5-ls/bad-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-1": {
+          "pub": true
+        },
+        "aruma-ref-f5-ls/ok-2": {
+          "pub": false
+        }
+      },
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "description": "Write stream handshake as an end user",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "streamId",
+          "msg": {
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>"
+          },
+          "seq": 1,
+          "tMs": 900
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the last wait; cancelled by the recorder",
+          "seq": 2,
+          "tMs": 1500
+        },
+        {
+          "dir": "status",
+          "seq": 3,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 1500
+        },
+        {
+          "dir": "end",
+          "seq": 4,
+          "tMs": 1500
+        }
+      ],
+      "id": "write.handshake",
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": {},
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "after": {
+        "aruma-ref-f5-m1/bad-w1": null,
+        "aruma-ref-f5-m1/ok-w1": null
+      },
+      "description": "Write stream: a batch with one denied write",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "streamId",
+          "msg": {
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>"
+          },
+          "seq": 1,
+          "tMs": 1100
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-w1"
+                }
+              }
+            ]
+          },
+          "seq": 2,
+          "tMs": 1100
+        },
+        {
+          "dir": "status",
+          "seq": 3,
+          "status": {
+            "code": 7,
+            "details": "Missing or insufficient permissions."
+          },
+          "tMs": 2100
+        },
+        {
+          "dir": "end",
+          "seq": 4,
+          "tMs": 2100
+        }
+      ],
+      "id": "write.denied",
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": {},
+      "streamOpenAtEnd": false,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "after": {
+        "aruma-ref-f5-m1/bad-w1": null,
+        "aruma-ref-f5-m1/ok-w1": {
+          "a": {
+            "integerValue": "1"
+          }
+        }
+      },
+      "description": "Write stream: a batch with one allowed write",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "streamId",
+          "msg": {
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>"
+          },
+          "seq": 1,
+          "tMs": 800
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-w1"
+                }
+              }
+            ]
+          },
+          "seq": 2,
+          "tMs": 800
+        },
+        {
+          "dir": "recv",
+          "kind": "streamToken",
+          "msg": {
+            "commitTime": "<commitTime: Timestamp>",
+            "streamToken": "<bytes 11>",
+            "writeResults": [
+              {
+                "updateTime": "<updateTime: Timestamp>"
+              }
+            ]
+          },
+          "seq": 3,
+          "tMs": 1600
+        },
+        {
+          "dir": "note",
+          "note": "stream still open after the batch; cancelled by the recorder",
+          "seq": 4,
+          "tMs": 3800
+        },
+        {
+          "dir": "status",
+          "seq": 5,
+          "status": {
+            "code": 1,
+            "details": "Cancelled on client"
+          },
+          "tMs": 3800
+        },
+        {
+          "dir": "end",
+          "seq": 6,
+          "tMs": 3800
+        }
+      ],
+      "id": "write.allowed",
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": {},
+      "streamOpenAtEnd": true,
+      "transport": "grpc"
+    },
+    {
+      "actor": "user",
+      "after": {
+        "aruma-ref-f5-m1/bad-w1": null,
+        "aruma-ref-f5-m1/ok-w1": null
+      },
+      "description": "Write stream: a batch with an allowed and a denied write",
+      "frames": [
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)"
+          },
+          "seq": 0,
+          "tMs": 0
+        },
+        {
+          "dir": "recv",
+          "kind": "streamId",
+          "msg": {
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>"
+          },
+          "seq": 1,
+          "tMs": 800
+        },
+        {
+          "dir": "send",
+          "msg": {
+            "database": "projects/{project}/databases/(default)",
+            "streamId": "<stream_id>",
+            "streamToken": "<bytes 9>",
+            "writes": [
+              {
+                "update": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/ok-w1"
+                }
+              },
+              {
+                "update": {
+                  "fields": {
+                    "a": {
+                      "integerValue": "1"
+                    }
+                  },
+                  "name": "projects/{project}/databases/(default)/documents/aruma-ref-f5-m1/bad-w1"
+                }
+              }
+            ]
+          },
+          "seq": 2,
+          "tMs": 800
+        },
+        {
+          "dir": "status",
+          "seq": 3,
+          "status": {
+            "code": 7,
+            "details": "Missing or insufficient permissions."
+          },
+          "tMs": 1600
+        },
+        {
+          "dir": "end",
+          "seq": 4,
+          "tMs": 1600
+        }
+      ],
+      "id": "write.ok-bad",
+      "rpc": "google.firestore.v1.Firestore/Write",
+      "setup": {},
+      "streamOpenAtEnd": false,
+      "transport": "grpc"
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+    "notes": [
+      "Auth: an end-user Firebase Auth ID token (the caller field names the actor: user and userB are email/password users, anon is an anonymous user, none sends the web API key only, owner is the project owner whose token bypasses rules). The owner only seeds and reads back state.",
+      "Rules: f5-rules-deployed.json holds the source every case ran under. Each case names the document ids its rule asserts; \"allow\" and \"deny\" are OK and PERMISSION_DENIED.",
+      "Times, durations and transaction ids are replaced by placeholders; everything else is as returned. A case ran once over REST and once over gRPC, each from the seeded state in \"seed\" (documents in \"touch\" are reset first); \"after\" is the state read back by the owner afterwards.",
+      "Listen and Write are gRPC only. Frames carry their time in ms from the stream opening (rounded to 100 ms)."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+    "target": "chatapp-8ae21 (default): FIRESTORE_NATIVE, STANDARD, PESSIMISTIC, europe-west1; security rules deployed by the recorder (f5-rules-deployed.json)",
+    "versions": {
+      "@grpc/grpc-js": "1.12.2",
+      "@grpc/proto-loader": "0.7.13",
+      "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+      "firebase-tools (auth only)": "13.23.0",
+      "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+      "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+      "node": "v24.21.0"
+    }
+  },
+  "rules": "corpus/f5-rules-deployed.json",
+  "schema": "aruma.documents-oracle/v1"
+}

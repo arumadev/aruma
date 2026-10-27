@@ -1,0 +1,26 @@
+{
+  "cases": [
+    {
+      "description": "documents left under the aruma-ref-f5 collections after the deletion, and the owner-side calls made",
+      "documentsLeft": [],
+      "documentsWritten": 290,
+      "id": "cleanup.sweep",
+      "ownerCalls": 1822
+    }
+  ],
+  "header": {
+    "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+    "notes": [
+      "Everything the recorder wrote under aruma-ref-f5-* was deleted and the collections swept; the original rules were restored and the test users deleted."
+    ],
+    "oracle": "production",
+    "recordedAt": "2026-10-27T16:20:25.095Z",
+    "target": "chatapp-8ae21",
+    "versions": {
+      "firebase-tools (auth only)": "13.23.0",
+      "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+      "node": "v24.21.0"
+    }
+  },
+  "schema": "aruma.documents-oracle/v1"
+}

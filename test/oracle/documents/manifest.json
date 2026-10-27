@@ -537,6 +537,182 @@
         "node": "v24.21.0"
       }
     },
+    "corpus/f5-rules-auth.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "20598963f1433cdddc1211d42f2f866f0ae26c1e10f37857e6f45df7327fad64",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-batches.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "ba32961580f600c59458b220e7399d791e61cb2bd57c1390831c58ac79bd2d00",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-cleanup.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:20:25.095Z",
+      "sha256": "3851318d57c3c4453ae5f08e99fc74a03c4032a30d13173ba55687b73be1358e",
+      "versions": {
+        "firebase-tools (auth only)": "13.23.0",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-constraints.json": {
+      "generator": "test/oracle/documents/production/record-f5-extra.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:48:04.674Z .. 2026-10-27T16:59:33.664Z",
+      "sha256": "929ba970e32f87ca86cba14fce4ee126dfda096f5e6b093723bb0c099362cf9e",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "456e034ea30b4720c8267dc9eda0f676e247a116b3b94750f4f43b2750608c2a",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-deployed.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "c9a0ee8b010b06197259afad2de0c38e0f6dcb2c95788dcc06e16528711e9eb3",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-listen.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "3ddec29ca1fe6fab84fe8001e6b09a5b128896bb179bf069ea728d8398354a99",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-lookup-limits.json": {
+      "generator": "test/oracle/documents/production/record-f5-extra.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:48:04.674Z .. 2026-10-27T16:59:33.776Z",
+      "sha256": "ececd1443e620182ac21e0037f8ce2bef4f25caf0f3c49955541f779bd4341f1",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "456e034ea30b4720c8267dc9eda0f676e247a116b3b94750f4f43b2750608c2a",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-lookups.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "f6c9284fd70ad21580e4c6a3b425aedf8f99b9f3797b19bbbfe2c6c1d0e26153",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-methods.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:22:07.096Z .. 2026-10-27T16:29:39.468Z",
+      "sha256": "e7fc21d7dd8fac2003e6fef7d983f39c5a78a50fff135dc37c768ca92aab79c7",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-queries.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "86b3abea2b3aee9bcd1c9e4801db73994887936213c026237d315955bc26775e",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-request.json": {
+      "generator": "test/oracle/documents/production/record-f5-rules.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:07:59.092Z .. 2026-10-27T16:19:31.567Z",
+      "sha256": "692d8b6f478db96898e3a21b4d90ecab60efb37d1ba246c6285197f5cca1889e",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "0b355167263ad9672bc98be603c5e6faa59856fb1fd877d95588209b1c993e1e",
+        "node": "v24.21.0"
+      }
+    },
+    "corpus/f5-rules-transactions.json": {
+      "generator": "test/oracle/documents/production/record-f5-extra.mjs",
+      "oracle": "production",
+      "recordedAt": "2026-10-27T16:48:04.674Z .. 2026-10-27T16:59:33.809Z",
+      "sha256": "ee8274afae5b5b85a6b0d11bb2699bacef518aba76e59b4a35b83dfe64425444",
+      "versions": {
+        "@grpc/grpc-js": "1.12.2",
+        "@grpc/proto-loader": "0.7.13",
+        "api": "firestore.googleapis.com REST v1 and gRPC google.firestore.v1.Firestore; firebaserules.googleapis.com v1; identitytoolkit.googleapis.com v1",
+        "firebase-tools (auth only)": "13.23.0",
+        "firestore protos": "@google-cloud/firestore 9.3.1 build/protos",
+        "generator sha256": "456e034ea30b4720c8267dc9eda0f676e247a116b3b94750f4f43b2750608c2a",
+        "node": "v24.21.0"
+      }
+    },
     "corpus/indexes-105.emulator.json": {
       "generator": ".cache/briefs/research/artifacts/composite-index-probe.mjs emu (the same shapes as test/oracle/documents/production/record-indexes.mjs), converted by record-indexes.mjs --import composite-index-probe-emulator.json",
       "oracle": "emulator",
