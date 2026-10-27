@@ -272,7 +272,7 @@
       "summary": "The channel's answers carry no x-client-wire-protocol header.",
       "production": "Every handshake answers x-client-wire-protocol: h2 (HTTP/1.1 to an HTTP/1.1 client) and exposes it (corpus/f6-webchannel-*.json).",
       "emulator": "Not recorded.",
-      "aruma": "Omitted: the SDK reads it to allow several forward requests at once over h2, and Aruma keeps one at a time (ADR-027 §5.5). Access-Control-Expose-Headers still names it, as production's.",
+      "aruma": "Omitted: the header only raises the client's forward request pool to 10 at once; without it the pool follows the page's own protocol (10 when the page was loaded over h2 or h3, else 1). Omitting it does not keep the client to one forward request at a time, so Aruma takes forward maps that arrive out of order or with sparse keys either way (ADR-027 §5.5). Access-Control-Expose-Headers still names it, as production's.",
       "follows": "production",
       "evidence": [
         "corpus/f6-webchannel-listen.json",
