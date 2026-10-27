@@ -316,6 +316,41 @@ func TestStreamRevocationsOverflow(t *testing.T) {
 	wantEnd(t, "after an overflow", l, connect.CodeUnauthenticated)
 }
 
+// A stream that ends while a Send that already wrote its message is on its way back still ends
+// with its status: the cut of a stuck write leaves that Send its grace, rather than resetting the
+// stream INTERNAL. Each Send here stays in that window until the stream ends.
+func TestStreamsEndMidSend(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		end  func(x *harness)
+	}{
+		{"instance lost", func(x *harness) { x.h.InstanceLost() }},
+		{"drain", func(x *harness) { go func() { _ = x.h.Shutdown(context.Background()) }() }},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
+			tok := x.env.JWT(t)
+			l := apitest.OpenListen(t, x.client, tok)
+			l.Add(docTarget(1, "ms/a"))
+			l.UntilGlobal()
+			docgrpc.SetAfterSend(t, func(ctx context.Context) {
+				select {
+				case <-ctx.Done():
+				case <-time.After(apitest.ListenWait):
+				}
+			})
+			w, _ := openWrite(t, x, tok)
+			x.commit(t, tok, update("ms/a", map[string]*pb.Value{"n": intValue(1)}))
+			l.Until(func(r *pb.ListenResponse) bool { return r.GetDocumentChange() != nil })
+			c.end(x)
+			wantEnd(t, "Listen", l, connect.CodeUnavailable)
+			if _, err := w.Receive(); connect.CodeOf(err) != connect.CodeUnavailable {
+				t.Errorf("Write: %v", err)
+			}
+		})
+	}
+}
+
 // The lost instance lock closes every Listen and Write stream UNAVAILABLE and refuses new ones
 // until it is taken again.
 func TestStreamsInstanceLost(t *testing.T) {

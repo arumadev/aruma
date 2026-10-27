@@ -310,9 +310,19 @@ type serverStream struct {
 	cancel  context.CancelCauseFunc
 	stops   []func() bool
 
-	mu      sync.Mutex // orders the cut of a stuck write with the sends and the trailers
-	sending bool       // a Send is in progress: only then is it cut, which resets the stream
+	mu       sync.Mutex // orders the cut of a stuck write with the sends and the trailers
+	sending  bool       // a Send is in progress: only then is it cut, which resets the stream
+	deadline time.Time  // the Send's own write deadline; zero is none
+	cut      bool       // the stream ended during the Send, and its write deadline was moved up
 }
+
+// cutGrace is how long a Send in progress when its stream ends has to return before it is cut.
+// A Send that already wrote its message may still be on its way back to sendWithin: cut at once,
+// the stream is reset INTERNAL and the client never sees the status it ends with.
+const cutGrace = time.Second
+
+// afterSend, when set, runs after each Send returns and before sendWithin takes it as done.
+var afterSend atomic.Pointer[func(context.Context)]
 
 func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
 	return h.openServerStream(ctx, h.limits.ServerStreamMax)
@@ -340,13 +350,14 @@ func (h *Handler) openServerStream(ctx context.Context, maxLife time.Duration) (
 	s.stops = []func() bool{
 		context.AfterFunc(h.drain, func() { s.cancel(errDraining) }),
 		// A Send stuck on flow control returns once its write deadline passes. That resets the
-		// stream, so it is done only to a Send in progress: otherwise the handler sees the end of
-		// its context and answers with a status.
+		// stream, so it is done only to a Send still in progress after cutGrace: otherwise the
+		// handler sees the end of its context and answers with a status.
 		context.AfterFunc(s.ctx, func() {
 			s.mu.Lock()
 			defer s.mu.Unlock()
-			if s.sending {
-				_ = info.rc.SetWriteDeadline(time.Now())
+			if cut := time.Now().Add(cutGrace); s.sending && (s.deadline.IsZero() || cut.Before(s.deadline)) {
+				s.cut = true
+				_ = info.rc.SetWriteDeadline(cut)
 			}
 		}),
 	}
@@ -371,15 +382,25 @@ func (s *serverStream) sendWithin(d time.Duration, send func() error) error {
 		return context.Cause(s.ctx)
 	}
 	s.sending = true
-	deadline := time.Time{}
+	s.deadline = time.Time{}
 	if d > 0 {
-		deadline = time.Now().Add(d)
+		s.deadline = time.Now().Add(d)
 	}
-	_ = s.info.rc.SetWriteDeadline(deadline)
+	_ = s.info.rc.SetWriteDeadline(s.deadline)
 	s.mu.Unlock()
 	err := send()
+	if f := afterSend.Load(); f != nil {
+		(*f)(s.ctx)
+	}
 	s.mu.Lock()
 	s.sending = false
+	if s.cut {
+		// The Send returned within its grace: the cut is called off, or it would reset the
+		// stream. Both changes reach the connection in order, under s.mu; finish bounds the
+		// trailers.
+		s.cut = false
+		_ = s.info.rc.SetWriteDeadline(time.Time{})
+	}
 	s.mu.Unlock()
 	return err
 }
