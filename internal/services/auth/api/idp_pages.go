@@ -30,34 +30,32 @@ import (
 // iframe page, which the SDK's iframe protocol requires (ADR-013's declared exception).
 
 const pageHTML = `<!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Aruma</title><style>` + pageStyle + `</style></head>
-<body><main id="msg"><p lang="ar"></p><p lang="en" dir="ltr"></p></main>
+<body><main id="msg"><p></p></main>
 <script type="application/json" id="aruma-idp">%DATA%</script>
 <script>` + handlerScript + `</script>
 </body></html>
 `
 
-const pageStyle = `body{font-family:system-ui,sans-serif;margin:0;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#fafafa;color:#222}main{max-width:28rem;padding:1.5rem;text-align:center}p[lang=en]{color:#555}`
+const pageStyle = `body{font-family:system-ui,sans-serif;margin:0;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#fafafa;color:#222}main{max-width:28rem;padding:1.5rem;text-align:center}`
 
 // handlerScript runs on the handler page. It starts the sign-in (keeping the sessionId in this
 // tab only), or builds the AuthEvent from the provider's answer and delivers it.
 const handlerScript = `(function () {
   var d = JSON.parse(document.getElementById('aruma-idp').textContent);
   var text = {
-    working: ['جارٍ تسجيل الدخول…', 'Signing you in…'],
-    done: ['تم. يمكنك إغلاق هذه النافذة.', 'Done. You can close this window.'],
-    lost: ['تعذّر الوصول إلى التطبيق. أغلق النافذة وحاول مجددًا.', 'The app could not be reached. Close this window and try again.'],
-    expired: ['انتهت جلسة تسجيل الدخول أو استُخدمت. حاول مجددًا.', 'This sign-in session has expired or was already used. Please try again.'],
-    domain: ['هذا العنوان غير مصرّح به لهذا المشروع.', 'This address is not authorized for this project.'],
-    disabled: ['طريقة الدخول هذه غير مفعّلة لهذا المشروع.', 'This sign-in method is not enabled for this project.'],
-    invalid: ['طلب تسجيل الدخول غير صالح.', 'The sign-in request is not valid.'],
-    cancelled: ['أُلغي تسجيل الدخول.', 'Sign-in was cancelled.']
+    working: 'Signing you in…',
+    done: 'Done. You can close this window.',
+    lost: 'The app could not be reached. Close this window and try again.',
+    expired: 'This sign-in session has expired or was already used. Please try again.',
+    domain: 'This address is not authorized for this project.',
+    disabled: 'This sign-in method is not enabled for this project.',
+    invalid: 'The sign-in request is not valid.',
+    cancelled: 'Sign-in was cancelled.'
   };
   function show(k) {
-    var t = text[k] || text.invalid;
-    document.querySelector('p[lang=ar]').textContent = t[0];
-    document.querySelector('p[lang=en]').textContent = t[1];
+    document.querySelector('#msg p').textContent = text[k] || text.invalid;
   }
   function key() { return d.apiKey + ':' + d.appName; }
   function authEvent(f) {

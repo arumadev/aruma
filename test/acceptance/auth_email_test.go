@@ -122,12 +122,12 @@ func TestAuthEmailVerificationThroughDevMailbox(t *testing.T) {
 		t.Fatalf("dev mailbox not enabled on a loopback instance: %s", box.Body)
 	}
 	m := p.lastMail("sara@example.com")
-	if m["type"] != "VERIFY_EMAIL" || !strings.Contains(m["subject"].(string), "أكّد") || !strings.Contains(m["html"].(string), `dir="rtl"`) {
+	if m["type"] != "VERIFY_EMAIL" || !strings.Contains(m["subject"].(string), "Confirm your email") || !strings.Contains(m["html"].(string), `lang="en"`) {
 		t.Fatalf("message: %v", m)
 	}
 	path, q := linkCode(t, m["link"].(string))
 	if !strings.HasPrefix(m["link"].(string), e.URL+"/__/auth/action?") || q.Get("mode") != "verifyEmail" || q.Get("apiKey") != p.key ||
-		q.Get("lang") != "ar" || q.Get("continueUrl") != "http://localhost:3000/done" || len(q.Get("oobCode")) < 40 {
+		q.Get("lang") != "en" || q.Get("continueUrl") != "http://localhost:3000/done" || len(q.Get("oobCode")) < 40 {
 		t.Fatalf("link: %s", m["link"])
 	}
 	if !strings.Contains(m["text"].(string), m["link"].(string)) {
@@ -135,7 +135,7 @@ func TestAuthEmailVerificationThroughDevMailbox(t *testing.T) {
 	}
 
 	pg := e.page("GET", path, nil, nil)
-	if pg.Status != 200 || !strings.Contains(string(pg.Body), `dir="rtl"`) {
+	if pg.Status != 200 || !strings.Contains(string(pg.Body), `dir="ltr"`) {
 		t.Fatalf("action page: %d %s", pg.Status, pg.Body)
 	}
 	// Opening the link changes nothing: a mail scanner's prefetch cannot use the code.
@@ -150,7 +150,7 @@ func TestAuthEmailVerificationThroughDevMailbox(t *testing.T) {
 	if lookupUser(t, p, up.str("idToken"))["emailVerified"] != true {
 		t.Fatal("emailVerified is still false")
 	}
-	if again := e.page("POST", "/__/auth/action", form, nil); again.Status != 400 || !strings.Contains(string(again.Body), "استُخدم") {
+	if again := e.page("POST", "/__/auth/action", form, nil); again.Status != 400 || !strings.Contains(string(again.Body), "invalid or has already been used") {
 		t.Fatalf("a used code was accepted again: %d %s", again.Status, again.Body)
 	}
 
@@ -214,7 +214,7 @@ func TestAuthPasswordReset(t *testing.T) {
 
 	// The same through the action page, in English.
 	path, _ := linkCode(t, p.lastMail("sara@example.com")["link"].(string))
-	pg := e.page("GET", strings.Replace(path, "lang=ar", "lang=en", 1), nil, nil)
+	pg := e.page("GET", path, nil, nil)
 	if pg.Status != 200 || !strings.Contains(string(pg.Body), `type="password"`) || !strings.Contains(string(pg.Body), "sara@example.com") {
 		t.Fatalf("reset page: %d %s", pg.Status, pg.Body)
 	}
@@ -239,8 +239,7 @@ func TestAuthPasswordReset(t *testing.T) {
 	authErr(t, p.refresh(in.str("refreshToken")), "TOKEN_EXPIRED")
 }
 
-// AC-A19 and the tamper scenarios on links: Arabic and right-to-left by default, English by
-// lang, Aruma's identity, strict headers, no third-party resources; a continueUrl off the
+// AC-A19 and the tamper scenarios on links: English by default whatever the lang, Aruma's identity, strict headers, no third-party resources; a continueUrl off the
 // authorised domains is refused and never offered; a key of another project, a forged form
 // token and a cross-site post are refused.
 func TestAuthActionPage(t *testing.T) {
@@ -258,10 +257,13 @@ func TestAuthActionPage(t *testing.T) {
 
 	ar := e.page("GET", path, nil, nil)
 	body := string(ar.Body)
-	for _, want := range []string{`<html lang="ar" dir="rtl">`, "أروما", "غير تابع لشركة Google ولا لـ Firebase", "اختر كلمة مرور جديدة"} {
+	for _, want := range []string{`<html lang="en" dir="ltr">`, ">Aruma<", "Choose a new password"} {
 		if !strings.Contains(body, want) {
-			t.Errorf("Arabic page lacks %q", want)
+			t.Errorf("page lacks %q", want)
 		}
+	}
+	if strings.Contains(body, "affiliated") || strings.Contains(body, "<footer") {
+		t.Error("the page carries a disclaimer")
 	}
 	csp := ar.Header.Get("Content-Security-Policy")
 	if !strings.HasPrefix(csp, "default-src 'none'; style-src 'sha256-") || strings.Contains(csp, "unsafe") || !strings.Contains(csp, "frame-ancestors 'none'") {
@@ -276,7 +278,7 @@ func TestAuthActionPage(t *testing.T) {
 
 	q.Set("lang", "en")
 	en := e.page("GET", "/__/auth/action?"+q.Encode(), nil, nil)
-	for _, want := range []string{`<html lang="en" dir="ltr">`, ">Aruma<", "not affiliated with or endorsed by Google or Firebase", "Choose a new password"} {
+	for _, want := range []string{`<html lang="en" dir="ltr">`, ">Aruma<", "Choose a new password"} {
 		if !strings.Contains(string(en.Body), want) {
 			t.Errorf("English page lacks %q", want)
 		}
@@ -353,7 +355,7 @@ func TestAuthEmailCodeExpiry(t *testing.T) {
 	}
 	authErr(t, p.call(itk+"accounts:update", map[string]any{"oobCode": q.Get("oobCode")}), "EXPIRED_OOB_CODE")
 	authErr(t, p.call(itk+"accounts:resetPassword", map[string]any{"oobCode": q.Get("oobCode")}), "EXPIRED_OOB_CODE")
-	if r := e.page("GET", path, nil, nil); r.Status != 400 || !strings.Contains(string(r.Body), "انتهت صلاحية") {
+	if r := e.page("GET", path, nil, nil); r.Status != 400 || !strings.Contains(string(r.Body), "This link has expired") {
 		t.Fatalf("expired link page: %d %s", r.Status, r.Body)
 	}
 	// Codes stop working once the user is disabled.
@@ -554,7 +556,7 @@ func TestAuthEmailConsole(t *testing.T) {
 	p := e.authProject("chat-app")
 	base := "/console/v1/projects/chat-app/auth/templates"
 	list := p.owner.mustOK(p.owner.do("GET", base, nil)).list("templates")
-	if len(list) != 8 || list[0]["type"] != "VERIFY_EMAIL" || list[0]["language"] != "ar" || list[0]["customized"] != false {
+	if len(list) != 8 || list[0]["type"] != "VERIFY_EMAIL" || list[0]["language"] != "en" || list[0]["customized"] != false {
 		t.Fatalf("templates: %v", list)
 	}
 	expect(t, p.owner.do("PUT", base+"/PASSWORD_RESET/ar", map[string]any{"subject": "x", "body": "no link"}), 400, "INVALID_ARGUMENT")
@@ -569,7 +571,8 @@ func TestAuthEmailConsole(t *testing.T) {
 	ok(t, up)
 	// The name goes only to a verified address (security review v0.1, S-4).
 	p.sql(`UPDATE auth.users SET email_verified = true WHERE uid = $1`, up.str("localId"))
-	ok(t, p.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "sara@example.com"}))
+	// Arabic stays available: a request that asks for it gets the Arabic template.
+	ok(t, p.callWith(itk+"accounts:sendOobCode", map[string]any{"requestType": "PASSWORD_RESET", "email": "sara@example.com"}, map[string]string{"X-Firebase-Locale": "ar"}))
 	m := p.lastMail("sara@example.com")
 	if m["subject"] != "استعادة Chat-app" || !strings.Contains(m["html"].(string), "&lt;i&gt;Sara&lt;/i&gt;") || !strings.Contains(m["text"].(string), "اضغط: "+m["link"].(string)) {
 		t.Fatalf("custom template: %v", m)

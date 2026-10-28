@@ -53,7 +53,7 @@ function TemplateEditor({ appName }: { appName: string }) {
   const { project } = useProject();
   const templates = useResource((signal) => api.listEmailTemplates(project.projectId, signal), [project.projectId]);
   const [type, setType] = useState<EmailTemplateType>('VERIFY_EMAIL');
-  const [language, setLanguage] = useState<Locale>('ar');
+  const [language, setLanguage] = useState<Locale>('en');
 
   let content;
   if (templates.error) {

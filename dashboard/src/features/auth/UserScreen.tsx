@@ -22,7 +22,6 @@ import type { AuthUser, Locale } from '@/lib/api/types';
 import { useErrorText } from '@/lib/errors';
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { useResource } from '@/lib/hooks/useResource';
-import { useLocale } from '@/lib/i18n/LocaleProvider';
 import { LOCALES } from '@/lib/i18n/locales';
 import { routes } from '@/lib/routes';
 import { checkClaims, CLAIMS_MAX_BYTES, formatClaims } from './claims';
@@ -233,13 +232,12 @@ function UserDetails({ user, onChange }: { user: AuthUser; onChange: (user: Auth
   );
 }
 
-/** Asks which language the reset email is written in; the user's own is unknown to the console. */
+/** Asks which language the reset email is written in: English unless chosen; the user's own is unknown to the console. */
 function ResetDialog({ user, onClose, onSent }: { user: AuthUser; onClose: () => void; onSent: (link: string) => void }) {
   const t = useTranslations('auth.user');
   const tLocale = useTranslations('locale');
-  const { locale } = useLocale();
   const { project } = useProject();
-  const [language, setLanguage] = useState<Locale>(locale);
+  const [language, setLanguage] = useState<Locale>('en');
   return (
     <ConfirmDialog
       title={t('resetTitle')}

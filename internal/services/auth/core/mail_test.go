@@ -70,7 +70,7 @@ func TestDefaultTemplates(t *testing.T) {
 }
 
 func TestMailLanguage(t *testing.T) {
-	for in, want := range map[string]string{"": "ar", "ar": "ar", "ar-SA": "ar", "en": "en", "EN-us": "en", "en_GB": "en", "fr": "ar"} {
+	for in, want := range map[string]string{"": "en", "ar": "ar", "AR-sa": "ar", "ar_EG": "ar", "en": "en", "EN-us": "en", "en_GB": "en", "fr": "en"} {
 		if got := mailLanguage(in); got != want {
 			t.Errorf("mailLanguage(%q) = %q, want %q", in, got, want)
 		}

@@ -416,12 +416,11 @@ func (s *Service) SendTestMail(ctx context.Context, p Project, to string) (devMa
 		return false, err
 	}
 	app := appName(c, prof)
-	ar, en := "إعدادات البريد في "+app+" تعمل.", "The mail settings of "+app+" work."
+	msg := "The mail settings of " + app + " work."
 	m := renderedMail{
-		Subject: "رسالة تجريبية من " + app + " / Test message from " + app,
-		Text:    ar + "\n\n" + en,
-		HTML: `<div dir="rtl" lang="ar"><p>` + html.EscapeString(ar) + `</p></div>` +
-			`<div dir="ltr" lang="en"><p>` + html.EscapeString(en) + `</p></div>`,
+		Subject: "Test message from " + app,
+		Text:    msg,
+		HTML:    `<div dir="ltr" lang="en"><p>` + html.EscapeString(msg) + `</p></div>`,
 	}
 	if s.devMailbox(c) {
 		return true, s.queue(ctx, s.q, p, c, "TEST", defaultMailLang, addr, m)
