@@ -8,7 +8,7 @@ import (
 )
 
 // passwordHashPlaceholder stands in for the hash, which never leaves the server. The web SDK
-// treats a user with an email but no passwordHash as anonymous (research §3.4), so password
+// treats a user with an email but no passwordHash as anonymous, so password
 // users must carry a non-empty value. It is base64 of "REDACTED".
 const passwordHashPlaceholder = "UkVEQUNURUQ="
 
