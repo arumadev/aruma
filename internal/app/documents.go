@@ -53,6 +53,9 @@ type Documents struct {
 	// hub is the Listen hub, the store's Notifier (ADR-026 §2), rebuilt when the
 	// single-instance lock is taken again after its loss (ADR-026 §5).
 	hub *hubs
+	// usage counts the dashboard's usage; Boot starts its flushes, and Close's last one keeps
+	// the counts across a restart.
+	usage *documents.Usage
 	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
 	// sweep), and jobsDone
 	// closes when they have.
@@ -89,10 +92,11 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	l := cfg.Documents.Limits
 	// The Listen hub serves the streams from the start; Boot binds it to the store it opens.
 	hub := newHubs(listen.Options{LagEvents: l.StreamLagEvents, SnapshotRows: l.SnapshotRows, Log: logger})
+	usage := documents.NewUsage(pool, nil, logger)
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
 		Rulesets: svc, IDTokens: idTokens, RulesInflight: rulesInflight,
-		IndexEnforcement: enforcement, Listen: hub, Logger: logger,
+		IndexEnforcement: enforcement, Listen: hub, Usage: usage, Logger: logger,
 	})
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
@@ -123,7 +127,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		API:   api,
 		GRPC:  streams,
 		REST:  docrest.New(docrest.Options{Service: api, Channel: channel, Logger: logger}),
-		store: store, pool: pool, cfg: l, log: logger, hub: hub,
+		store: store, pool: pool, cfg: l, log: logger, hub: hub, usage: usage,
 		txns: documents.TxnConfig{
 			Key:             keys.DocumentsTransactionKey(),
 			WaitTimeout:     l.TxnWaitTimeout,
@@ -202,6 +206,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
+	jobs.Go(func() { d.usage.Run(jctx, 0) })
 	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
 	jobs.Go(func() {
 		store.RunTTL(jctx, documents.TTLOptions{Every: d.cfg.TTLSweepInterval, Batch: d.cfg.TTLSweepBatch, Log: d.log})

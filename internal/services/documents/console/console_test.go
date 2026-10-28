@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -337,8 +338,62 @@ func TestInfoAndUsage(t *testing.T) {
 		lim["documentBytes"] != float64(1<<20) || lim["fieldDepth"] != float64(20) || lim["pageSize"] != float64(defaultPage) {
 		t.Errorf("info: %s", res.body)
 	}
-	if res := e.ok(owner, "GET", path(project, "/usage"), nil); res.json["available"] != false {
+	// The usage of the owner's reads above (none: the info route reads no document), then of a
+	// write and a read through the dashboard, which production counts too.
+	e.ok(owner, "PATCH", path(project, "/document", "path", "users/u1"), map[string]any{"fields": map[string]any{}})
+	e.ok(owner, "GET", path(project, "/document", "path", "users/u1"), nil)
+	res = e.ok(owner, "GET", path(project, "/usage"), nil)
+	totals, _ := res.json["totals"].(map[string]any)
+	if res.json["period"] != "24h" || res.json["granularity"] != "hour" || res.json["available"] != nil ||
+		totals["writes"] != float64(1) || totals["reads"] != float64(1) || len(res.json["hours"].([]any)) != 1 {
 		t.Errorf("usage: %s", res.body)
+	}
+	for _, p := range []string{"60m", "24h", "7d", "30d"} {
+		if res := e.ok(owner, "GET", path(project, "/usage", "period", p), nil); res.json["period"] != p {
+			t.Errorf("usage over %s: %s", p, res.body)
+		}
+	}
+	if res := e.do(owner, "GET", path(project, "/usage", "period", "1y"), nil); res.status() != "INVALID_ARGUMENT" {
+		t.Errorf("usage over 1y: %d %s", res.code, res.body)
+	}
+}
+
+// TestUsagePeriods: the usage route sums the hours of its period and keeps the greatest peak,
+// from the stored hours as the flush leaves them, of the caller's project alone.
+func TestUsagePeriods(t *testing.T) {
+	e := newEnv(t, true)
+	other, err := e.docs.Tenancy.GetProject(t.Context(), e.docs.Owner, apitest.OtherProject)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Truncate(time.Hour)
+	for _, r := range []struct {
+		project int64
+		ago     time.Duration
+		reads   int
+		peak    int
+	}{
+		{e.docs.Number, 0, 1, 2},
+		{e.docs.Number, 3 * time.Hour, 10, 5},
+		{e.docs.Number, 3 * 24 * time.Hour, 100, 1},
+		{e.docs.Number, 20 * 24 * time.Hour, 1000, 9},
+		{e.docs.Number, 40 * 24 * time.Hour, 10000, 0}, // past every period
+		{other.Number, 0, 7, 7},
+	} {
+		if _, err := e.docs.Pool.Exec(t.Context(), `INSERT INTO documents.usage_hours (project_number, hour, reads, listeners_peak) VALUES ($1, $2, $3, $4)`,
+			r.project, now.Add(-r.ago), r.reads, r.peak); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, c := range []struct {
+		period      string
+		reads, peak float64
+	}{{"60m", 1, 2}, {"24h", 11, 5}, {"7d", 111, 5}, {"30d", 1111, 9}} {
+		res := e.ok(owner, "GET", path(project, "/usage", "period", c.period), nil)
+		totals, _ := res.json["totals"].(map[string]any)
+		if totals["reads"] != c.reads || totals["listenersPeak"] != c.peak {
+			t.Errorf("%s: %s", c.period, res.body)
+		}
 	}
 }
 

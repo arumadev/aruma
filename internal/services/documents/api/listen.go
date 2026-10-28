@@ -113,11 +113,17 @@ func (s *Service) OpenListen(ctx context.Context, c Call, first *pb.ListenReques
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
+	s.o.Usage.Connections(a.db.Project, 1)
 	return &ListenStream{s: s, a: a, sub: sub, targets: map[int32]*listenTarget{}, byTarget: map[*listen.Target]*listenTarget{}}, nil
 }
 
-// Close ends the stream's subscription.
-func (l *ListenStream) Close() { l.sub.Close() }
+// Close ends the stream's subscription. The usage counts the stream, a connection, and its
+// targets, the snapshot listeners, from OpenListen to Close.
+func (l *ListenStream) Close() {
+	l.sub.Close()
+	l.s.o.Usage.Listeners(l.a.db.Project, -len(l.targets))
+	l.s.o.Usage.Connections(l.a.db.Project, -1)
+}
 
 // ListenLimits are a Listen stream's own bounds (ADR-026 §3), which the transport sets before
 // Serve; a zero field is no bound.
@@ -148,7 +154,13 @@ func (l *ListenStream) overflow(limit string) {
 // An error ends the stream with its status.
 func (l *ListenStream) Serve(ctx context.Context, first *pb.ListenRequest, requests <-chan *pb.ListenRequest,
 	send func(*pb.ListenResponse) error) error {
-	l.write = send
+	// Each document sent to the client is a read, as Firestore bills a listener's.
+	l.write = func(r *pb.ListenResponse) error {
+		if dc := r.GetDocumentChange(); dc != nil && len(dc.GetTargetIds()) > 0 {
+			l.s.o.Usage.Read(l.a.db.Project, 1)
+		}
+		return send(r)
+	}
 	// idle runs while the stream has no target, from its last request (stream_idle).
 	idle := time.NewTimer(time.Hour)
 	idle.Stop()
@@ -284,6 +296,7 @@ func (l *ListenStream) add(ctx context.Context, t *pb.Target) error {
 		return err
 	}
 	l.targets[id], l.byTarget[lt.t] = lt, lt
+	l.s.o.Usage.Listeners(l.a.db.Project, 1)
 	resync, err := l.answer(ctx, lt, func() error {
 		if resumed {
 			var expected *int32
@@ -376,6 +389,9 @@ func (l *ListenStream) targetFailed(lt *listenTarget, err error) error {
 // forget takes a target off the stream.
 func (l *ListenStream) forget(lt *listenTarget) {
 	l.sub.Remove(lt.t)
+	if _, ok := l.targets[lt.id]; ok {
+		l.s.o.Usage.Listeners(l.a.db.Project, -1)
+	}
 	delete(l.targets, lt.id)
 	delete(l.byTarget, lt.t)
 }

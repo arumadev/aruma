@@ -47,6 +47,8 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 		if err := s.allowReads(ctx, a, []core.Document{{Path: pathOf(n)}}, readTime, readBudget()); err != nil {
 			return nil, err
 		}
+		// Firestore bills the read of a document that does not exist.
+		s.o.Usage.Read(a.db.Project, 1)
 	}
 	if err != nil {
 		return nil, s.fail(ctx, err)
@@ -54,6 +56,7 @@ func (s *Service) GetDocument(ctx context.Context, c Call, req *pb.GetDocumentRe
 	if err := s.allowReads(ctx, a, []core.Document{d}, readTime, readBudget()); err != nil {
 		return nil, err
 	}
+	s.o.Usage.Read(a.db.Project, 1)
 	return documentProto(a.db, d, mask, masked), nil
 }
 
@@ -170,6 +173,8 @@ func (s *Service) BatchGetDocuments(ctx context.Context, c Call, req *pb.BatchGe
 				return err
 			}
 		}
+		// Each document asked is a read, found or missing.
+		s.o.Usage.Read(a.db.Project, len(docs))
 	}
 	if len(paths) == 0 {
 		// Nothing to read but the database: it must exist, as production's answer says.
@@ -192,11 +197,17 @@ const batchGetChunk = 100
 
 // ListDocuments lists a collection's documents in name order, or with an empty collection id
 // the documents of every collection directly under the parent (f1-list-documents.json).
-func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
+func (s *Service) ListDocuments(ctx context.Context, c Call, req *pb.ListDocumentsRequest) (resp *pb.ListDocumentsResponse, err error) {
 	a, err := s.admit(ctx, c, req, parentOf(req.GetParent()))
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err == nil {
+			// A page bills its documents, and one read when it is empty, as a query does.
+			s.o.Usage.Read(a.db.Project, max(len(resp.GetDocuments()), 1))
+		}
+	}()
 	parent, err := wire.ParseParentName(req.GetParent())
 	if err != nil {
 		return nil, err
@@ -361,13 +372,15 @@ func (s *Service) CreateDocument(ctx context.Context, c Call, req *pb.CreateDocu
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.o.Store.Commit(ctx, a.db, []core.Write{{
+	writes := []core.Write{{
 		Kind: core.WriteUpdate, Path: pathOf(n), Fields: fields,
 		Precondition: core.Precondition{Exists: new(false)},
-	}})
+	}}
+	res, err := s.o.Store.Commit(ctx, a.db, writes)
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
+	s.o.Usage.Wrote(a.db.Project, writes)
 	t := res.Results[0].UpdateTime
 	return documentProto(a.db, core.Document{Path: pathOf(n), Fields: fields, CreateTime: t, UpdateTime: t}, mask, masked), nil
 }
@@ -403,6 +416,7 @@ func (s *Service) UpdateDocument(ctx context.Context, c Call, req *pb.UpdateDocu
 	if err != nil {
 		return nil, s.fail(ctx, err)
 	}
+	s.o.Usage.Wrote(a.db.Project, []core.Write{w})
 	// The document as this commit left it: at its commit time, or the latest when the commit
 	// changed nothing and so took no place in the order.
 	var ro core.ReadOptions
@@ -435,9 +449,11 @@ func (s *Service) DeleteDocument(ctx context.Context, c Call, req *pb.DeleteDocu
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.o.Store.Commit(ctx, a.db, []core.Write{{Kind: core.WriteDelete, Path: pathOf(n), Precondition: pre}}); err != nil {
+	writes := []core.Write{{Kind: core.WriteDelete, Path: pathOf(n), Precondition: pre}}
+	if _, err := s.o.Store.Commit(ctx, a.db, writes); err != nil {
 		return nil, s.fail(ctx, err)
 	}
+	s.o.Usage.Wrote(a.db.Project, writes)
 	return &emptypb.Empty{}, nil
 }
 

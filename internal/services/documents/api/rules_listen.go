@@ -64,7 +64,7 @@ func (l *ListenStream) judgeQuery(ctx context.Context, lt *listenTarget) error {
 		return err
 	}
 	lt.judgedUnder = rs
-	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db}}
+	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db, usage: l.s.o.Usage}}
 	err = l.s.judgeList(ctx, l.a, rs, listOfPath(lt.parent, lt.q), tr, rules.NewPooledBudget(), l.s.now())
 	lt.lookups = lt.lookups || tr.used
 	return err
@@ -84,7 +84,7 @@ func (l *ListenStream) judgeDocs(ctx context.Context, lt *listenTarget, docs []c
 	if whole {
 		lt.judgedUnder = rs
 	}
-	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db, readTime: readTime}}
+	tr := &trackedLookups{Documents: &lookups{store: l.s.o.Store, db: l.a.db, readTime: readTime, usage: l.s.o.Usage}}
 	budget, now := readBudget(), l.s.now()
 	defer func() { lt.lookups = lt.lookups || tr.used }()
 	for _, d := range docs {
