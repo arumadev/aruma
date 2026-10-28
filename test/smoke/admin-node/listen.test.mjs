@@ -12,7 +12,7 @@ import { initializeApp, cert, deleteApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const require = createRequire(import.meta.url);
-const netguard = require.resolve('../../experiments/netguard.cjs');
+const netguard = require.resolve('../../e2e/netguard.cjs');
 assert.ok(require.cache[netguard], 'run this file through documents-run.mjs (npm run test:documents): the netguard is not loaded');
 const { attempts } = require(netguard);
 

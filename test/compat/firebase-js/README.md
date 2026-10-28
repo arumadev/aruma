@@ -42,7 +42,7 @@ It needs Go, Node 24.12 or newer, git, openssl, `psql` (`ARUMA_PG_BIN`), the loc
    console and Admin APIs. It swaps in real credentials for the tests' fixed ones: the API key,
    `Bearer owner`, and unsigned custom tokens, which it signs with a service account key of the
    project as `createCustomToken` would. It is test code: Aruma itself serves none of this.
-4. **Run (offline).** The Node processes load `test/experiments/netguard.cjs`, which refuses any
+4. **Run (offline).** The Node processes load `test/e2e/netguard.cjs`, which refuses any
    connection off the machine. Chrome starts through a launcher that resolves only loopback, so a
    page cannot reach Google either. The summary reports every refused connection.
 5. **Results.** In `.cache/upstream/results`: a mocha JSON report per Node suite, the logs,

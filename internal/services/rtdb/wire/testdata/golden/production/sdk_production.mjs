@@ -5,7 +5,7 @@
 //   node sdk_production.mjs <config.json> <out.json>
 //
 // config.json: {target, databaseURL, apiKey, projectId, run, email, password, authEmulator?}
-// The firebase package is loaded from test/experiments/rtdb-rules/node_modules (npm ci there),
+// The firebase package is loaded from test/e2e/rtdb-rules/node_modules (npm ci there),
 // or from $SDK_DIR/node_modules. The SDK's warnings are what it prints with console.warn.
 // The password and tokens are never written out.
 import fs from 'node:fs';
@@ -14,7 +14,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const sdkDir = process.env.SDK_DIR || path.join(here, '../../../../../../../test/experiments/rtdb-rules');
+const sdkDir = process.env.SDK_DIR || path.join(here, '../../../../../../../test/e2e/rtdb-rules');
 const require = createRequire(path.join(sdkDir, 'package.json'));
 const { initializeApp } = require('firebase/app');
 const { getAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } = require('firebase/auth');

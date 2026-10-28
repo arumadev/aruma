@@ -1,8 +1,8 @@
-// Network guard for the experiments: records every outbound TCP connection and DNS lookup a
+// Network guard for the tests: records every outbound TCP connection and DNS lookup a
 // Node process makes, and refuses anything that is not loopback. Preload it into a process
 // and all of its Node children with
 //
-//   NODE_OPTIONS="--require /abs/path/test/experiments/netguard.cjs"
+//   NODE_OPTIONS="--require /abs/path/test/e2e/netguard.cjs"
 //   ARUMA_NETGUARD_LOG=/abs/path/attempts.log   (optional; one line per attempt)
 //
 // Lines look like "ALLOW 127.0.0.1:49441 pid=123" or "BLOCK oauth2.googleapis.com:443 pid=123".

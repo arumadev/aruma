@@ -41,7 +41,7 @@ node build.mjs
 if [[ "${ARUMA_E2E_SSR:-on}" != off ]]; then
   log "SvelteKit (SSR): build, and serve with Node under the network guard"
   (cd apps/sveltekit && npx vite build --logLevel error)
-  ARUMA_NETGUARD_LOG=$gen/ssr-netguard.log NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" \
+  ARUMA_NETGUARD_LOG=$gen/ssr-netguard.log NODE_OPTIONS="--require $root/test/e2e/netguard.cjs" \
     PORT=$ssr_port HOST=127.0.0.1 ORIGIN="http://127.0.0.1:$ssr_port" \
     node apps/sveltekit/build/index.js >"$gen/ssr.log" 2>&1 &
   pids+=($!)

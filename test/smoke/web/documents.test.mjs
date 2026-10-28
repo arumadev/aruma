@@ -18,7 +18,7 @@ import { checked, expectedFailures } from '../documents-server.mjs';
 import { loadValues, parseTimestamp } from '../documents-values.mjs';
 
 const require = createRequire(import.meta.url);
-const netguard = require.resolve('../../experiments/netguard.cjs');
+const netguard = require.resolve('../../e2e/netguard.cjs');
 assert.ok(require.cache[netguard], 'run this file through documents-run.mjs (npm run test:documents): the netguard is not loaded');
 const { attempts } = require(netguard);
 

@@ -4,7 +4,7 @@
 // the rules go over REST (/.settings/rules.json).
 //
 // Run it through rtdb-run.mjs (npm run test:rtdb), which starts the server and preloads
-// test/experiments/netguard.cjs and test/compat/firebase-js/rtdb/hosts.cjs: every connection off
+// test/e2e/netguard.cjs and test/compat/firebase-js/rtdb/hosts.cjs: every connection off
 // this machine fails, and *.aruma.test resolves to the TLS front inside this process only. Or,
 // with ARUMA_RTDB_DATABASE_URL, a server behind a front of its own, such as Caddy.
 //
@@ -18,10 +18,10 @@ import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 // firebase-admin's cert() ignores token_uri and sends the assertion to Google; this credential
 // makes the same exchange at the key file's token_uri, which is Aruma's.
-import { arumaCredential } from '../../experiments/admin-node/aruma-credential.mjs';
+import { arumaCredential } from '../../e2e/admin-node/aruma-credential.mjs';
 
 const require = createRequire(import.meta.url);
-const netguard = require.resolve('../../experiments/netguard.cjs');
+const netguard = require.resolve('../../e2e/netguard.cjs');
 assert.ok(require.cache[netguard], 'run this file through rtdb-run.mjs (npm run test:rtdb): the netguard is not loaded');
 const { attempts } = require(netguard);
 

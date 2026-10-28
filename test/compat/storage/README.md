@@ -65,7 +65,7 @@ sign-in, its Storage rules, and a service account key.
 
 **The js suites run as production code does.** They never call `connectStorageEmulator`, so
 the SDK speaks to `firebasestorage.googleapis.com` and Auth to `identitytoolkit.googleapis.com`.
-In Node, `hosts.cjs` (after `test/experiments/netguard.cjs`) resolves those names, and nothing
+In Node, `hosts.cjs` (after `test/e2e/netguard.cjs`) resolves those names, and nothing
 else, to the local TLS front; in Chromium the launch's resolver rules do it, and the front's
 certificate is trusted by its SPKI hash alone. `front.mjs` hands each request to Aruma the way a
 runtime redirect does, the host becoming the first path segment
@@ -104,7 +104,7 @@ emulator mode send none) the same token, `/b/...` gets its `/storage/v1` back
 
 ## Offline
 
-Every Node process loads `test/experiments/netguard.cjs` and refuses any connection off the
+Every Node process loads `test/e2e/netguard.cjs` and refuses any connection off the
 machine; the browsers resolve nothing but loopback and the front's names. `summarize.mjs`
 prints the refused connections (none so far), and the run fails on one, or when the guard saw no
 connection at all (it was not loaded). The processes of `ct` and the captures get

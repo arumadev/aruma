@@ -19,7 +19,7 @@
 # The upstream code is cloned at fixed tags into $ARUMA_CACHE_DIR/upstream and run from there;
 # none of it enters this repository. Every download (git, npm, yarn, the chromedriver that
 # matches the local Chrome) happens in the prepare step. The tests themselves run with every
-# connection off this machine refused: the Node processes through test/experiments/netguard.cjs,
+# connection off this machine refused: the Node processes through test/e2e/netguard.cjs,
 # Chrome through a host resolver rule that resolves nothing but loopback. Results land in
 # $ARUMA_CACHE_DIR/upstream/results: <suite>.json and .log per suite, versions.txt, the Aruma,
 # adapter and netguard logs.
@@ -219,7 +219,7 @@ EOF
 
 # Each Node suite writes mocha's JSON report and a log; the browser suite only a log (karma has
 # no JSON reporter installed upstream). A failing test does not stop the run.
-guard="--require $root/test/experiments/netguard.cjs"
+guard="--require $root/test/e2e/netguard.cjs"
 export ARUMA_NETGUARD_LOG=$results/netguard.log
 
 run_js_node() {

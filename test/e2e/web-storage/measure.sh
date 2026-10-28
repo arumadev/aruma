@@ -191,11 +191,11 @@ stop_dev() {
   note "FAILED  a stopped server still answers on :$dev_port"
 }
 
-# netguarded <log> <command…>: runs a Node server under test/experiments/netguard.cjs.
+# netguarded <log> <command…>: runs a Node server under test/e2e/netguard.cjs.
 netguarded() {
   local logf=$1
   shift
-  ARUMA_NETGUARD_LOG=$logf NODE_OPTIONS="--require $root/test/experiments/netguard.cjs" "$@"
+  ARUMA_NETGUARD_LOG=$logf NODE_OPTIONS="--require $root/test/e2e/netguard.cjs" "$@"
 }
 
 google='googleapis\.com|gstatic\.com|google\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com'

@@ -302,7 +302,7 @@ esac
 # Every Node process from here refuses connections off this machine (netguard.cjs). In
 # production mode hosts.cjs, loaded after it, sends *.aruma.test to the TLS front.
 export ARUMA_NETGUARD_LOG=$results/netguard.log
-node_options="--no-strip-types --require $root/test/experiments/netguard.cjs"
+node_options="--no-strip-types --require $root/test/e2e/netguard.cjs"
 unset RTDB_EMULATOR_PORT RTDB_EMULATOR_NAMESPACE FIREBASE_DATABASE_EMULATOR_HOST NODE_EXTRA_CA_CERTS
 if [[ $target == external ]]; then
   # The real DNS resolves the name, and the guard checks that it is this machine.

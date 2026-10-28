@@ -6,9 +6,9 @@
 # the localStorage flag; and that with localStorage blocked, and WebSockets refused as well,
 # long polling carries the data.
 #
-#   test/experiments/rtdb-lp-browser.sh
+#   test/e2e/rtdb-lp-browser.sh
 #
-# Run `npm ci` in test/experiments/rtdb-lp-browser once; Playwright's Chromium must be
+# Run `npm ci` in test/e2e/rtdb-lp-browser once; Playwright's Chromium must be
 # installed (npx playwright-core install chromium). Needs Go, Node, curl, openssl, psql and
 # the local Postgres.
 #

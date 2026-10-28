@@ -20,7 +20,7 @@
 # emulator mode, pointed at an adapter (adapter.mjs) that swaps the emulators' fixed stand-ins
 # (fake-api-key, Bearer owner, an Admin SDK without credentials, /internal/reset) for real ones.
 # Nothing reaches the network once the sources are installed: every Node process refuses any
-# connection off this machine (test/experiments/netguard.cjs), and the browsers resolve no name
+# connection off this machine (test/e2e/netguard.cjs), and the browsers resolve no name
 # but those of the front and loopback.
 #
 # Sources are fetched at fixed versions into $ARUMA_CACHE_DIR/upstream/storage (the main
@@ -342,7 +342,7 @@ start_front() {
 
 # --- suites ------------------------------------------------------------------------------------
 
-guard="--require $root/test/experiments/netguard.cjs"
+guard="--require $root/test/e2e/netguard.cjs"
 export ARUMA_NETGUARD_LOG=$results/netguard.log
 
 # js_env points config/project.json at the project and Node at the front.

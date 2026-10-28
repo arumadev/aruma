@@ -53,7 +53,7 @@ The package unit tests (`packages/database/test/*.test.ts`) need no server and a
 
   ```sh
   TS_NODE_FILES=true TS_NODE_CACHE=NO TS_NODE_COMPILER_OPTIONS='{"module":"commonjs","baseUrl":"<sdk>","paths":{...}}' \
-  NODE_OPTIONS='--no-strip-types --require test/experiments/netguard.cjs [--require rtdb/hosts.cjs]' \
+  NODE_OPTIONS='--no-strip-types --require test/e2e/netguard.cjs [--require rtdb/hosts.cjs]' \
     <sdk>/node_modules/.bin/mocha 'test/*.test.ts' --file src/index.node.ts \
     --config ../../config/mocharc.node.js --reporter json --reporter-option output=<results>/compat.mocha.json
   ```
@@ -108,7 +108,7 @@ development URL of ADR-018.
   The namespace is the URL's first label. Node trusts `RTDB_EXTERNAL_CA` (or the system's roots
   without it). The name is resolved by the real DNS, and the network guard lets it through only
   when every address it resolves to is loopback (`ARUMA_NETGUARD_LOOPBACK_NAMES`, see
-  `test/experiments/netguard.cjs`). The run is still compared with the production baseline.
+  `test/e2e/netguard.cjs`). The run is still compared with the production baseline.
   `test/experiments/rtdb-caddy.sh` runs it behind Caddy: 332 of 332 passed, no regression.
 
 ## Before the tests
