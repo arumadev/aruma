@@ -46,7 +46,7 @@ A pull request should:
   - `docs/architecture.md`, `docs/security.md`, `docs/testing.md`, `docs/benchmarks.md`: how Aruma works and how it is checked.
   - `docs/sdks.md`: the packages under `sdk/`. Each package has its own README.
   - `docs/CHANGELOG.md`: one section per release. Add your change to the newest section when a user can notice it.
-- Use plain, short sentences. Link to other pages with relative links, and keep every link working. `test/ci/repo-hygiene.sh` checks the rules above, and it also fails on a new top-level entry under `docs/` and on paths from a developer's machine (`/Volumes/`, `/Users/` except `/Users/Shared/`, and `/home/<name>/`).
+- Use plain, short sentences. Link to other pages with relative links, and keep every link working. `test/ci/repo-hygiene.sh` checks the rules above, and it also fails on a new top-level entry under `docs/` and on paths from a developer's machine, such as home folders and mounted volumes.
 
 ## Security issues
 
