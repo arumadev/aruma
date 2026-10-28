@@ -7,7 +7,7 @@ import (
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
-// Resource shapes of firebase.googleapis.com/v1beta1 (docs/research/management-api.md).
+// Resource shapes of firebase.googleapis.com/v1beta1.
 // Names always use the project id, even when the request used the number or "-".
 
 const typePrefix = "type.googleapis.com/google.firebase.service.v1beta1."

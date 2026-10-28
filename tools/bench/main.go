@@ -7,7 +7,7 @@
 //	go run ./tools/bench                                   # all scenarios, 10 s each
 //	go run ./tools/bench -scenarios healthz,mgmt-web-config -c 16 -duration 20s
 //	go run ./tools/bench -rate 500                         # open loop: 500 req/s per scenario
-//	go run ./tools/bench -json docs/performance/run.json
+//	go run ./tools/bench -json run.json
 //
 // To keep the load generator out of the server's process, start a server with -serve in one
 // terminal and point a second bench at it with the printed -url/-token/-email/-password. The

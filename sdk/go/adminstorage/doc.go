@@ -16,7 +16,7 @@
 // Client.Bucket and Client.DefaultBucket return the official *storage.BucketHandle, so the code
 // after that line stays as it is. Do not pass option.WithEndpoint to firebase.NewApp instead:
 // firebase-admin-go hands the app's options to every service, and Cloud Messaging then posts to
-// <aruma>/storage/v1//projects/…/messages:send (docs/research/storage-production-path.md).
+// <aruma>/storage/v1//projects/…/messages:send.
 //
 // It is its own module, and imports nothing of the server.
 package adminstorage

@@ -1,4 +1,4 @@
-// The long-poll trap (docs/research/rtdb/J-lp-trap.md) against Aruma: the official web SDK in
+// The long-poll trap against Aruma: the official web SDK in
 // Chromium, with Aruma serving /.lp. ../rtdb-lp-browser.sh builds and configures Aruma and
 // runs this with ARUMA_BIN (the binary, its environment already set), BASE, NS, PROJECT_ID
 // and PAGE_PORT; this starts and stops the server itself, prints one JSON report and exits

@@ -27,7 +27,7 @@ const appURL = `http://${APP_HOST}:${server.address().port}/`;
 
 // The full Chromium build in its new headless mode, which runs Chrome's own code. Playwright's
 // default headless shell stalls a cross-site iframe created just before a popup opens: the
-// SDK's relay iframe then never runs until the next popup (docs/research/phase2-idp.md).
+// SDK's relay iframe then never runs until the next popup.
 const browser = await chromium.launch({ channel: 'chromium', ...(PARTITIONED ? { args: ['--disable-features=Translate'] } : {}) });
 const context = await browser.newContext();
 const external = new Set();

@@ -22,7 +22,7 @@ import (
 
 // Sign-in with Google and Apple (T15, T20): per-project provider settings and where the
 // providers are reached. The flow is in idp_flow.go, token checks in idp_keys.go and the
-// account rules in idp_signin.go; docs/research/phase2-idp.md records the decisions.
+// account rules in idp_signin.go.
 
 // Provider ids.
 const (

@@ -152,7 +152,7 @@ public final class ArumaRedirect {
     }
 
     /**
-     * The S0-B spike's switch, kept for test/experiments/storage-path: the Storage redirect is now on by default
+     * The S0-B spike's switch, kept for the S0-B experiment: the Storage redirect is now on by default
      * ({@link #META_STORAGE_REDIRECT}), and the build-time plugin {@code dev.aruma.storage} is the production path.
      * Read per request; this skips the launch check.
      *

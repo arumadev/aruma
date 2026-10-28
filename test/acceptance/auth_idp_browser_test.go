@@ -26,7 +26,7 @@ func TestAuthIdPBrowser(t *testing.T) {
 		return map[string]any{"sub": "apple-browser", "email": "relay@privaterelay.appleid.com", "email_verified": "true"}
 	}
 	// The app on Aruma's site, on another site, and on another site with Chrome's storage
-	// partitioning, which breaks the redirect relay (docs/research/phase2-idp.md §7).
+	// partitioning, which breaks the redirect relay.
 	for _, run := range []struct{ name, host, partitioned string }{
 		{"same-site", "127.0.0.1", ""}, {"cross-site", "localhost", ""}, {"cross-site-partitioned", "localhost", "1"},
 	} {

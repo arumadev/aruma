@@ -130,8 +130,7 @@ func NewClient(ctx context.Context, app *firebase.App, opts ...Option) (*Client,
 }
 
 // emulatorGuard refuses to start with FIREBASE_AUTH_EMULATOR_HOST set: with it, the official
-// client in the same process skips signature checks and sends "Bearer owner"
-// (docs/research/phase2-admin-auth.md).
+// client in the same process skips signature checks and sends "Bearer owner".
 func emulatorGuard(allow bool, getenv func(string) string) error {
 	if getenv("FIREBASE_AUTH_EMULATOR_HOST") == "" {
 		return nil

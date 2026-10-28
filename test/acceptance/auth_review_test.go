@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Regression tests for the Phase 2 security review (docs/security/review-phase2.md).
+// Regression tests for the Phase 2 security review.
 
 // H-1: signUp with an idToken links a password to the current user. It must not become a way
 // around accounts:update's rules: an account that already has a password keeps it, and an

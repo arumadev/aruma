@@ -12,7 +12,7 @@ import (
 // AC-A3 and AC-A4: for each P0 endpoint, the first error Aruma reports for combined invalid
 // input, in the Identity Toolkit envelope, with enumeration protection on and off. Each row
 // breaks several rules at once; the expected code is the one that must win. The order follows
-// docs/research/phase2-identity-toolkit.md §3; where Aruma deliberately departs from the
+// the Identity Toolkit API; where Aruma deliberately departs from the
 // emulator (a disabled account is revealed only after its password is checked) the row says so.
 
 // errFixture holds accounts in every state the tables need.
@@ -254,7 +254,7 @@ var errTables = map[string][]errRow{
 
 func noPassword(c *queries.AuthProjectConfig) { c.PasswordEnabled = false }
 
-// The email action tables follow the order in docs/research/phase2-email-actions.md. Each env
+// The email action tables follow the order of the Identity Toolkit email actions. Each env
 // stays within the per-address sendOobCode bucket (20 at once).
 var emailErrTables = map[string][]errRow{
 	"accounts:sendOobCode": {

@@ -1,6 +1,6 @@
 // Package core is Aruma Auth: users, sign-in, tokens and their revocation, behind the
 // Identity Toolkit compatible APIs. Errors are *Error values with the codes the Firebase SDKs
-// map; everything a client can observe follows docs/research/phase2-identity-toolkit.md.
+// map; everything a client can observe follows the Identity Toolkit API.
 package core
 
 import (

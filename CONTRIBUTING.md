@@ -5,7 +5,7 @@ Thanks for helping. Aruma aims to be a backend that official Firebase SDKs can t
 ## Before you start
 
 - For anything larger than a small fix, open an issue first so we can agree on the approach.
-- Read the [architecture decisions](docs/adr/README.md). Most "why is it like this" questions are answered there, and a change that goes against one needs a new decision, not only a patch.
+- Code comments cite the architecture decisions by number (ADR-021 and so on). Most "why is it like this" questions are answered by them, and a change that goes against one needs a new decision, not only a patch.
 - Behavior that mirrors Firebase is checked against real Firebase and the official emulators. If your change affects it, say how you verified it.
 
 ## Set up

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The long-poll trap (docs/research/rtdb/J-lp-trap.md, ADR-020 §4) against this checkout's
+# The long-poll trap (ADR-020 §4) against this checkout's
 # Aruma: the official web SDK in Chromium (rtdb-lp-browser/run.mjs), with the database
 # enabled and dev_open_rules on loopback. It checks that a page reconnects after the server
 # was down for 10 s, comes back over long polling, upgrades to a WebSocket again and clears

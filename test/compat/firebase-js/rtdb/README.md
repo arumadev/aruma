@@ -30,8 +30,8 @@ The package unit tests (`packages/database/test/*.test.ts`) need no server and a
 
 ## The pinned source, and how it is built
 
-- **Commit `d7bb0e16f2b13ba15f74b690596eb70ef145d4f6`**, the one the protocol research read
-  (`docs/research/rtdb/A-protocol-sdks.md`), so the line numbers there hold. It is 14 commits
+- **Commit `d7bb0e16f2b13ba15f74b690596eb70ef145d4f6`**, the one the protocol research read,
+  so the line numbers there hold. It is 14 commits
   after the `firebase@13.0.0` release (`0c331cc`), and none of those commits touches
   `packages/database*`, `util`, `app`, `component`, `logger` or `config/mocharc.node.js`. Since
   the `@firebase/database@1.1.5` tag (`6cde0c0`) the two database packages changed only in
@@ -82,7 +82,7 @@ The package unit tests (`packages/database/test/*.test.ts`) need no server and a
   address and refuses anything else.
 - **TLS front.** `tls-proxy.mjs` stands in for Caddy: https and wss on port 9471, forwarded to
   the target's plain http port 9470, with `Host` unchanged and `X-Forwarded-Proto`/`-For` added.
-  It forwards WebSocket upgrades, which `test/experiments/tls-proxy.mjs` does not.
+  It forwards WebSocket upgrades, which a plain TLS proxy does not.
 
 **Emulator mode** sets `RTDB_EMULATOR_PORT` and `RTDB_EMULATOR_NAMESPACE`, so the tests use
 `http://localhost:9470?ns=compat-tests-default-rtdb`. It also works against Aruma, through the
@@ -109,7 +109,7 @@ development URL of ADR-018.
   without it). The name is resolved by the real DNS, and the network guard lets it through only
   when every address it resolves to is loopback (`ARUMA_NETGUARD_LOOPBACK_NAMES`, see
   `test/e2e/netguard.cjs`). The run is still compared with the production baseline.
-  `test/experiments/rtdb-caddy.sh` runs it behind Caddy: 332 of 332 passed, no regression.
+  Run behind Caddy it passed 332 of 332, no regression.
 
 ## Before the tests
 

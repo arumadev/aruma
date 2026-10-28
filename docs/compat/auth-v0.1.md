@@ -10,7 +10,7 @@
 |---|---|---|
 | سيناريوهات P0 | [auth-p0-scenarios.md](auth-p0-scenarios.md)، في CI | 27/27 |
 | اختبارات Firebase الرسمية لـ Auth (T23) | [firebase-js-suites.md](firebase-js-suites.md) | 180 ناجحًا، وكل ما لم ينجح مصنّف بسببه. ثلاثة أخطاء في Aruma أُصلحت |
-| المراجعة الأمنية | [../security/review-v0.1.md](../security/review-v0.1.md) | لا حرج ولا عالٍ. سبع مشاكل أُصلحت، منها اثنتان متوسطتان |
+| المراجعة الأمنية | review-v0.1.md | لا حرج ولا عالٍ. سبع مشاكل أُصلحت، منها اثنتان متوسطتان |
 | تطبيق التوافق على الأجهزة | مستودع `aruma-conformance`، `results/ARUMA-REPORT.md` | الجدول أدناه |
 
 ## تطبيق التوافق: Firebase الحقيقي مقابل Aruma

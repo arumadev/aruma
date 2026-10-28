@@ -1,5 +1,5 @@
 // Package configgen renders the configuration files developers download, in the exact shapes
-// the official client and Admin SDKs read (docs/research/client-config-formats.md).
+// the official client and Admin SDKs read.
 //
 // It is pure: values in, bytes out. Files are generated on request and never stored, and every
 // API that serves a file calls the same function, so the Management API and the console return

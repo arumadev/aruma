@@ -6,7 +6,7 @@
 // Google publishes no specification of this protocol. The reference is the SDKs' code, read
 // at firebase-js-sdk d7bb0e16f2 (packages/database/src/realtime), firebase-android-sdk
 // dcc8d0eb52 and firebase-ios-sdk dc5821fd8c, and the official emulator 4.11.2 observed from
-// the outside (docs/research/rtdb/A-protocol-sdks.md and B-emulator-oracle.md). Frames the
+// the outside. Frames the
 // emulator sent are kept under testdata/golden with their provenance.
 //
 // The shape of every message:

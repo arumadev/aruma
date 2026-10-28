@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// The cost of durability (docs/research/storage/baseline.md): a chunk appended and synced as an
+// The cost of durability: a chunk appended and synced as an
 // upload request does it, an object written and committed, and a staging file promoted. The
 // directory under test is TMPDIR's.
 

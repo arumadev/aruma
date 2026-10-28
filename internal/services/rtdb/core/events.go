@@ -99,8 +99,7 @@ func (d *Database) fanout(ctx context.Context, tx StoreTx, ch Change, b *batchSt
 // views shares among the tagged listens one change concerns what they all compute alike:
 // the node at a path, read once, and a query's window over it, filtered once. Without it,
 // every listen at a path reads its whole node again and sorts it, so ten clients on one
-// leaderboard made each write under it ten times as slow (the bench's query scenario,
-// docs/performance/baseline-rtdb.md). Nodes are immutable, so listens may hold the same one.
+// leaderboard made each write under it ten times as slow (the bench's query scenario). Nodes are immutable, so listens may hold the same one.
 type views struct {
 	nodes   map[string]*Node // by path
 	windows map[string]*Node // by path and query

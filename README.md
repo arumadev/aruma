@@ -47,7 +47,7 @@ Aruma is pre-1.0 and under active development. Services land one at a time, each
 | **Document Database (Firestore-compatible)** | Release candidate [v0.4.0-rc.1](docs/releases/v0.4.0-rc.1.md), opt-in with `ARUMA_DOCUMENTS_ENABLED` ([compat](docs/compat/documents-v0.4.md)) | Replays of recordings made on production in every test, web e2e on Chromium, Firefox and WebKit, firebase-tools and the Admin SDKs; the official Android and iOS suites are not run yet |
 | **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
 
-Every difference from Firebase is documented, with its source and classification, in the compatibility reports under [`docs/compat`](docs/compat) and the [architecture decisions](docs/adr).
+Every difference from Firebase is documented, with its source and classification, in the compatibility reports under [`docs/compat`](docs/compat).
 
 ## How it works
 
@@ -77,7 +77,7 @@ flowchart LR
 2. Download the app's configuration file (`google-services.json`, `GoogleService-Info.plist`, or the Web and Flutter equivalents).
 3. Put it in your app in place of the Firebase one. Your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](sdk).
 
-Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in [ADR-008](docs/adr/ADR-008-single-entry.md), [ADR-015](docs/adr/ADR-015-services-layout.md) and [ADR-017](docs/adr/ADR-017-postgres-rls.md).
+Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in ADR-008, ADR-015 and ADR-017.
 
 ## The console
 
@@ -145,7 +145,7 @@ arumactl sa create --project chat-app backend
 arumactl sa keys create --project chat-app backend@chat-app.sa.aruma.example.com --out key.json
 ```
 
-The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`. Details are in [docs/research/experiments.md](docs/research/experiments.md).
+The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`.
 
 ## Repository layout
 
@@ -179,16 +179,13 @@ make smoke   # the official SDKs against real config files: web, admin-node, adm
 - Passwords use argon2id. Tokens are stored as HMACs only, and a service account's private key is never stored.
 - What a caller does not own returns `NOT_FOUND`.
 
-The full list and its tests are in [ADR-010](docs/adr/ADR-010-secure-defaults.md) and the [threat model](docs/security/threat-model.md). To report a vulnerability, read [SECURITY.md](SECURITY.md).
+The full list and its tests are in ADR-010 and the [threat model](docs/security/threat-model.md). To report a vulnerability, read [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
-- [Architecture decisions](docs/adr/README.md)
 - [Compatibility reports](docs/compat)
 - [Guides](docs/guides): Web auth, Admin auth, Realtime Database and operating it
-- [Security reviews](docs/security)
-- [Performance baselines](docs/performance)
-- [Research notes](docs/research)
+- [Threat model](docs/security/threat-model.md)
 
 ## Contributing
 

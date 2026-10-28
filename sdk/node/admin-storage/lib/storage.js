@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // ArumaStorage: the official @google-cloud/storage client, configured for Aruma as ADR-022 §14
-// decides and docs/research/storage-production-path.md measured.
+// decides.
 //
 // - apiEndpoint is the Aruma origin, and useAuthWithCustomEndpoint keeps the authorization a
 //   custom endpoint otherwise drops (nodejs-common/util.js:495-500).

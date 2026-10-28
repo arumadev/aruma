@@ -5,7 +5,7 @@
 // values into these types itself (api/resource.go, gcs/resource.go), because the two disagree on
 // tokens, contentEncoding and numbers.
 //
-// Sources: the client protocol research (docs/research/storage/A-client-protocol.md, A), the
+// Sources: the client protocol research (A), the
 // Admin and GCS protocol (B), the emulator's recordings (D, test/oracle/storage/emulator) and
 // production against the emulator (E, test/oracle/storage/production, and Pyric's observations
 // of real Storage), as ADR-022 cites them. golden_test.go holds every type and parser to the

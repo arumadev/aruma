@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Regression tests for the v0.1 security review (docs/security/review-v0.1.md).
+// Regression tests for the v0.1 security review.
 
 // S-2: Google vouches for an address only where it is the mail host: @gmail.com, or a Google
 // Workspace account whose hosted domain (hd) is the address's domain. Anyone can open a Google

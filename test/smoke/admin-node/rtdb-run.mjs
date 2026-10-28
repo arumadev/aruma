@@ -15,8 +15,8 @@
 //                          use a genconfig -serve -rtdb-domain rtdb.aruma.test -rtdb-tls ...
 //                          already running, whose files are in ARUMA_SMOKE_DIR
 //   ARUMA_SMOKE_DIR with ARUMA_RTDB_DATABASE_URL
-//                          use a server behind a front of its own, such as Caddy (see
-//                          test/experiments/rtdb-caddy.sh): ARUMA_SMOKE_DIR holds the
+//                          use a server behind a front of its own, such as Caddy:
+//                          ARUMA_SMOKE_DIR holds the
 //                          project's service-account.json and an expected.json with projectId
 //                          and that databaseURL, ARUMA_RTDB_CA the CA to trust (optional), and
 //                          ARUMA_NETGUARD_LOOPBACK_NAMES the names the real DNS resolves to

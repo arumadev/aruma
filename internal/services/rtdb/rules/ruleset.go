@@ -8,7 +8,7 @@
 // data through the Source interface in snapshot.go, which core backs with Postgres.
 //
 // What Aruma does not support is refused when the rules are loaded, never denied silently at run
-// time: getPriority() (docs/research/rtdb-decisions.md, Q4), and regular expressions Go's regexp
+// time: getPriority(), and regular expressions Go's regexp
 // cannot run with Firebase's meaning (see regex.go). auth.provider, refused until R4, is
 // supported since the verified ID tokens give it its value (auth.go).
 package rules
@@ -20,7 +20,7 @@ import (
 
 // MaxSize bounds a rules document. Firebase documents no limit for Realtime Database rules; in a
 // sample of 2255 public rules files the median was 1.2 KB and the largest 150 KB
-// (docs/research/rtdb/H-rules-rest-lp.md), so 1 MiB refuses nothing real while keeping a
+// so 1 MiB refuses nothing real while keeping a
 // hostile upload cheap to reject.
 const MaxSize = 1 << 20
 

@@ -3,7 +3,7 @@
 // firebase-admin/storage, next to firebase-admin initialised with the key file Aruma issued.
 // Uploads of each kind, downloads with the CRC check, getDownloadURL, copies, and the Bearer on
 // every request the client makes, the resumable session's start and chunks included, measured
-// again with key files that carry universe_domain (docs/research/storage-production-path.md).
+// again with key files that carry universe_domain.
 //
 // Run it through storage-run.mjs (npm run test:storage): it starts the server, in the loopback
 // and the TLS form, and preloads the network guard, which refuses every connection beyond

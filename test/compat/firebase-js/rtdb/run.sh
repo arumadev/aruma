@@ -29,8 +29,8 @@
 # first label), RTDB_EXTERNAL_CA the CA Node trusts for it (NODE_EXTRA_CA_CERTS; unset, the
 # system's), and RTDB_ADMIN_AUTH or RTDB_RULES_HOOK loads the rules. Its name must resolve, by
 # the real DNS, to this machine: the network guard lets that one name through only when every
-# address it resolves to is loopback (ARUMA_NETGUARD_LOOPBACK_NAMES). test/experiments/
-# rtdb-caddy.sh runs it behind Caddy.
+# address it resolves to is loopback (ARUMA_NETGUARD_LOOPBACK_NAMES). It also runs
+# behind Caddy.
 #
 # Before the tests, the target gets the suites' open rules (config/database.rules.json, as the
 # upstream emulator runner loads them) through PUT /.settings/rules.json with the target's admin

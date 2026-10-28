@@ -12,9 +12,8 @@ import (
 	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
-// The Admin API is what firebase-admin calls, at the paths and shapes both official SDKs use
-// (docs/research/phase2-admin-auth.md §3): every call is under /v1/projects/{project}, where
-// {project} is the project id or number. The callers are server code, never a browser, so
+// The Admin API is what firebase-admin calls, at the paths and shapes both official SDKs use:
+// every call is under /v1/projects/{project}, where {project} is the project id or number. The callers are server code, never a browser, so
 // there is no CORS. A caller is a service account with an access token from
 // /oauth2/v1/token, acting on its own project, or the project owner with a CLI token. API keys,
 // ID tokens, "Bearer owner" and anonymous calls are refused by authn before any handler runs.

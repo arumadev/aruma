@@ -7,7 +7,7 @@ import (
 
 // Error is an Identity Toolkit error: a code the SDKs map (EMAIL_EXISTS, TOKEN_EXPIRED...) and
 // an optional detail, rendered as "CODE : detail" in the Google error envelope. Codes and their
-// order follow docs/research/phase2-identity-toolkit.md; texts are Aruma's own (U-13).
+// order follow the Identity Toolkit API; texts are Aruma's own (U-13).
 type Error struct {
 	Code   string
 	Detail string

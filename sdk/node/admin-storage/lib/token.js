@@ -3,8 +3,8 @@
 
 // The service account's access token, from Aruma's token endpoint. firebase-admin's cert() and
 // @google-cloud/storage's keyFilename both go through gtoken, which posts to a fixed
-// https://oauth2.googleapis.com/token whatever token_uri says (docs/research/experiments.md,
-// T22), so the library makes the RFC 7523 exchange itself, at the key file's server.
+// https://oauth2.googleapis.com/token whatever token_uri says, so the library makes the RFC 7523 exchange itself, at the key file's
+// server.
 
 import { createPrivateKey, sign } from 'node:crypto';
 import { FirebaseStorageError } from 'firebase-admin/storage';
