@@ -101,6 +101,7 @@ DELETE /console/v1/projects/{project}/documents/document session+token
 GET    /console/v1/projects/{project}/documents/rules session+token
 PUT    /console/v1/projects/{project}/documents/rules session+token
 POST   /console/v1/projects/{project}/documents/rules:validate session+token
+POST   /console/v1/projects/{project}/documents/rules:simulate session+token
 GET    /console/v1/projects/{project}/documents/rulesets session+token
 GET    /console/v1/projects/{project}/documents/rulesets/{ruleset} session+token
 GET    /console/v1/projects/{project}/documents/indexes session+token

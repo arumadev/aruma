@@ -141,14 +141,36 @@ func (s *Service) ruleset(ctx context.Context, a admitted) (*rules.Ruleset, erro
 }
 
 // judge decides one operation under rs: nil when the rules allow it, wire.PermissionDenied when
-// they do not, errRulesUnavailable when they cannot decide. A nil rs denies.
+// they do not, errRulesUnavailable when they cannot decide. A nil rs denies. The usage counts
+// the decision.
 func (s *Service) judge(ctx context.Context, a admitted, rs *rules.Ruleset, op ruleOp) error {
+	_, err := s.decide(ctx, a, rs, op, rules.TraceNone)
+	return s.countRule(a, err)
+}
+
+// countRule counts judge's or judgeList's answer err in the usage, and returns it.
+func (s *Service) countRule(a admitted, err error) error {
+	o := core.RuleAllow
+	switch {
+	case err == nil:
+	case errors.Is(err, errRulesUnavailable):
+		o = core.RuleError
+	default:
+		o = core.RuleDeny
+	}
+	s.o.Usage.Rule(a.db.Project, o)
+	return err
+}
+
+// decide is judge's decision, with the trace asked for, which the usage does not count: the
+// Decision, and the error judge answers.
+func (s *Service) decide(ctx context.Context, a admitted, rs *rules.Ruleset, op ruleOp, trace rules.TraceLevel) (rules.Decision, error) {
 	if rs == nil {
-		return wire.PermissionDenied()
+		return rules.Decision{}, wire.PermissionDenied()
 	}
 	match := matchPath(a.db, op.path)
 	if len(match) > rs.RequestSegments() {
-		return wire.PermissionDenied()
+		return rules.Decision{}, wire.PermissionDenied()
 	}
 	request := map[string]rules.Value{
 		"auth":     a.guard.auth,
@@ -172,17 +194,18 @@ func (s *Service) judge(ctx context.Context, a admitted, rs *rules.Ruleset, op r
 		Documents: op.lookups,
 		Budget:    op.budget,
 		Inflight:  s.inflight,
+		Trace:     trace,
 	})
 	switch {
 	case errors.Is(err, rules.ErrOverloaded):
-		return errRulesUnavailable
+		return d, errRulesUnavailable
 	case err != nil:
 		s.log.Error("documents: the rules could not decide", "project_number", a.db.Project, "method", op.method.String(), "error", err)
-		return errRulesUnavailable
+		return d, errRulesUnavailable
 	case !d.Allow:
-		return wire.PermissionDenied()
+		return d, wire.PermissionDenied()
 	}
-	return nil
+	return d, nil
 }
 
 // ruleOp is one operation judge decides.
@@ -212,7 +235,7 @@ func (s *Service) allowReads(ctx context.Context, a admitted, docs []core.Docume
 	if err != nil {
 		return err
 	}
-	l := &lookups{store: s.o.Store, db: a.db, readTime: readTime}
+	l := &lookups{store: s.o.Store, db: a.db, readTime: readTime, usage: s.o.Usage}
 	now := s.now()
 	for _, d := range docs {
 		op := ruleOp{method: rules.MethodGet, path: d.Path, before: d, now: now, lookups: l, budget: budget}
@@ -234,7 +257,7 @@ func (s *Service) judged(ctx context.Context, a admitted) (context.Context, erro
 		return nil, err
 	}
 	return core.WithAuthorizer(ctx, func(ctx context.Context, proposals []core.Proposal, now time.Time) error {
-		l := &lookups{store: s.o.Store, db: a.db, after: make(map[string]core.Document, len(proposals))}
+		l := &lookups{store: s.o.Store, db: a.db, after: make(map[string]core.Document, len(proposals)), usage: s.o.Usage}
 		for _, p := range proposals {
 			l.after[p.Path.String()] = p.After
 		}
@@ -347,6 +370,8 @@ type lookups struct {
 	db       core.DB
 	readTime time.Time
 	after    map[string]core.Document // by path, for getAfter and existsAfter
+	// usage counts the documents read, as Firestore bills a rules lookup; nil for none.
+	usage *core.Usage
 }
 
 // Get implements rules.Documents.
@@ -368,11 +393,13 @@ func (l *lookups) Get(ctx context.Context, project int64, path []string, after b
 	}
 	d, _, err := l.store.Get(ctx, l.db, p, core.ReadOptions{ReadTime: l.readTime})
 	if ce, ok := errors.AsType[*core.Error](err); ok && ce.Code == core.NotFound {
+		l.usage.Read(l.db.Project, 1)
 		return rules.Value{}, false, nil
 	}
 	if err != nil {
 		return rules.Value{}, false, err
 	}
+	l.usage.Read(l.db.Project, 1)
 	return resourceValue(l.db, d), true, nil
 }
 

@@ -58,6 +58,9 @@ type Options struct {
 	// Listen is the hub the Listen streams subscribe to (ADR-026 §2); without it Listen is
 	// UNIMPLEMENTED.
 	Listen ListenHub
+	// Usage counts the dashboard's usage: the documents read, written and deleted as Firestore
+	// bills them, the listeners and connections, the rules' decisions; nil counts nothing.
+	Usage  *core.Usage
 	Logger *slog.Logger
 }
 

@@ -59,6 +59,8 @@ type Options struct {
 	Hub listen.Options
 	// Notifier wraps the hub as the store tells it of commits, for tests that lose a commit.
 	Notifier func(documents.Notifier) documents.Notifier
+	// Now is the usage counters' clock; nil is time.Now.
+	Now func() time.Time
 }
 
 // Env is a service layer on a fresh database.
@@ -76,6 +78,9 @@ type Env struct {
 	Key       tenancy.GeneratedKey
 	SAEmail   string
 	OwnerPAT  string // an aruma_pat_ token of the owner of both projects
+	// Usage is Service's usage counters (Reference counts none), which nothing flushes but a
+	// test.
+	Usage *documents.Usage
 }
 
 // New returns the environment.
@@ -139,11 +144,12 @@ func New(t testing.TB, o Options) *Env {
 	if o.Store != nil {
 		s = o.Store(store)
 	}
+	usage := documents.NewUsage(pool, o.Now, log)
 	return &Env{
 		Pool: pool, Tenancy: svc, Store: store, Hub: hub, Owner: owner, Number: proj.Number, Key: key,
-		SAEmail: sa.Email, OwnerPAT: pat.Plaintext,
+		SAEmail: sa.Email, OwnerPAT: pat.Plaintext, Usage: usage,
 		Service: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log,
-			Rulesets: svc, IDTokens: tokens}),
+			Rulesets: svc, IDTokens: tokens, Usage: usage}),
 		Reference: api.New(api.Options{Store: s, Auth: resolver, Projects: svc, DevOpenRules: o.DevOpenRules, Listen: hub, Logger: log,
 			Rulesets: svc, IDTokens: tokens, ReferenceOnly: true}),
 	}

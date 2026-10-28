@@ -12,6 +12,6 @@ func TestQueriesAreProjectScoped(t *testing.T) {
 	scopecheck.Check(t, ".", []string{
 		"documents.databases", "documents.sequencer", "documents.documents", "documents.versions",
 		"documents.changelog", "documents.indexes", "documents.field_overrides", "documents.index_entries",
-		"documents.usage", "documents.operations",
+		"documents.usage", "documents.usage_hours", "documents.operations",
 	})
 }

@@ -50,6 +50,9 @@ func PurgeProject(ctx context.Context, pool *pgxpool.Pool, project int64) error 
 	if err := q.PurgeUsage(ctx, project); err != nil {
 		return fmt.Errorf("documents: purge the usage of project %d: %w", project, err)
 	}
+	if err := q.PurgeUsageHours(ctx, project); err != nil {
+		return fmt.Errorf("documents: purge the usage hours of project %d: %w", project, err)
+	}
 	if err := q.PurgeDatabases(ctx, project); err != nil {
 		return fmt.Errorf("documents: purge the databases of project %d: %w", project, err)
 	}

@@ -130,6 +130,19 @@ type DocumentsUsage struct {
 	Documents     int64
 }
 
+type DocumentsUsageHour struct {
+	ProjectNumber   int64
+	Hour            time.Time
+	Reads           int64
+	Writes          int64
+	Deletes         int64
+	ListenersPeak   int64
+	ConnectionsPeak int64
+	RulesAllows     int64
+	RulesDenies     int64
+	RulesErrors     int64
+}
+
 type DocumentsVersion struct {
 	ProjectNumber int64
 	DatabaseID    string

@@ -94,12 +94,15 @@ func (s *Service) RunQuery(ctx context.Context, c Call, req *pb.RunQueryRequest,
 			}
 		}
 		sent = true
+		s.o.Usage.Read(a.db.Project, 1)
 		return send(&pb.RunQueryResponse{Document: queryDocument(d), ReadTime: timestamppb.New(rt)})
 	})
 	if err != nil {
 		return err
 	}
 	if !sent {
+		// A query without results bills one read.
+		s.o.Usage.Read(a.db.Project, 1)
 		return send(&pb.RunQueryResponse{ReadTime: timestamppb.New(readTime), SkippedResults: int32(skipped)})
 	}
 	return nil

@@ -13,13 +13,16 @@
 // exactly. Every write is audited; the rules are saved and published by tenancy, which audits
 // them itself. No route reads a body over 1 MiB.
 //
-// The routes live in one file per area: data.go, rules.go, indexes.go.
+// The routes live in one file per area: data.go, rules.go (with the Rules Playground,
+// simulate.go), indexes.go; usage is here.
 package console
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -198,17 +201,73 @@ func (h *handlers) getInfo(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
 
-// getUsage answers what the server counts for the project's database. It keeps no per-project
-// counters of reads, writes or deletes today (its metrics are process-wide, by method), so the
-// answer says so rather than show another project's traffic (ADR-030 §8).
+// usagePeriods are the usage screen's periods, the Firebase console's (f7-production-console.md
+// §5), by their query value. The counts are an hour a row, so a period starts at the start of
+// its first hour: "60m" is the current hour and the one before.
+var usagePeriods = map[string]time.Duration{
+	"60m": time.Hour,
+	"24h": 24 * time.Hour,
+	"7d":  7 * 24 * time.Hour,
+	"30d": 30 * 24 * time.Hour,
+}
+
+type usageJSON struct {
+	Hour            string `json:"hour,omitempty"`
+	Reads           int64  `json:"reads"`
+	Writes          int64  `json:"writes"`
+	Deletes         int64  `json:"deletes"`
+	ListenersPeak   int64  `json:"listenersPeak"`
+	ConnectionsPeak int64  `json:"connectionsPeak"`
+	RulesAllows     int64  `json:"rulesAllows"`
+	RulesDenies     int64  `json:"rulesDenies"`
+	RulesErrors     int64  `json:"rulesErrors"`
+}
+
+// getUsage answers the project's usage over ?period= (60m, 24h, 7d or 30d; 24h when absent),
+// as the Firebase console's usage tab shows it: the documents read, written and deleted, the
+// peaks of snapshot listeners and active connections, and the rules' allows, denies and
+// errors, in total and an hour a row. Totals sum the counts and keep the greatest peak. The
+// counts are this project's alone (core.Usage).
 func (h *handlers) getUsage(w http.ResponseWriter, r *http.Request) {
-	if _, err := h.target(r); err != nil {
+	t, err := h.target(r)
+	if err != nil {
 		h.m.Fail(w, r, err)
 		return
 	}
+	period := cmp.Or(r.URL.Query().Get("period"), "24h")
+	d, ok := usagePeriods[period]
+	if !ok {
+		h.m.Fail(w, r, apierr.Invalid("period", "period must be 60m, 24h, 7d or 30d."))
+		return
+	}
+	now := time.Now()
+	start := now.Add(-d).UTC().Truncate(time.Hour)
+	hours, counted, err := h.svc.UsageHours(r.Context(), t.call, t.database(), start)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	if !counted {
+		h.m.Fail(w, r, apierr.New(apierr.FailedPrecondition, "This server does not count the Document Database's usage."))
+		return
+	}
+	var total usageJSON
+	rows := make([]usageJSON, 0, len(hours))
+	for _, u := range hours {
+		rows = append(rows, usageJSON{Hour: rfc3339(u.Hour), Reads: u.Reads, Writes: u.Writes, Deletes: u.Deletes,
+			ListenersPeak: u.ListenersPeak, ConnectionsPeak: u.ConnectionsPeak,
+			RulesAllows: u.RulesAllows, RulesDenies: u.RulesDenies, RulesErrors: u.RulesErrors})
+		total.Reads += u.Reads
+		total.Writes += u.Writes
+		total.Deletes += u.Deletes
+		total.ListenersPeak = max(total.ListenersPeak, u.ListenersPeak)
+		total.ConnectionsPeak = max(total.ConnectionsPeak, u.ConnectionsPeak)
+		total.RulesAllows += u.RulesAllows
+		total.RulesDenies += u.RulesDenies
+		total.RulesErrors += u.RulesErrors
+	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
-		"available": false,
-		"counters":  map[string]any{},
-		"note":      "This server does not count reads, writes or deletes per project yet.",
+		"period": period, "start": rfc3339(start), "end": rfc3339(now), "granularity": "hour",
+		"totals": total, "hours": rows,
 	})
 }
