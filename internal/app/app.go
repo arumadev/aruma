@@ -27,6 +27,8 @@ import (
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
 	authconsole "github.com/arumadev/aruma/internal/services/auth/console"
 	identity "github.com/arumadev/aruma/internal/services/auth/core"
+	docapi "github.com/arumadev/aruma/internal/services/documents/api"
+	docconsole "github.com/arumadev/aruma/internal/services/documents/console"
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	rtdbapi "github.com/arumadev/aruma/internal/services/rtdb/api"
 	rtdbconsole "github.com/arumadev/aruma/internal/services/rtdb/console"
@@ -188,6 +190,10 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		m.Registry.MustRegister(storageMetrics.Collectors()...)
 	}
 	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
+	var docsAPI *docapi.Service
+	if docs != nil {
+		docsAPI = docs.API
+	}
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){
@@ -196,6 +202,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			storageconsole.Routes(storageSvc, storageconsole.Options{
 				PublicURL: publicURL, ProjectDomain: cfg.ProjectDomain, Rules: svc, Audit: svc.Audit,
 			}),
+			docconsole.Routes(docsAPI, docconsole.Options{Rules: svc, Audit: svc.Audit}),
 		},
 	})
 	mgmtAPI := mgmt.New(svc, auth, logger, mgmt.Options{

@@ -36,6 +36,8 @@ import (
 // errNotBooted's text. Boot is not run from the request path, since it may wait 30 seconds for
 // the single-instance lock.
 type Documents struct {
+	// API is the service layer every transport and the dashboard's routes call.
+	API   *docapi.Service
 	GRPC  *docgrpc.Handler
 	REST  *docrest.Handler
 	store *bootStore
@@ -118,6 +120,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		},
 	})
 	return &Documents{
+		API:   api,
 		GRPC:  streams,
 		REST:  docrest.New(docrest.Options{Service: api, Channel: channel, Logger: logger}),
 		store: store, pool: pool, cfg: l, log: logger, hub: hub,
