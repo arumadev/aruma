@@ -160,6 +160,4 @@ curl -s -o /dev/null -w '%{http_code}\n' 'https://chat-app-default-rtdb.rtdb.exa
 curl -s 'https://no-such-default-rtdb.rtdb.example.com/'  # fails in the TLS handshake: no certificate for unknown names
 ```
 
-`test/experiments/rtdb-caddy.sh` runs this whole section on one machine: Caddy with its local CA,
-nip.io's public wildcard DNS, the official SDKs through it, and Google's own test suites.
 

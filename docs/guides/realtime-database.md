@@ -101,7 +101,6 @@ firebase database:set /smoke smoke.json --project chat-app --force
 firebase database:get /smoke --project chat-app
 firebase deploy --only database --project chat-app   # firebase.json: {"database": {"rules": "database.rules.json"}}
 ```
-(From `test/experiments/firebase-cli-rtdb.sh`.)
 
 ## Rules
 
@@ -154,7 +153,7 @@ curl -X PUT -H "Authorization: Bearer $CLI_TOKEN" --data-binary @database.rules.
 
 ## Testing your app on Aruma
 
-- **Local server:** follow "Running locally" in the [README](../../README.md), and add `ARUMA_RTDB_ENABLED=true` to `.env`. Without `rtdb.domain`, the config files carry the development form. For the production URL locally (Admin SDKs and the tool), `test/experiments/rtdb-caddy.sh` runs the whole setup behind Caddy.
+- **Local server:** follow "Running locally" in the [README](../../README.md), and add `ARUMA_RTDB_ENABLED=true` to `.env`. Without `rtdb.domain`, the config files carry the development form. For the production URL locally (Admin SDKs and the tool), put Aruma behind a reverse proxy with a wildcard certificate as described in [Operations](operations.md#realtime-database).
 - **Full examples:** `test/e2e/web-rtdb`, `android-rtdb` and `ios-rtdb` (their scenarios are in [test/e2e/README.md](../../test/e2e/README.md)), and `test/smoke/admin-node` and `admin-go`.
 
 ## Troubleshooting
