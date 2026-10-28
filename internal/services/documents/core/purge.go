@@ -16,8 +16,10 @@ const purgeBatch = 10_000
 // (ADR-024 §1.1): the hot tables, which have no foreign keys, in batches, then its databases,
 // whose cascade takes the sequencer, indexes, field overrides and operations. It is idempotent:
 // a project without documents costs a few empty deletes. It needs no single-instance lock: the
-// project is gone, so no commit reaches its rows.
-func PurgeProject(ctx context.Context, pool *pgxpool.Pool, project int64) error {
+// project is gone, so no commit reaches its rows. usage, which may be nil, forgets the
+// project's counts first, so that its next flush does not write them back.
+func PurgeProject(ctx context.Context, pool *pgxpool.Pool, usage *Usage, project int64) error {
+	usage.Forget(project)
 	q := queries.New(pool)
 	tables := []struct {
 		name string

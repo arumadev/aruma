@@ -154,3 +154,35 @@ func TestUsageRun(t *testing.T) {
 		t.Errorf("after the process stopped: %+v", hs)
 	}
 }
+
+// TestUsagePurge: after a project is purged, the next flush writes nothing for it: neither the
+// counts it had not flushed, nor the listeners its open streams held. Another project is kept.
+func TestUsagePurge(t *testing.T) {
+	pool := storetest.NewPool(t)
+	u := core.NewUsage(pool, nil, nil)
+	const gone, kept = 301, 302
+	u.Read(gone, 2)
+	u.Listeners(gone, 1)
+	u.Read(kept, 1)
+	if err := u.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	u.Read(gone, 5)
+	if err := core.PurgeProject(t.Context(), pool, u, gone); err != nil {
+		t.Fatal(err)
+	}
+	u.Listeners(gone, -1) // the stream that was open closes
+	if err := u.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	since := time.Now().Add(-time.Hour)
+	if hs := hours(t, core.NewUsage(pool, nil, nil), gone, since); len(hs) != 0 {
+		t.Errorf("the purged project's hours came back: %+v", hs)
+	}
+	if hs := hours(t, u, gone, since); len(hs) != 0 {
+		t.Errorf("the purged project's hours, read with its counts in memory: %+v", hs)
+	}
+	if hs := hours(t, u, kept, since); len(hs) != 1 || hs[0].Reads != 1 {
+		t.Errorf("the other project: %+v", hs)
+	}
+}

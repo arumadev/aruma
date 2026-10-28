@@ -30,7 +30,9 @@ type Usage struct {
 	// mu guards hours: a count holds it shared, Flush exclusively while it takes them.
 	mu    sync.RWMutex
 	hours map[usageKey]*usageCounts
-	// gauges are the projects' current listeners and connections, which outlive a flush.
+	// gauges are the projects' current listeners and connections, which outlive a flush. A
+	// gauge changes under mu held shared, so that seed, which holds it exclusively, can drop
+	// the gauges back at zero.
 	gauges sync.Map // int64 → *usageGauge
 
 	// flushMu orders the flushes, and guards pruned.
@@ -181,7 +183,9 @@ func (u *Usage) Listeners(project int64, delta int) {
 	if u == nil || delta == 0 {
 		return
 	}
+	u.mu.RLock()
 	n := u.gauge(project).listeners.Add(int64(delta))
+	u.mu.RUnlock()
 	if delta > 0 {
 		u.add(project, func(c *usageCounts) { raise(&c.listenersPeak, n) })
 	}
@@ -192,7 +196,9 @@ func (u *Usage) Connections(project int64, delta int) {
 	if u == nil || delta == 0 {
 		return
 	}
+	u.mu.RLock()
 	n := u.gauge(project).connections.Add(int64(delta))
+	u.mu.RUnlock()
 	if delta > 0 {
 		u.add(project, func(c *usageCounts) { raise(&c.connectionsPeak, n) })
 	}
@@ -221,13 +227,15 @@ func (c *usageCounts) merge(h UsageHour) {
 func (h UsageHour) zero() bool { return h == UsageHour{Hour: h.Hour} }
 
 // seed starts the current hour's peaks at the listeners and connections still open, so that an
-// hour in which none opened shows them. u.mu is held.
+// hour in which none opened shows them, and drops the gauges with none open. u.mu is held.
 func (u *Usage) seed() {
 	hour := hourOf(u.now()).Unix()
 	u.gauges.Range(func(k, v any) bool {
 		g := v.(*usageGauge)
 		l, c := g.listeners.Load(), g.connections.Load()
 		if l <= 0 && c <= 0 {
+			// Below zero only for a project Forget dropped while its streams were open.
+			u.gauges.Delete(k)
 			return true
 		}
 		key := usageKey{k.(int64), hour}
@@ -240,6 +248,21 @@ func (u *Usage) seed() {
 		raise(&cs.connectionsPeak, c)
 		return true
 	})
+}
+
+// Forget drops what project counted and has not flushed, and its listeners and connections, so
+// that no later flush writes a row for it: the purge of a deleted project (PurgeProject) calls it
+// before it deletes the project's hours. A flush under way finishes first.
+func (u *Usage) Forget(project int64) {
+	if u == nil {
+		return
+	}
+	u.flushMu.Lock()
+	defer u.flushMu.Unlock()
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	maps.DeleteFunc(u.hours, func(k usageKey, _ *usageCounts) bool { return k.project == project })
+	u.gauges.Delete(project)
 }
 
 // Flush adds the counts so far to the table, in one statement, and prunes the hours past

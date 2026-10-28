@@ -600,7 +600,7 @@ func TestPurgeIndexes(t *testing.T) {
 	if _, err := s.UpdateField(ctx, testDB, "c", &adminpb.Field{Name: testDB.FieldName("c", "a"), IndexConfig: &adminpb.Field_IndexConfig{}}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := PurgeProject(ctx, pool, testDB.Project); err != nil {
+	if err := PurgeProject(ctx, pool, nil, testDB.Project); err != nil {
 		t.Fatal(err)
 	}
 	for _, table := range []string{"index_entries", "indexes", "field_overrides", "operations"} {

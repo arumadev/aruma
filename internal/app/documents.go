@@ -70,8 +70,9 @@ type Documents struct {
 // key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
 func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics,
 	idTokens idtoken.Verifier, revocations idtoken.Revocations, rulesInflight *rules.Inflight, logger *slog.Logger) *Documents {
+	usage := documents.NewUsage(pool, nil, logger)
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
-		return documents.PurgeProject(ctx, pool, project)
+		return documents.PurgeProject(ctx, pool, usage, project)
 	})
 	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 	jwts := authn.NewServiceAccountJWTVerifier(svc, publicURL, logger)
@@ -92,7 +93,6 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	l := cfg.Documents.Limits
 	// The Listen hub serves the streams from the start; Boot binds it to the store it opens.
 	hub := newHubs(listen.Options{LagEvents: l.StreamLagEvents, SnapshotRows: l.SnapshotRows, Log: logger})
-	usage := documents.NewUsage(pool, nil, logger)
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
 		Rulesets: svc, IDTokens: idTokens, RulesInflight: rulesInflight,
