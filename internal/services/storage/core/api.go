@@ -23,7 +23,7 @@ import (
 	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
-// The contract of S2-0 (storage-layout.md, "عقد S2-0"): every exported type and every method's
+// The contract of S2-0 (storage-layout.md, "the S2-0 contract"): every exported type and every method's
 // signature, fixed until S6 ends. A method a later task writes panics with its owner's name, in
 // the file that task owns. Changing anything here goes through the integrator.
 

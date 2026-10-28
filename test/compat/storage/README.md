@@ -3,7 +3,7 @@
 `run.sh` runs the Storage tests Firebase publishes, unmodified, against a fresh Aruma built
 from this checkout, and records the emulator captures of `test/oracle/storage` again on it.
 Every difference is classified in `classified.json`, and the classes and numbers are in
-[docs/compat/storage-v0.3.md](../../../docs/compat/storage-v0.3.md) ("اختبارات Firebase الرسمية").
+[docs/compat/storage-v0.3.md](../../../docs/compat/storage-v0.3.md) ("The official Firebase tests").
 
 ```sh
 test/compat/storage/run.sh                       # every suite, then the captures
