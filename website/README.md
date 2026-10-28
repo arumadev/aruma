@@ -11,9 +11,9 @@ npm run build    # static site in dist/
 
 ## How the docs get in
 
-`../docs` stays the single source of truth. `scripts/sync-docs.mjs` runs before every dev and build. It copies the published sections (`compat`, `guides`, `security`, plus the configuration and console API references) into `src/content/docs`, adds the frontmatter Starlight needs, and rewrites relative links. Those copies are git-ignored. Release notes are not published; links to them point at GitHub.
+`../docs` stays the single source of truth. `scripts/sync-docs.mjs` runs before every dev and build. It copies the published pages (`guides/`, `reference/`, and getting started, SDK packages, architecture, security, testing, benchmarks and the changelog) into `src/content/docs`, adds the frontmatter Starlight needs, and rewrites relative links. Those copies are git-ignored.  Links to files that are not published (for example `docs/README.md`) point at GitHub.
 
-Hand-written pages live in `src/content/docs`: the landing page (`index.mdx`) and the quick start (`docs/getting-started.md`).
+The only hand-written page is the landing page, `src/content/docs/index.mdx`.
 
 ## Address
 

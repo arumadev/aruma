@@ -622,7 +622,7 @@ func (c *checker) call(e *callExpr, cx exprCtx) {
 // 'a'.lower(1) warn at the method, then fail "Incorrect number of arguments". A method is
 // listed only where every receiver that has it takes the same number, so the warning needs no
 // type of the receiver. Production warns about other calls the checker does not know
-// (docs/compat/rules-v0.3.md).
+// (docs/reference/compatibility.md).
 var (
 	libraryArities = map[string]int{"debug": 1, "math.abs": 1}
 	methodArities  = map[string]int{"size": 0, "lower": 0}

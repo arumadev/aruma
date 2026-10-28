@@ -57,7 +57,7 @@ func TestPosition(t *testing.T) {
 		{span{1, 2}, Position{Line: 1, Column: 2, CurrentOffset: 1, EndOffset: 1}},
 		{span{0, 2}, Position{Line: 1, Column: 1, EndOffset: 1}},
 		{span{2, 3}, Position{Line: 1, Column: 3, CurrentOffset: 2, EndOffset: 2}},
-		// "نص" is two code points of two bytes.
+		// The Arabic word for "text" is two code points of two bytes.
 		{span{3, 7}, Position{Line: 2, Column: 1, CurrentOffset: 3, EndOffset: 4}},
 		{span{x, x + 1}, Position{Line: 2, Column: 6, CurrentOffset: 8, EndOffset: 8}},
 		// CRLF ends one line; the CR is the line's last column.

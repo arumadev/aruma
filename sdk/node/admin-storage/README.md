@@ -25,8 +25,10 @@ without a name is the app's `storageBucket`, as in `firebase-admin`.
 
 ## Install
 
+The package is not published to npm yet. Install it from your clone of this repository:
+
 ```sh
-npm install @aruma/admin-storage firebase-admin@^14
+npm install /path/to/aruma/sdk/node/admin-storage firebase-admin@^14
 ```
 
 `firebase-admin` 14 is a peer dependency. Node.js 22 or later.

@@ -138,8 +138,8 @@ do, `follows` (always `production`), the `evidence` corpus files, and `test`, wr
 `path/to/x_test.go:TestName`, or `planned: {test, phase}`, the test a later phase of
 `phases.json` writes, or both (`test` for what is proven today, `planned` for the rest). A
 planned test must not exist yet (once written it moves to `test`), and its phase must still be
-open: closing a phase in `phases.json` fails CI for every entry still planned in it. The docs table in `docs/compat/documents-v0.4.md` will be generated
-from it.
+open: closing a phase in `phases.json` fails CI for every entry still planned in it. The Firestore section of `docs/reference/compatibility.md`
+summarizes it.
 
 ### How CI checks it
 

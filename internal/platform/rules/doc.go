@@ -20,7 +20,7 @@
 //
 // What the package does not do: it reports fewer warnings than the emulator (only an unknown
 // function and an unused one; the emulator's type warnings are not ported), and it keeps limits
-// of its own that Firebase does not have, which docs/compat/rules-v0.3.md lists.
+// of its own that Firebase does not have, which docs/reference/compatibility.md lists.
 //
 // Firestore's list queries (constraint.go, ADR-021 §2.4) are decided before any document is
 // read. The binding splits a query into ways: each branch of an or, each value of an in (a

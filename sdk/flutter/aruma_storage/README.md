@@ -44,14 +44,16 @@ final link = await ref.getDownloadURL();
 final same = FirebaseStorage.instance.refFromURL(fromArumaUrl(link));
 ```
 
+The package is not published to pub.dev yet. Use a path dependency on your clone of this repository:
+
 ```yaml
 # pubspec.yaml
 dependencies:
   aruma_storage:
-    git:
-      url: https://github.com/arumadev/aruma
-      path: sdk/flutter/aruma_storage
+    path: /path/to/aruma/sdk/flutter/aruma_storage
 ```
+
+A `git:` dependency on `https://github.com/arumadev/aruma` with `path: sdk/flutter/aruma_storage` also works.
 
 - Any host is accepted: Aruma's, Google's (with or without `:443`). The name is percent-decoded
   strictly as UTF-8 (`+` stays `+`) and written raw, because `refFromURL` passes a `gs://` path on

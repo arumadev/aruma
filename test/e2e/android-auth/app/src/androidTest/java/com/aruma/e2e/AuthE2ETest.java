@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  * the google-services.json Aruma generated and sent to Aruma by aruma-redirect (ArumaURL in the
  * manifest), against a real server, with every other connection recorded here and rejected on the
  * device (NetworkGuard, run.sh). The scenarios follow test/e2e/web-auth and
- * docs/compat/auth-p0-scenarios.md.
+ * docs/reference/compatibility.md.
  *
  * <p>run.sh passes the server as instrumentation arguments: arumaUrl, projectId and cliToken.
  */

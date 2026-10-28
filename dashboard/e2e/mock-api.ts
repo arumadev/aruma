@@ -19,7 +19,7 @@ import { MockDatabase } from './mock-database';
 import { MockDocuments } from './mock-documents';
 import { MockStorage } from './mock-storage';
 
-// A deterministic, in-memory stand-in for /console/v1 (docs/api/console.md), installed with
+// A deterministic, in-memory stand-in for /console/v1 (docs/reference/console-api.md), installed with
 // page.route. Each test gets a fresh copy, so writes are visible within a test only.
 
 export const NOW = '2026-10-18T09:00:00Z';

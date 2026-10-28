@@ -4,7 +4,7 @@
 //   node summarize.mjs <results> <classified.json> <suite>...
 //
 // A test that does not pass is classified in classified.json under "<suite> | <full title>",
-// with one of the three classes of docs/compat/storage-v0.3.md:
+// with one of the three classes of docs/reference/compatibility.md:
 //   a  a bug in Aruma (fixed with a test, or listed)
 //   b  a difference listed in ADR-023 §3 (item names the number)
 //   c  a bug in the emulator, with the evidence that production differs

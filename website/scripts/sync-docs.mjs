@@ -16,14 +16,24 @@ const outDir = path.join(siteDir, 'src/content/docs');
 const BASE = (process.env.SITE_BASE ?? '/aruma').replace(/\/$/, '');
 const GH = 'https://github.com/arumadev/aruma';
 
-// Published sections. Release notes stay on GitHub.
-const SECTIONS = ['compat', 'guides', 'security'];
-const SINGLES = { 'configuration.md': 'reference/configuration', 'api/console.md': 'reference/console-api' };
+// Published sections and single pages. docs/README.md is the index on GitHub and is not published.
+const SECTIONS = ['guides', 'reference'];
+const SINGLES = {
+  'getting-started.md': 'getting-started',
+  'architecture.md': 'architecture',
+  'sdks.md': 'sdks',
+  'benchmarks.md': 'benchmarks',
+  'testing.md': 'testing',
+  'security.md': 'security',
+  'CHANGELOG.md': 'changelog',
+};
 const ORDER = {
-  'guides/web-auth.md': 1, 'guides/admin-auth.md': 2, 'guides/rtdb.md': 3, 'guides/rtdb-operator.md': 4,
-  'compat/auth-v0.1.md': 1, 'compat/auth-p0-scenarios.md': 2, 'compat/firebase-js-suites.md': 3,
-  'compat/rtdb-v0.2.md': 4, 'compat/rules-v0.3.md': 5, 'compat/storage-v0.3.md': 6,
-  'security/threat-model.md': 1,
+  'getting-started.md': 1, 'sdks.md': 2, 'architecture.md': 3, 'security.md': 4, 'testing.md': 5,
+  'benchmarks.md': 6, 'CHANGELOG.md': 7,
+  'guides/auth-web.md': 1, 'guides/auth-admin.md': 2, 'guides/realtime-database.md': 3,
+  'guides/firestore-migration.md': 4, 'guides/operations.md': 5,
+  'reference/configuration.md': 1, 'reference/compatibility.md': 2, 'reference/known-differences.md': 3,
+  'reference/console-api.md': 4,
 };
 
 const posix = (p) => p.split(path.sep).join('/');
@@ -108,6 +118,9 @@ function describe(body) {
 // 3. Write the generated files (start clean so renamed or removed docs do not linger).
 for (const d of ['docs/compat', 'docs/guides', 'docs/security', 'docs/reference']) {
   await fs.rm(path.join(outDir, d), { recursive: true, force: true });
+}
+for (const slug of Object.values(SINGLES)) {
+  await fs.rm(path.join(outDir, 'docs', slug + '.md'), { force: true });
 }
 const generated = [];
 for (const e of entries.values()) {

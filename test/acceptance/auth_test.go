@@ -489,7 +489,7 @@ func TestAuthDeferredMethods(t *testing.T) {
 }
 
 // The web SDK's phone sign-in first fetches the reCAPTCHA site key, cross-origin. Found by
-// Firebase's own phone integration tests (docs/compat/firebase-js-suites.md): without an
+// Firebase's own phone integration tests (docs/reference/compatibility.md): without an
 // answer carrying CORS headers the browser saw auth/network-request-failed, not the deferral.
 func TestAuthDeferredPhoneRecaptchaParams(t *testing.T) {
 	e := newEnv(t, nil)
@@ -521,7 +521,7 @@ func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
 }
 
 // A photo URL is any string the app sends, as in Identity Toolkit: the web SDK's own
-// integration tests (email.test.ts, docs/compat/firebase-js-suites.md) set "photo-url" and read
+// integration tests (email.test.ts, docs/reference/compatibility.md) set "photo-url" and read
 // it back after a reload. Aruma refused anything but http(s) with a code Firebase does not have.
 func TestAuthPhotoURLIsAnyString(t *testing.T) {
 	e := newEnv(t, nil)

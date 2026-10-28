@@ -16,7 +16,7 @@
 # beyond loopback. firebase-admin (Node) speaks the WebSocket protocol, firebase-admin-go REST.
 # ARUMA_SMOKE_ADDR and ARUMA_SMOKE_TLS_ADDR set the server's and the front's addresses (default:
 # any free loopback port), ARUMA_SMOKE_DB_PREFIX the throwaway database's prefix. The Python
-# Admin SDK is not covered: see docs/compat/rtdb-v0.2.md.
+# Admin SDK is not covered: see docs/reference/compatibility.md.
 #
 # The -storage targets run the Aruma Admin Storage packages (sdk/node/admin-storage,
 # sdk/go/adminstorage): their own suites, then the official @google-cloud/storage and

@@ -1,9 +1,7 @@
 # Verifying users on your server
 
-[العربية](#التحقق-من-المستخدمين-في-خادمك)
-
-Your server keeps `firebase-admin`. Only the place `getAuth` comes from changes: that is the one
-line ADR-013 allows for a developer's server.
+Your server keeps `firebase-admin`. Only the place `getAuth` comes from changes. That one import
+line is the only change Aruma asks of a developer's server (ADR-013).
 
 **Node** (`@aruma/admin-auth`):
 
@@ -53,37 +51,3 @@ Under the hood the libraries call Aruma's Admin API
 of the project or the project owner's CLI token, and refuses everything else, including the
 `Bearer owner` token the official SDKs send in emulator mode. Any OIDC library can also verify
 Aruma ID tokens through `<server>/issuers/<project>/.well-known/openid-configuration`.
-
----
-
-<div dir="rtl">
-
-## التحقق من المستخدمين في خادمك
-
-يبقى `firebase-admin` في خادمك كما هو. يتغير فقط مصدر `getAuth`، وهذا هو السطر الواحد الذي يسمح
-به ADR-013 لخادم المطوّر.
-
-- **Node:** استورد `getAuth` من `@aruma/admin-auth` بدل `firebase-admin/auth`.
-- **Go:** استدعِ `adminauth.NewClient(ctx, app, adminauth.WithCredentialsFile(...))` بدل `app.Auth(ctx)`.
-
-ما تحتاجه:
-
-1. **مفتاح حساب خدمة** تنشئه للمشروع في اللوحة، وهو الملف الذي يقرؤه `cert()`
-   أصلًا. تبادله المكتبتان برمز صالح ساعة من Aruma.
-2. **عنوان الخادم:** يؤخذ من `token_uri` في ملف المفتاح، ويغيّره المتغير `ARUMA_URL`. يجب أن يكون
-   `https`، و`http` مسموح على الجهاز المحلي فقط.
-3. **غياب `FIREBASE_AUTH_EMULATOR_HOST`:** وجوده يجعل المكتبة الرسمية في عمليتك تقبل رموزًا غير
-   موقّعة، فترفض المكتبتان البدء. ويمكن السماح به صراحةً خارج الإنتاج فقط.
-
-ما يبقى كما هو:
-
-- **الأنواع والأخطاء:** `DecodedIdToken` و`UserRecord` ورموز الأخطاء نفسها، مثل
-  `auth/id-token-revoked` و`auth.IsIDTokenRevoked`.
-- **Custom token:** يبقى `createCustomToken` الرسمي دون تغيير، ويقبل Aruma رموزه.
-- **الدوال:** تعمل كما في `firebase-admin`. والـ claims تظهر في رمز الدخول بعد التجديد التالي،
-  والإبطال بدقة الثانية كما في Firebase.
-
-لم يُدعم بعد: أرقام الهاتف، والعامل الثاني، والـ tenants، وروابط البريد
-(`generatePasswordResetLink` وأخواتها).
-
-</div>

@@ -19,7 +19,7 @@ machine, fails the run.
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
 | [android-firestore](android-firestore) | `firebase-firestore` and `firebase-auth` (BoM 35), instrumented tests | production host set in code; Auth through `aruma-redirect`; the server under the cloud.firestore ruleset of `firestore.rules`, released through the firebaserules API (`ARUMA_E2E_RULES=open` opts in to `documents.dev_open_rules`) | `android-firestore/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 
-The Auth device suites cover the Auth P0 list ([docs/compat/auth-p0-scenarios.md](../../docs/compat/auth-p0-scenarios.md)):
+The Auth device suites cover the Auth P0 list ([docs/reference/compatibility.md](../../docs/reference/compatibility.md)):
 sign-up, duplicate email, weak password, invalid email, sign-in, wrong password, anonymous,
 forced token refresh with the ID token's `iss`/`aud`/`sub`, display name, password change after
 reauthentication, password reset through the dev mailbox, delete and sign-out. They also check

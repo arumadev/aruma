@@ -1,6 +1,6 @@
 # Configuration
 
-Aruma reads an optional YAML file (`--config` or `ARUMA_CONFIG`). Every key can be overridden by an `ARUMA_*` environment variable, and the environment wins over the file. Unknown keys are rejected, so a typo fails loudly. [`aruma.example.yaml`](../aruma.example.yaml) shows every key with its default.
+Aruma reads an optional YAML file (`--config` or `ARUMA_CONFIG`). Every key can be overridden by an `ARUMA_*` environment variable, and the environment wins over the file. Unknown keys are rejected, so a typo fails loudly. [`aruma.example.yaml`](../../aruma.example.yaml) shows every key with its default.
 
 Check a configuration without starting the server:
 
@@ -25,7 +25,7 @@ aruma config check
 | `ARUMA_MAIL_DEV_MAILBOX` | | `true` if `public_url` is on loopback, otherwise `false` | Development mailbox: Auth emails of projects without SMTP are kept in the console instead of being sent. An SMTP server is configured per project from the console |
 | `ARUMA_MAIL_SMTP_ALLOW_PRIVATE` | | `true` if `public_url` is on loopback, otherwise `false` | Allow an SMTP server on a loopback, private or link-local address (for example Postfix on the same machine). Off by default so the console's SMTP settings cannot reach the server's internal network or the cloud metadata address. Turn it on if your mail relay is local |
 | `ARUMA_RTDB_ENABLED` | | `false` | Turn on the Realtime Database |
-| `ARUMA_RTDB_DOMAIN` | | | Parent domain for database hosts: `https://<project_id>-default-rtdb.<domain>`. Needs a public DNS record, a certificate and a proxy that preserves the host, see the [Realtime Database operator guide](guides/rtdb-operator.md). Without a value, databases are served with `?ns=` on `public_url`, for local development only |
+| `ARUMA_RTDB_DOMAIN` | | | Parent domain for database hosts: `https://<project_id>-default-rtdb.<domain>`. Needs a public DNS record, a certificate and a proxy that preserves the host, see the [Realtime Database operator guide](../guides/operations.md). Without a value, databases are served with `?ns=` on `public_url`, for local development only |
 | `ARUMA_STORAGE_ENABLED` | | `false` | Turn on Cloud Storage for Firebase, see [Storage](#storage) |
 | `ARUMA_STORAGE_DATA_DIR` | with Storage | | Absolute path of the directory that holds the objects' bytes, on a local disk. See the warning under [Storage](#storage) |
 | `ARUMA_STORAGE_GC_GRACE` | | `1m` | How long a file no object points to any more waits before it is deleted, so a read that started before the change still finds it |

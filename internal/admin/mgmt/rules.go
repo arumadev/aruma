@@ -178,7 +178,7 @@ func (a *API) decodeSource(r *http.Request, v any) error {
 // (production/raw/limits.json, call_depth_22), so firebase deploy prints "[E] line:column -
 // description" and stops; a source that compiles is 200 with its warnings, or {}. Test suites
 // are not run: a request with test cases is refused rather than answered as if they passed
-// (docs/compat/storage-v0.3.md).
+// (docs/reference/compatibility.md).
 func (a *API) testRuleset(w http.ResponseWriter, r *http.Request) {
 	if _, err := a.activeProject(r); err != nil {
 		a.fail(w, r, err)

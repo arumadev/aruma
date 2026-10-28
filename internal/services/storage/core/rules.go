@@ -141,7 +141,7 @@ func preparedRuleset(ctx context.Context, project int64) (*rules.Ruleset, bool) 
 // allowed for rules_version='2'", D §4.1), and a path longer than the ruleset's
 // request_segments (a name of over a thousand slashes by default), which the engine would refuse
 // as an invalid request, answered 503 and retried by the SDKs without end: an Aruma limit
-// (docs/compat/storage-v0.3.md).
+// (docs/reference/compatibility.md).
 func (s *Service) ruleRequest(b Bucket, p Principal, op ruleOp, rs *rules.Ruleset) (*rules.Request, bool) {
 	list := op.Method == rules.MethodList
 	if op.Method < rules.MethodGet || op.Method > rules.MethodDelete || (op.List && !list) {

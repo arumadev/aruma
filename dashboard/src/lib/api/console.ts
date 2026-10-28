@@ -1,4 +1,4 @@
-// Typed calls for every console API route the dashboard uses (docs/api/console.md).
+// Typed calls for every console API route the dashboard uses (docs/reference/console-api.md).
 import { downloadFile, request, requestEmpty, requestText } from './client';
 import type {
   Account,

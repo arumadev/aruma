@@ -22,4 +22,4 @@ Out of scope: problems in Firebase or in Google's own SDKs, and findings that de
 
 ## What we already do
 
-The secure defaults are written down in ADR-010, and the threat model is in [docs/security/threat-model.md](docs/security/threat-model.md).
+The secure defaults, the threats we considered and the results of our reviews are in [docs/security.md](docs/security.md).
