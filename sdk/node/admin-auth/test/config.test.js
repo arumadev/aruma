@@ -39,6 +39,7 @@ test('the Aruma URL comes from the option, ARUMA_URL, then token_uri', () => {
   assert.equal(resolveURL({ url: 'https://opt.example.com/base/' }, k, { ARUMA_URL: 'https://env.example.com' }), 'https://opt.example.com/base');
   assert.equal(resolveURL({ url: 'http://127.0.0.1:8080' }, {}, {}), 'http://127.0.0.1:8080');
   for (const bad of ['http://aruma.example.com', 'https://identitytoolkit.googleapis.com', 'https://accounts.google.com',
+    'https://accounts.google.com.', 'https://oauth2.googleapis.com./token',
     'https://aruma.example.com/?x=1', 'not a url']) {
     assert.throws(() => resolveURL({ url: bad }, {}, {}), { code: 'auth/argument-error' }, bad);
   }

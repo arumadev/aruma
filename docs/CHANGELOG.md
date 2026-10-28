@@ -2,6 +2,13 @@
 
 One section per release, newest first. Each release has an upgrade section when its steps are not obvious. Releases: [v0.4.0-rc.1](#v040-rc1), [v0.3.0](#v030), [v0.2.0](#v020), [v0.1.0](#v010).
 
+## Unreleased
+
+### Security
+
+- The server and both Admin Auth libraries accept a token only in canonical base64url, so one token has one spelling.
+- The Admin Auth libraries refuse a Google address written with a trailing dot (for example `accounts.google.com.`).
+
 ## v0.4.0-rc.1
 
 Released 2026-10-28. Release candidate.

@@ -188,7 +188,7 @@ func resolveURL(opt string, key serviceAccountKey, getenv func(string) string) (
 	if err != nil || u.Host == "" {
 		return "", fmt.Errorf("adminauth: invalid Aruma URL %q", raw)
 	}
-	host := strings.ToLower(u.Hostname())
+	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	if host == "google.com" || host == "googleapis.com" || strings.HasSuffix(host, ".google.com") || strings.HasSuffix(host, ".googleapis.com") {
 		return "", fmt.Errorf("adminauth: %s is a Google address, not an Aruma server: check the key file and ARUMA_URL", raw)
 	}

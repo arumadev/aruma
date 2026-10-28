@@ -122,7 +122,7 @@ func (v *verifier) verify(ctx context.Context, token string) (*auth.Token, error
 	if err != nil {
 		return nil, err
 	}
-	sig, err := base64.RawURLEncoding.DecodeString(parts[2])
+	sig, err := base64.RawURLEncoding.Strict().DecodeString(parts[2])
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
 	if err != nil || rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], sig) != nil {
 		return nil, v.invalid("has an invalid signature")
@@ -140,7 +140,7 @@ func (v *verifier) verify(ctx context.Context, token string) (*auth.Token, error
 }
 
 func decode(seg string, out any) error {
-	b, err := base64.RawURLEncoding.DecodeString(seg)
+	b, err := base64.RawURLEncoding.Strict().DecodeString(seg)
 	if err != nil {
 		return err
 	}
@@ -191,8 +191,8 @@ func (v *verifier) load(ctx context.Context) error {
 		if k.Kty != "RSA" || k.Kid == "" || (k.Alg != "" && k.Alg != "RS256") || (k.Use != "" && k.Use != "sig") {
 			continue
 		}
-		n, errN := base64.RawURLEncoding.DecodeString(k.N)
-		e, errE := base64.RawURLEncoding.DecodeString(k.E)
+		n, errN := base64.RawURLEncoding.Strict().DecodeString(k.N)
+		e, errE := base64.RawURLEncoding.Strict().DecodeString(k.E)
 		if errN != nil || errE != nil || len(e) == 0 || len(e) > 4 {
 			continue
 		}

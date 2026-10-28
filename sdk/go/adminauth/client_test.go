@@ -55,7 +55,7 @@ func TestResolveURL(t *testing.T) {
 			t.Errorf("resolveURL(%q, %v) = %q, %v; want %q", c.opt, c.env, got, err, c.want)
 		}
 	}
-	for _, bad := range []string{"http://aruma.example.com", "https://identitytoolkit.googleapis.com", "https://accounts.google.com", "https://a.example.com/?x=1", "::"} {
+	for _, bad := range []string{"http://aruma.example.com", "https://identitytoolkit.googleapis.com", "https://accounts.google.com", "https://accounts.google.com.", "https://oauth2.googleapis.com./token", "https://a.example.com/?x=1", "::"} {
 		if _, err := resolveURL(bad, serviceAccountKey{}, env(nil)); err == nil {
 			t.Errorf("accepted %q", bad)
 		}

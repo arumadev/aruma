@@ -68,7 +68,7 @@ func parse(token string) (*parsed, error) {
 	if len(parts) != 3 || len(token) > 16<<10 {
 		return nil, ErrMalformed
 	}
-	hb, err := base64.RawURLEncoding.DecodeString(parts[0])
+	hb, err := base64.RawURLEncoding.Strict().DecodeString(parts[0])
 	if err != nil {
 		return nil, ErrMalformed
 	}
@@ -76,11 +76,11 @@ func parse(token string) (*parsed, error) {
 	if err := json.Unmarshal(hb, &h); err != nil || h.Alg != "RS256" || h.Kid == "" {
 		return nil, ErrMalformed
 	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	payload, err := base64.RawURLEncoding.Strict().DecodeString(parts[1])
 	if err != nil || !json.Valid(payload) {
 		return nil, ErrMalformed
 	}
-	sig, err := base64.RawURLEncoding.DecodeString(parts[2])
+	sig, err := base64.RawURLEncoding.Strict().DecodeString(parts[2])
 	if err != nil || len(sig) == 0 {
 		return nil, ErrMalformed
 	}
@@ -112,11 +112,11 @@ func toJWK(kid string, pub *rsa.PublicKey) JWK {
 }
 
 func (j JWK) publicKey() (*rsa.PublicKey, error) {
-	n, err := base64.RawURLEncoding.DecodeString(j.N)
+	n, err := base64.RawURLEncoding.Strict().DecodeString(j.N)
 	if err != nil {
 		return nil, err
 	}
-	e, err := base64.RawURLEncoding.DecodeString(j.E)
+	e, err := base64.RawURLEncoding.Strict().DecodeString(j.E)
 	if err != nil {
 		return nil, err
 	}

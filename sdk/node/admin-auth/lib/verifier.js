@@ -22,11 +22,21 @@ const refetchCooldownMs = 30_000;
 export const ID_TOKEN = { name: 'ID token', prefix: '/issuers/', expired: AuthErrorCode.ID_TOKEN_EXPIRED };
 export const SESSION_COOKIE = { name: 'session cookie', prefix: '/session-issuers/', expired: AuthErrorCode.SESSION_COOKIE_EXPIRED };
 
-function decodeSegment(segment) {
+// Decodes base64url strictly: only the canonical form of each value is accepted, so one token has
+// one spelling.
+function decodeBase64url(segment) {
   if (!/^[A-Za-z0-9_-]*$/.test(segment)) {
     throw new Error('not base64url');
   }
-  return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));
+  const bytes = Buffer.from(segment, 'base64url');
+  if (bytes.toString('base64url') !== segment) {
+    throw new Error('not canonical base64url');
+  }
+  return bytes;
+}
+
+function decodeSegment(segment) {
+  return JSON.parse(decodeBase64url(segment).toString('utf8'));
 }
 
 function maxAgeMs(res) {
@@ -102,7 +112,13 @@ export class Verifier {
     }
     const key = await this.key(header.kid);
     const signed = Buffer.from(parts[0] + '.' + parts[1]);
-    if (!verifySignature('RSA-SHA256', signed, key, Buffer.from(parts[2], 'base64url'))) {
+    let signature;
+    try {
+      signature = decodeBase64url(parts[2]);
+    } catch {
+      throw argumentError(`The ${name} has an invalid signature.`);
+    }
+    if (!verifySignature('RSA-SHA256', signed, key, signature)) {
       throw argumentError(`The ${name} has an invalid signature.`);
     }
     // Expiry is reported only for a token that is otherwise genuine.
