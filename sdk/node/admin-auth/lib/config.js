@@ -104,7 +104,7 @@ export function resolveURL(options, key, env = process.env) {
   } catch {
     throw argumentError(`Invalid Aruma URL: ${raw}`);
   }
-  if (/(^|\.)(googleapis|google)\.com$/i.test(u.hostname)) {
+  if (/(^|\.)(googleapis|google)\.com$/i.test(u.hostname.replace(/\.$/, ''))) {
     throw argumentError(`${raw} is a Google address, not an Aruma server: check the key file and ARUMA_URL.`);
   }
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && isLoopback(u.hostname))) {

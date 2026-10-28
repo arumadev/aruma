@@ -152,23 +152,24 @@ func TestVerifierRejectsForgedTokens(t *testing.T) {
 	mac.Write([]byte(hsHeader + "." + parts[1]))
 
 	for name, tok := range map[string]string{
-		"alg none":         b64(map[string]string{"alg": "none", "kid": "key-1"}) + "." + parts[1] + ".",
-		"unsigned":         parts[0] + "." + parts[1] + ".",
-		"HS256 confusion":  hsHeader + "." + parts[1] + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)),
-		"no kid":           is.token("/issuers/", is.idKey, map[string]any{"kid": nil}, nil),
-		"unknown kid":      is.token("/issuers/", is.idKey, map[string]any{"kid": "nope"}, nil),
-		"other key":        is.token("/issuers/", other, nil, nil),
-		"modified payload": parts[0] + "." + b64(map[string]any{"iss": is.srv.URL + "/issuers/demo-app", "aud": "demo-app", "sub": "admin", "iat": now, "exp": now + 3600, "auth_time": now}) + "." + parts[2],
-		"other project":    is.token("/issuers/", is.idKey, nil, map[string]any{"aud": "other-app"}),
-		"Google issuer":    is.token("/issuers/", is.idKey, nil, map[string]any{"iss": "https://securetoken.google.com/demo-app"}),
-		"session cookie":   is.token("/session-issuers/", is.ckKey, nil, nil),
-		"empty sub":        is.token("/issuers/", is.idKey, nil, map[string]any{"sub": ""}),
-		"long sub":         is.token("/issuers/", is.idKey, nil, map[string]any{"sub": strings.Repeat("x", 129)}),
-		"future iat":       is.token("/issuers/", is.idKey, nil, map[string]any{"iat": now + 3600}),
-		"no auth_time":     is.token("/issuers/", is.idKey, nil, map[string]any{"auth_time": nil}),
-		"not a JWT":        "abc.def",
-		"empty":            "",
-		"custom token":     b64(map[string]string{"alg": "RS256"}) + "." + b64(map[string]string{"aud": customTokenAud}) + ".x",
+		"alg none":                b64(map[string]string{"alg": "none", "kid": "key-1"}) + "." + parts[1] + ".",
+		"unsigned":                parts[0] + "." + parts[1] + ".",
+		"HS256 confusion":         hsHeader + "." + parts[1] + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)),
+		"no kid":                  is.token("/issuers/", is.idKey, map[string]any{"kid": nil}, nil),
+		"unknown kid":             is.token("/issuers/", is.idKey, map[string]any{"kid": "nope"}, nil),
+		"other key":               is.token("/issuers/", other, nil, nil),
+		"modified payload":        parts[0] + "." + b64(map[string]any{"iss": is.srv.URL + "/issuers/demo-app", "aud": "demo-app", "sub": "admin", "iat": now, "exp": now + 3600, "auth_time": now}) + "." + parts[2],
+		"other project":           is.token("/issuers/", is.idKey, nil, map[string]any{"aud": "other-app"}),
+		"Google issuer":           is.token("/issuers/", is.idKey, nil, map[string]any{"iss": "https://securetoken.google.com/demo-app"}),
+		"session cookie":          is.token("/session-issuers/", is.ckKey, nil, nil),
+		"empty sub":               is.token("/issuers/", is.idKey, nil, map[string]any{"sub": ""}),
+		"long sub":                is.token("/issuers/", is.idKey, nil, map[string]any{"sub": strings.Repeat("x", 129)}),
+		"future iat":              is.token("/issuers/", is.idKey, nil, map[string]any{"iat": now + 3600}),
+		"no auth_time":            is.token("/issuers/", is.idKey, nil, map[string]any{"auth_time": nil}),
+		"not a JWT":               "abc.def",
+		"empty":                   "",
+		"custom token":            b64(map[string]string{"alg": "RS256"}) + "." + b64(map[string]string{"aud": customTokenAud}) + ".x",
+		"non-canonical signature": parts[0] + "." + parts[1] + "." + nonCanonical(parts[2]),
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := v.verify(context.Background(), tok)
@@ -222,4 +223,12 @@ func TestVerifierTrustsOnlyItsServer(t *testing.T) {
 			}
 		})
 	}
+}
+
+// nonCanonical spells a base64url value differently without changing its bytes: it sets the
+// unused low bits of the last character, which a lenient decoder ignores.
+func nonCanonical(s string) string {
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+	i := strings.IndexByte(alphabet, s[len(s)-1])
+	return s[:len(s)-1] + string(alphabet[i+1])
 }

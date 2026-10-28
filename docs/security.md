@@ -125,14 +125,13 @@ v0.1 was reviewed in three passes: the platform and console, the Auth service as
 - High, all fixed: `signUp` with an `idToken` could replace an account's password or email using a stolen or old token; an email-change token stayed valid after takeover protection and after revocation; a session started in the revocation second survived it.
 - Medium, all fixed: account-creation limit bypass through `signUp`; full rate-limit tables disabled password sign-in for everyone (now the oldest entry is evicted); emergency key rotation took up to five minutes to reach the Admin libraries (now 60 seconds).
 - Low, fixed: the Go library followed redirects. Low, accepted: a 15-minute lockout after repeated wrong passwords, as in Firebase.
-- Low, open: seven findings were open at the end of the Auth review. They are tracked for a fix and are not accepted:
+- Low: seven findings were open at the end of the Auth review. Two are fixed since; five are open, tracked for a fix and not accepted:
   - password-reset mail takes a different time for a registered email than for an unknown one;
   - signing in by email match can replace another linked Google or Apple identity without a notice;
   - Apple refresh tokens are not revoked at Apple, except when the account is deleted;
-  - token signatures are decoded with non-strict base64;
-  - the Admin libraries' check for Google domains does not normalize every hostname form;
   - key rotation can race with the signer cache;
   - a direct email change with protection off sends no alert to the old address.
+  - Fixed after v0.4.0-rc.1: token signatures were decoded with non-strict base64 (the server and both Admin libraries now accept only the canonical form); the Admin libraries' check for Google domains did not normalize every hostname form.
 - Informational, all accepted: `localhost` is authorized by default; `needConfirmation` reveals that an email has an account when a provider token is held; and similar low-impact items that match Firebase.
 - A set of 22 tamper scenarios (forged tokens, replayed and swapped OAuth state, cross-project tokens, admin-field injection, secret dumps, rate limits) all pass against the server and both Admin libraries.
 - Dependencies: no reachable vulnerabilities in Go or npm dependencies. One advisory in an unused package (`x/crypto/openpgp`) has no published fix and is not called.
@@ -145,7 +144,7 @@ v0.1 was reviewed in three passes: the platform and console, the Auth service as
 - Informational: removing a user's email left a password provider on the old address, blocking re-registration.
 - Checked and sound: token signing and verification, refresh tokens, custom tokens, console CSRF and cookies, email tokens and `continueUrl` checks, Google sign-in, SQL parameterization, and malformed-input fuzzing (no crash).
 
-**Accepted at v0.1:** limits are in memory and per server. The seven open low findings above are not accepted; they are open.
+**Accepted at v0.1:** limits are in memory and per server. The five open low findings above are not accepted; they are open.
 
 ### v0.2: Realtime Database
 

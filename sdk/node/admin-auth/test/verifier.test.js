@@ -99,6 +99,12 @@ test('forged and misused tokens are argument-error', async (t) => {
     'future auth_time': token({ claims: { auth_time: now + 3600 } }),
     'not a JWT': 'abc.def',
     'garbage segments': 'a.b.c',
+    // The same signature bytes, spelled with the unused low bits of the last character set.
+    'non-canonical signature': (() => {
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+      const sig = good.split('.')[2];
+      return `${h}.${p}.${sig.slice(0, -1)}${alphabet[alphabet.indexOf(sig.at(-1)) + 1]}`;
+    })(),
   };
   for (const [name, tok] of Object.entries(cases)) {
     await t.test(name, () => rejects(ids().verify(tok), 'argument-error'));

@@ -82,16 +82,17 @@ func TestVerifyRejectsTampering(t *testing.T) {
 		project int64
 		purpose Purpose
 	}{
-		"unsigned":        {parts[0] + "." + parts[1] + ".", projA, IDToken},
-		"alg none":        {enc(`{"alg":"none","kid":"`+h.Kid+`"}`) + "." + parts[1] + ".", projA, IDToken},
-		"hmac confusion":  {hsHeader + "." + parts[1] + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), projA, IDToken},
-		"edited payload":  {parts[0] + "." + enc(`{"sub":"admin"}`) + "." + parts[2], projA, IDToken},
-		"no kid":          {enc(`{"alg":"RS256"}`) + "." + parts[1] + "." + parts[2], projA, IDToken},
-		"other project":   {otherProject, projA, IDToken},
-		"cookie as token": {cookie, projA, IDToken},
-		"token as cookie": {good, projA, SessionCookie},
-		"garbage":         {"a.b.c", projA, IDToken},
-		"two segments":    {parts[0] + "." + parts[1], projA, IDToken},
+		"unsigned":                {parts[0] + "." + parts[1] + ".", projA, IDToken},
+		"alg none":                {enc(`{"alg":"none","kid":"`+h.Kid+`"}`) + "." + parts[1] + ".", projA, IDToken},
+		"hmac confusion":          {hsHeader + "." + parts[1] + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil)), projA, IDToken},
+		"edited payload":          {parts[0] + "." + enc(`{"sub":"admin"}`) + "." + parts[2], projA, IDToken},
+		"no kid":                  {enc(`{"alg":"RS256"}`) + "." + parts[1] + "." + parts[2], projA, IDToken},
+		"other project":           {otherProject, projA, IDToken},
+		"cookie as token":         {cookie, projA, IDToken},
+		"token as cookie":         {good, projA, SessionCookie},
+		"garbage":                 {"a.b.c", projA, IDToken},
+		"two segments":            {parts[0] + "." + parts[1], projA, IDToken},
+		"non-canonical signature": {parts[0] + "." + parts[1] + "." + nonCanonical(parts[2]), projA, IDToken},
 	}
 	for name, c := range cases {
 		if _, err := m.Verify(ctx, c.project, c.purpose, c.token); err == nil {
@@ -195,4 +196,12 @@ func kid(tok string) string {
 	var h Header
 	json.Unmarshal(hb, &h)
 	return h.Kid
+}
+
+// nonCanonical spells a base64url value differently without changing its bytes: it sets the
+// unused low bits of the last character, which a lenient decoder ignores.
+func nonCanonical(s string) string {
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+	i := strings.IndexByte(alphabet, s[len(s)-1])
+	return s[:len(s)-1] + string(alphabet[i+1])
 }
