@@ -1123,6 +1123,279 @@
       "typeToConfirm": "Confirm you want to delete this collection by typing its ID: {id}",
       "confirmId": "Collection ID",
       "progress": "Deleting… {count, plural, one {# document} other {# documents}} deleted so far."
+    },
+    "rules": {
+      "title": "Rules",
+      "description": "Security rules decide which requests may read and write documents. Every change is checked by the server as you type, and a version is only served once you publish it.",
+      "history": "Versions",
+      "rightNow": "Right now",
+      "unpublishedChanges": "Unpublished changes",
+      "published": "Published",
+      "noHistory": "Nothing has been published yet.",
+      "defaultTitle": "No rules have been published yet",
+      "defaultBody": "Until you publish, the locked default runs: no client can read or write a document. Server-side access with a service account is not affected.",
+      "publishedAt": "Published {time}",
+      "publish": "Publish",
+      "discard": "Discard",
+      "publishedToast": "Rules published.",
+      "discarded": "Changes discarded",
+      "invalidTitle": "{count, plural, one {The rules have # error} other {The rules have # errors}}",
+      "warningsTitle": "{count, plural, one {# warning} other {# warnings}}",
+      "error": "Error",
+      "warning": "Warning",
+      "at": "Line {line}, column {column}",
+      "editor": "Rules",
+      "playground": {
+        "title": "Rules Playground",
+        "expand": "Show",
+        "collapse": "Hide",
+        "simulationType": "Simulation type",
+        "method": {
+          "get": "get",
+          "create": "create",
+          "update": "update",
+          "delete": "delete"
+        },
+        "location": "Location",
+        "locationPrefix": "The document, below",
+        "pathPlaceholder": "path/to/resource",
+        "pathProblem": {
+          "required": "Required",
+          "empty": "Enter ids separated by / with none empty",
+          "odd": "A document path has an even number of ids, such as users/alice"
+        },
+        "authenticated": "Authenticated",
+        "authLegend": "Signed-in user",
+        "authHint": "All fields are optional",
+        "provider": "Provider",
+        "uid": "Firebase UID",
+        "email": "Email",
+        "emailVerified": "Email verified",
+        "name": "Name",
+        "phone": "Phone number",
+        "payload": "Authentication payload",
+        "data": "Firestore data (JSON)",
+        "dataHint": "The document as request.resource will hold it: a JSON object.",
+        "dataProblem": {
+          "syntax": "This is not valid JSON",
+          "object": "Enter a JSON object, not a list or a single value"
+        },
+        "run": "Run",
+        "noun": { "read": "read", "create": "create", "update": "update", "delete": "delete" },
+        "allowed": "Simulated {method} allowed",
+        "denied": "Simulated {method} denied",
+        "outdated": "(viewing outdated simulation)",
+        "dismiss": "Dismiss",
+        "failed": "The simulation could not run",
+        "detail": "Detailed information",
+        "noStatements": "No allow statement matched this path, so the request is denied.",
+        "statement": "Line {line}, column {column}:",
+        "outcome": {
+          "true": "true",
+          "false": "false",
+          "error": "error"
+        }
+      }
+    },
+    "indexes": {
+      "title": "Indexes",
+      "sections": "Index kinds",
+      "pager": {
+        "perPage": "Items per page",
+        "page": "Page {page} of {pages}",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "kind": {
+        "ASCENDING": "Ascending",
+        "DESCENDING": "Descending",
+        "ARRAYS": "Arrays"
+      },
+      "manual": {
+        "tab": "Manual",
+        "create": "Create index",
+        "emptyTitle": "Build the indexes you need to power your compound queries",
+        "emptyBody": "Run your desired query in your app code to get a link to generate the required index, or create one here.",
+        "description": "Composite indexes serve queries over more than one field.",
+        "caption": "Composite indexes",
+        "collection": "Collection ID",
+        "fields": "Fields indexed",
+        "scope": "Query scope",
+        "id": "Index ID",
+        "status": "Status",
+        "actions": "Actions",
+        "scopes": {
+          "COLLECTION": "Collection",
+          "COLLECTION_GROUP": "Collection group"
+        },
+        "menu": "More actions for index {id}",
+        "delete": "Delete",
+        "created": "Index created. It builds in the background.",
+        "deleted": "Index deleted.",
+        "deleteTitle": "Delete composite index",
+        "deleteBody": "Once you delete this index, queries that rely on it will no longer work.",
+        "state": {
+          "creating": "Building…",
+          "ready": "Enabled",
+          "needsRepair": "Needs repair"
+        },
+        "form": {
+          "title": "Create a composite index",
+          "submit": "Create",
+          "collection": "Collection ID",
+          "collectionPlaceholder": "For example: Posts",
+          "problem": {
+            "required": "Required",
+            "slash": "Can't contain a forward slash (/)",
+            "name": "Can't start and end with double underscores (__)"
+          },
+          "fields": "Fields to index",
+          "fieldPath": "Field path {n}",
+          "order": "Order of field {n}",
+          "removeField": "Remove field {n}",
+          "addField": "Add field",
+          "nameNote": "The document name (__name__) is added to every index automatically.",
+          "scope": "Query scope"
+        }
+      },
+      "automatic": {
+        "tab": "Automatic",
+        "settingsTitle": "Automatic index settings",
+        "settingsBody": "Single-field indexes the database keeps for every field. Exempt a field below to change them for it.",
+        "summary": "Collection scope: {collection, plural, one {# index enabled} other {# indexes enabled}}, collection group scope: {group, plural, =0 {indexes disabled} one {# index enabled} other {# indexes enabled}}",
+        "settingsCaption": "Automatic index settings",
+        "type": "Index type",
+        "collectionScope": "Collection scope",
+        "groupScope": "Collection group scope",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "exemptionsTitle": "Exemptions",
+        "exemptionsBody": "Fields whose single-field indexes differ from the automatic settings.",
+        "addExemption": "Add exemption",
+        "noExemptions": "No exemptions",
+        "noExemptionsBody": "Every field follows the automatic index settings.",
+        "exemptionsCaption": "Single-field exemptions",
+        "collection": "Collection ID",
+        "fieldPath": "Field path",
+        "noChanges": "No changes from automatic index settings",
+        "actions": "Actions",
+        "menu": "More actions for field {field}",
+        "edit": "Edit",
+        "delete": "Delete",
+        "saved": "Exemption saved.",
+        "deleted": "Exemption deleted.",
+        "deleteTitle": "Delete exemption",
+        "deleteBody": "Once you delete this exemption, the specified field will inherit your database's automatic index settings (or a parent field's exemption, if one exists).",
+        "deleteWarning": "Depending on your automatic index settings, deleting an exemption might disable indexes your queries rely on or enable indexes that increase storage usage.",
+        "chipOff": "{kind} (disabled)",
+        "kind": {
+          "ASCENDING": "Ascending",
+          "DESCENDING": "Descending",
+          "ARRAYS": "Arrays"
+        },
+        "scopeName": {
+          "COLLECTION": "Collection",
+          "COLLECTION_GROUP": "Collection group"
+        },
+        "form": {
+          "step1": "Choose a field to exempt from automatic settings",
+          "step2": "Select index settings for this field",
+          "back": "Back",
+          "next": "Next",
+          "collection": "Collection ID",
+          "collectionPlaceholder": "Example: Artists",
+          "field": "Field path",
+          "fieldPlaceholder": "Example: Playcount",
+          "scopes": "Query scope",
+          "problem": {
+            "required": "Required",
+            "slash": "Can't contain a forward slash (/)",
+            "name": "Can't start and end with double underscores (__)",
+            "scope": "Choose at least one query scope"
+          },
+          "warning": "Change indexes settings carefully. Disabling indexes will cause queries that rely on them to fail. Enabling new indexes can increase storage usage."
+        }
+      },
+      "ttl": {
+        "tab": "Time to live",
+        "title": "Time-to-live (TTL)",
+        "description": "TTL policies schedule the expiration and bulk deletion of documents. Deletion jobs run continuously in the background.",
+        "create": "Create policy",
+        "empty": "No policies to display",
+        "caption": "TTL policies",
+        "group": "Collection group",
+        "field": "Timestamp field",
+        "state": "State",
+        "actions": "Actions",
+        "states": {
+          "STATE_UNSPECIFIED": "Unknown",
+          "CREATING": "Creating",
+          "ACTIVE": "Serving",
+          "NEEDS_REPAIR": "Needs repair"
+        },
+        "menu": "More actions for the policy of {group}",
+        "delete": "Delete",
+        "created": "Policy created.",
+        "deleted": "Policy deleted.",
+        "deleteTitle": "Delete TTL policy",
+        "deleteBody": "Documents of {group} will no longer expire by {field}. Documents already deleted stay deleted.",
+        "form": {
+          "title": "Create a TTL policy",
+          "submit": "Create",
+          "perGroup": "You can set one TTL policy per collection group.",
+          "help": "Documents are scheduled for deletion based on a timestamp field in the specified collection group. Data is typically deleted within 24 hours after its expiration date.",
+          "indexNotice": "Automatic indexes may cause issues with the field receiving a TTL.",
+          "group": "Collection group",
+          "field": "Timestamp field",
+          "problem": {
+            "required": "Required",
+            "slash": "Can't contain a forward slash (/)",
+            "name": "Can't start and end with double underscores (__)"
+          }
+        }
+      }
+    },
+    "usage": {
+      "title": "Usage",
+      "description": "What the database counted for this project, including the console's own requests.",
+      "period": "Period",
+      "periods": {
+        "60m": "Last 60 minutes",
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days"
+      },
+      "refresh": "Refresh",
+      "counter": {
+        "reads": "Reads",
+        "writes": "Writes",
+        "deletes": "Deletes",
+        "listenersPeak": "Snapshot listeners (peak)",
+        "connectionsPeak": "Active connections (peak)",
+        "rulesAllows": "Allows",
+        "rulesDenies": "Denies",
+        "rulesErrors": "Errors"
+      },
+      "section": {
+        "billable": "Billable metrics",
+        "subscription": "Subscription metrics",
+        "rules": "Rules metrics"
+      },
+      "chart": {
+        "billable": {
+          "hour": "Operations (per hour)",
+          "day": "Operations (per day)"
+        },
+        "subscription": {
+          "hour": "Peak subscriptions (per hour)",
+          "day": "Peak subscriptions (per day)"
+        },
+        "rules": {
+          "hour": "Rules evaluations (per hour)",
+          "day": "Rules evaluations (per day)"
+        }
+      },
+      "note": "Includes console usage. Does not include imports and exports or aggregation queries. May not match billing and quota usage."
     }
   },
   "storage": {

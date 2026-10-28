@@ -274,3 +274,75 @@ export const listOperations = (p: string, signal?: AbortSignal) => request<{ ope
 // Usage.
 
 export const getUsage = (p: string, signal?: AbortSignal) => request<DocumentsUsage>(`${docs(p)}/usage`, { signal });
+
+// The Rules Playground and the usage counters (ADR-030 §7, §8).
+
+export type SimulateMethod = 'get' | 'create' | 'update' | 'delete';
+
+/** The signed-in user the Playground's "Authenticated" switch makes; every field is optional. */
+export interface SimulateAuth {
+  uid?: string;
+  provider?: string;
+  email?: string;
+  emailVerified?: boolean;
+  name?: string;
+  phoneNumber?: string;
+}
+
+export interface SimulateRequest {
+  /** The editor's text, published or not; absent, the published rules judge. */
+  source?: string;
+  method: SimulateMethod;
+  /** The document, below the documents root: users/alice. */
+  path: string;
+  auth?: SimulateAuth;
+  /** request.resource's data of a create or an update, in REST form. */
+  data?: Fields;
+}
+
+/** An allow statement the rules evaluated: where it is, the methods it names, what it came to. */
+export interface SimulateStatement {
+  line: number;
+  column: number;
+  methods: string[];
+  outcome: 'true' | 'false' | 'error';
+  message?: string;
+}
+
+export interface SimulateResult {
+  allowed: boolean;
+  statements: SimulateStatement[];
+  issues?: RuleIssue[];
+}
+
+/** Judges one request by the rules, writing nothing. A source that does not compile is INVALID_ARGUMENT. */
+export const simulateRules = (p: string, body: SimulateRequest, signal?: AbortSignal) =>
+  request<SimulateResult>(`${docs(p)}/rules:simulate`, { method: 'POST', body, signal });
+
+export type UsagePeriod = '60m' | '24h' | '7d' | '30d';
+
+/** One hour's counts (or the period's totals, where hour is absent). */
+export interface UsageRow {
+  hour?: string;
+  reads: number;
+  writes: number;
+  deletes: number;
+  listenersPeak: number;
+  connectionsPeak: number;
+  rulesAllows: number;
+  rulesDenies: number;
+  rulesErrors: number;
+}
+
+export interface UsageReport {
+  period: UsagePeriod;
+  start: string;
+  end: string;
+  granularity: 'hour';
+  totals: UsageRow;
+  hours: UsageRow[];
+}
+
+/** The usage over a period; a server that counts nothing answers FAILED_PRECONDITION. */
+export const getUsageReport = (p: string, period: UsagePeriod, signal?: AbortSignal) =>
+  request<UsageReport>(`${docs(p)}/usage`, { query: { period }, signal });
