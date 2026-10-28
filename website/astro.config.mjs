@@ -28,17 +28,21 @@ export default defineConfig({
         { tag: 'meta', attrs: { name: 'twitter:image', content: ogImage } },
       ],
       sidebar: [
-        { label: 'Start', items: [{ slug: 'docs/getting-started' }] },
-        { label: 'Guides', items: [{ autogenerate: { directory: 'docs/guides' } }] },
         {
-          label: 'Reference',
+          label: 'Start',
+          items: [{ slug: 'docs/getting-started' }, { slug: 'docs/sdks' }, { slug: 'docs/changelog' }],
+        },
+        { label: 'Guides', items: [{ autogenerate: { directory: 'docs/guides' } }] },
+        { label: 'Reference', items: [{ autogenerate: { directory: 'docs/reference' } }] },
+        {
+          label: 'How it works',
           items: [
-            { label: 'Configuration', slug: 'docs/reference/configuration' },
-            { label: 'Console API', slug: 'docs/reference/console-api' },
+            { slug: 'docs/architecture' },
+            { slug: 'docs/security' },
+            { slug: 'docs/testing' },
+            { slug: 'docs/benchmarks' },
           ],
         },
-        { label: 'Compatibility reports', items: [{ autogenerate: { directory: 'docs/compat' } }] },
-        { label: 'Security', items: [{ autogenerate: { directory: 'docs/security' } }] },
       ],
     }),
   ],

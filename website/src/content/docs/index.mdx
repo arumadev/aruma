@@ -40,28 +40,29 @@ Firebase gives you excellent client SDKs and a managed backend you can't leave. 
 
 <Steps>
 
-1. Create a project and an app from the console or with `arumactl`.
+1. Create a project and an app from the dashboard or with `arumactl`.
 2. Download the app's configuration file: `google-services.json`, `GoogleService-Info.plist`, or the Web and Flutter equivalents.
 3. Put it in your app in place of the Firebase one. Your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk).
 
 </Steps>
 
-Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in ADR-008, ADR-015 and ADR-017.
+Projects are kept apart by a `project_number` that is the first column of every key in every data table, and a CI test checks that every query uses it. Aruma does not use PostgreSQL row-level security. See [architecture](/aruma/docs/architecture/#tenancy).
 
 ## Status
 
-Aruma is pre-1.0 and under active development. Services land one at a time, each closed with a compatibility report before the next one starts.
+Aruma is pre-1.0. The latest release is [v0.3.0](/aruma/docs/changelog/#v030). The Document Database is in the release candidate [v0.4.0-rc.1](/aruma/docs/changelog/#v040-rc1), and some of its verification is still pending.
 
-| Service | State | Evidence |
+| Service | Status | Details |
 |---|---|---|
-| **Platform**: projects, apps, API keys, service accounts, console, Management API | Available | Acceptance tests, project-isolation tests in CI, the `firebase` CLI works against it |
-| **Authentication** | Released in [v0.1.0](/aruma/docs/compat/auth-v01/) | 27/27 P0 scenarios, 180 passing official Firebase JS Auth tests, Web, iOS, Android and Node verified |
-| **Realtime Database** | Released in [v0.2.0](/aruma/docs/compat/rtdb-v02/), opt-in with `ARUMA_RTDB_ENABLED` | 332/332 official Firebase RTDB tests against a production-style `databaseURL` |
-| **Security Rules** and **Cloud Storage** | In development for v0.3 ([storage](/aruma/docs/compat/storage-v03/), [rules](/aruma/docs/compat/rules-v03/)) | Official Storage suites and iOS, Android and Web production paths in progress |
-| **Firestore** | Planned | |
-| **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
+| **Platform**: projects, apps, API keys, service accounts, dashboard, Management API | Released | [Architecture](/aruma/docs/architecture/) |
+| **Authentication** | Released in v0.1.0 | [Compatibility](/aruma/docs/reference/compatibility/#auth) |
+| **Realtime Database** | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#realtime-database) |
+| **Security Rules** | Released in v0.3.0 | [Compatibility](/aruma/docs/reference/compatibility/#security-rules) |
+| **Cloud Storage** | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#cloud-storage) |
+| **Document Database (Firestore-compatible)** | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#firestore) |
+| **Cloud Messaging, App Check, Remote Config, Functions** | Planned | |
 
-Every difference from Firebase is documented, with its source and classification, in the [compatibility reports](/aruma/docs/compat/auth-v01/).
+Every difference from Firebase is documented in [known differences](/aruma/docs/reference/known-differences/).
 
 ## The console
 
