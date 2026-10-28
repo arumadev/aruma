@@ -145,11 +145,12 @@ func (s *Service) ruleset(ctx context.Context, a admitted) (*rules.Ruleset, erro
 // the decision.
 func (s *Service) judge(ctx context.Context, a admitted, rs *rules.Ruleset, op ruleOp) error {
 	_, err := s.decide(ctx, a, rs, op, rules.TraceNone)
-	return s.countRule(a, err)
+	return s.countRule(ctx, a, err)
 }
 
-// countRule counts judge's or judgeList's answer err in the usage, and returns it.
-func (s *Service) countRule(a admitted, err error) error {
+// countRule counts judge's or judgeList's answer err in the usage (core.CountUsage: a commit's
+// once, whatever wounds retried it), and returns it.
+func (s *Service) countRule(ctx context.Context, a admitted, err error) error {
 	o := core.RuleAllow
 	switch {
 	case err == nil:
@@ -158,7 +159,7 @@ func (s *Service) countRule(a admitted, err error) error {
 	default:
 		o = core.RuleDeny
 	}
-	s.o.Usage.Rule(a.db.Project, o)
+	core.CountUsage(ctx, func() { s.o.Usage.Rule(a.db.Project, o) })
 	return err
 }
 
@@ -393,14 +394,19 @@ func (l *lookups) Get(ctx context.Context, project int64, path []string, after b
 	}
 	d, _, err := l.store.Get(ctx, l.db, p, core.ReadOptions{ReadTime: l.readTime})
 	if ce, ok := errors.AsType[*core.Error](err); ok && ce.Code == core.NotFound {
-		l.usage.Read(l.db.Project, 1)
+		l.read(ctx)
 		return rules.Value{}, false, nil
 	}
 	if err != nil {
 		return rules.Value{}, false, err
 	}
-	l.usage.Read(l.db.Project, 1)
+	l.read(ctx)
 	return resourceValue(l.db, d), true, nil
+}
+
+// read counts a document a lookup read, a commit's once (core.CountUsage).
+func (l *lookups) read(ctx context.Context) {
+	core.CountUsage(ctx, func() { l.usage.Read(l.db.Project, 1) })
 }
 
 // lookupPath is the document a lookup names, databases/{db}/documents/..., its ids checked as a

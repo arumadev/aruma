@@ -695,9 +695,9 @@ type commitTxn struct {
 func (s *PGStore) lockCommit(ctx context.Context, db DB, p *plan, c *commitTxn) (release func(), err error) {
 	switch {
 	case c == nil:
-		var judge func() error
+		var judge func(context.Context) error
 		if authorizerOf(ctx) != nil {
-			judge = func() error { return s.authorize(ctx, db, p) }
+			judge = func(ctx context.Context) error { return s.authorize(ctx, db, p) }
 		}
 		return s.lockWrites(ctx, db, p, 0, nil, judge)
 	case c.tx.mode == txnPessimistic:
@@ -727,13 +727,13 @@ func writeLocks(p *plan) []lockSpec {
 
 // lockWrites takes a commit's write locks, after the locks of more, as a transaction of its own,
 // of age (0: a new one). check, when set, runs once they are held, before the commit is marked
-// committing.
+// committing, with a context whose usage counts (CountUsage) count only for the last attempt.
 //
 // Such a commit has done nothing before it is marked committing: when an older transaction
 // wounds it, it frees its locks and asks for them again, keeping its age, so that it only grows
 // older; the client never sees that wound. Every wait ends WaitTimeout after the first request,
 // with ErrContention (f0-contention s6b).
-func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, more []lockSpec, check func() error) (func(), error) {
+func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, more []lockSpec, check func(context.Context) error) (func(), error) {
 	specs := append(more, writeLocks(p)...)
 	if len(specs) == 0 && check == nil {
 		return func() {}, nil
@@ -744,6 +744,7 @@ func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, mo
 		lt := table.begin(age, true)
 		lt.waitUntil = waitUntil
 		release := func() { table.release(lt) }
+		actx, attempt := withUsageAttempt(ctx)
 		err := func() (err error) {
 			held := false
 			// The locks go on any failure, a panic of check included: no sweep finds them.
@@ -755,7 +756,7 @@ func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, mo
 			}()
 			err = table.acquireAll(ctx, lt, specs)
 			if err == nil && check != nil {
-				err = check()
+				err = check(actx)
 			}
 			if err == nil {
 				err = table.markCommitting(lt)
@@ -763,15 +764,17 @@ func (s *PGStore) lockWrites(ctx context.Context, db DB, p *plan, age uint64, mo
 			held = err == nil
 			return err
 		}()
-		if err == nil {
+		if errors.Is(err, ErrWounded) && time.Now().Before(waitUntil) {
+			continue // asks again; what this attempt counted does not count
+		}
+		attempt.count()
+		switch {
+		case err == nil:
 			return release, nil
-		}
-		if !errors.Is(err, ErrWounded) {
-			return nil, err
-		}
-		if !time.Now().Before(waitUntil) {
+		case errors.Is(err, ErrWounded):
 			return nil, ErrContention
 		}
+		return nil, err
 	}
 }
 

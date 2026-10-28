@@ -413,50 +413,61 @@ func (h *handlers) recursiveDelete(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	deleted := 0
+	deleted, done, err := h.deleteTree(r, t, rel, isDoc)
+	// A delete that failed part-way has still deleted what its committed batches named: the
+	// audit log records those, with the error that stopped it.
+	if deleted > 0 {
+		details := map[string]any{"deleted": deleted, "done": done}
+		if err != nil {
+			details["error"] = apierr.CodeOf(docError(err)).String()
+		}
+		if aerr := h.audit(r, t, "documents.recursive_delete", rel, details); aerr != nil && err == nil {
+			err = aerr
+		}
+	}
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"deleted": deleted, "done": done})
+}
+
+// afterBatch runs after each committed batch of deleteTree; the tests stop a delete part-way
+// with it.
+var afterBatch = func(*http.Request) {}
+
+// deleteTree deletes up to maxRecursiveDelete documents of a tree, and answers how many it
+// deleted, and whether none remain. On an error, deleted counts the documents already gone.
+func (h *handlers) deleteTree(r *http.Request, t target, rel string, isDoc bool) (deleted int, done bool, err error) {
 	if isDoc {
 		n, err := h.deleteIfExists(r, t, rel)
 		if err != nil {
-			h.fail(w, r, err)
-			return
+			return 0, false, err
 		}
 		deleted += n
 	}
-	done := false
 	for deleted < maxRecursiveDelete {
 		want := min(deleteBatch, maxRecursiveDelete-deleted)
 		names, err := h.descendants(r, t, rel, isDoc, want)
 		if err != nil {
-			h.fail(w, r, err)
-			return
+			return deleted, false, err
 		}
 		if len(names) > 0 {
 			if err := h.deleteAll(r, t, names); err != nil {
-				h.fail(w, r, err)
-				return
+				return deleted, false, err
 			}
 			deleted += len(names)
+			afterBatch(r)
 		}
 		if len(names) < want {
-			done = true
-			break
+			return deleted, true, nil
 		}
 	}
-	if !done {
-		more, err := h.descendants(r, t, rel, isDoc, 1)
-		if err != nil {
-			h.fail(w, r, err)
-			return
-		}
-		done = len(more) == 0
+	more, err := h.descendants(r, t, rel, isDoc, 1)
+	if err != nil {
+		return deleted, false, err
 	}
-	if deleted > 0 {
-		if err := h.audit(r, t, "documents.recursive_delete", rel, map[string]any{"deleted": deleted, "done": done}); err != nil {
-			h.m.Fail(w, r, err)
-			return
-		}
-	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"deleted": deleted, "done": done})
+	return deleted, len(more) == 0, nil
 }
 
 // deleteIfExists deletes a document, and counts it when it existed.

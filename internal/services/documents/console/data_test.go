@@ -1,6 +1,7 @@
 package console
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -296,5 +297,37 @@ func TestAdminWriteBypassesRules(t *testing.T) {
 	other := api.Call{Caller: &authn.Caller{Role: authn.RoleAdmin, Principal: &authn.Principal{Kind: authn.KindAccount, AccountID: e.docs.Owner.AccountID}}}
 	if _, err := e.docs.Service.GetDocument(t.Context(), other, &pb.GetDocumentRequest{Name: "projects/" + badrApp + "/databases/(default)/documents/users/u1"}); err == nil {
 		t.Error("the service layer admitted an account to a project it does not own")
+	}
+}
+
+// TestRecursiveDeletePartialAudited: a delete stopped after a batch committed (here the request
+// is cancelled) still audits the documents it deleted, with done false and the error.
+func TestRecursiveDeletePartialAudited(t *testing.T) {
+	e := newEnv(t, true)
+	for _, id := range []string{"u1", "u2", "u3"} {
+		e.ok(owner, "POST", path(project, "/documents", "path", "users"), map[string]any{"documentId": id})
+	}
+	defer func(n int) { maxRecursiveDelete = n }(maxRecursiveDelete)
+	maxRecursiveDelete = 2
+	var cancel context.CancelFunc
+	inner := e.h
+	e.h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, c := context.WithCancel(r.Context())
+		defer c()
+		cancel = c
+		inner.ServeHTTP(w, r.WithContext(ctx))
+	})
+	defer func(f func(*http.Request)) { afterBatch = f }(afterBatch)
+	afterBatch = func(*http.Request) { cancel() }
+
+	if res := e.do(owner, "POST", path(project, "/documents:recursiveDelete"), map[string]any{"path": "users"}); res.code == http.StatusOK {
+		t.Fatalf("a cancelled delete answered 200: %s", res.body)
+	}
+	a, ok := e.lastAudit("documents.recursive_delete")
+	if !ok {
+		t.Fatal("the documents a cancelled delete deleted were not audited")
+	}
+	if a.target != "users" || a.details["deleted"] != float64(2) || a.details["done"] != false || a.details["error"] == nil {
+		t.Errorf("audit: %+v", a)
 	}
 }

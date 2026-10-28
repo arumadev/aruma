@@ -53,12 +53,11 @@ func (s *PGStore) lockOptimistic(ctx context.Context, db DB, p *plan, c *commitT
 		return ErrReadsChanged
 	}
 	p.verify = verifyWritten(p, c.reads, conflict)
-	rulesCtx := ctx
-	return s.lockWrites(ctx, db, p, c.tx.age, more, func() error {
+	return s.lockWrites(ctx, db, p, c.tx.age, more, func(rulesCtx context.Context) error {
 		// The check holds shared locks, the database's for a listing of every collection, so
 		// it is bounded in time as a lock wait is: past it the commit is ABORTED with the
 		// contention text, which the clients retry. What it reads again is bounded by MaxLocks.
-		ctx, cancel := context.WithTimeoutCause(ctx, s.txns.cfg.WaitTimeout, ErrContention)
+		ctx, cancel := context.WithTimeoutCause(rulesCtx, s.txns.cfg.WaitTimeout, ErrContention)
 		defer cancel()
 		err := s.recheck(ctx, db, unwritten, c.lists, conflict)
 		if err != nil && errors.Is(context.Cause(ctx), ErrContention) {

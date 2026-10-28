@@ -72,7 +72,7 @@ func (s *Service) allowList(ctx context.Context, a admitted, lq listQuery, readT
 // counts the decision, once.
 func (s *Service) judgeList(ctx context.Context, a admitted, rs *rules.Ruleset, lq listQuery, l rules.Documents,
 	budget *rules.Budget, now time.Time) error {
-	return s.countRule(a, s.decideList(ctx, a, rs, lq, l, budget, now))
+	return s.countRule(ctx, a, s.decideList(ctx, a, rs, lq, l, budget, now))
 }
 
 func (s *Service) decideList(ctx context.Context, a admitted, rs *rules.Ruleset, lq listQuery, l rules.Documents,

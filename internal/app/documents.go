@@ -56,6 +56,9 @@ type Documents struct {
 	// usage counts the dashboard's usage; Boot starts its flushes, and Close's last one keeps
 	// the counts across a restart.
 	usage *documents.Usage
+	// stopUsage ends the usage's flushes, not ctx (Boot), and usageDone closes after the last.
+	stopUsage context.CancelFunc
+	usageDone chan struct{}
 	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
 	// sweep), and jobsDone
 	// closes when they have.
@@ -70,8 +73,9 @@ type Documents struct {
 // key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
 func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics,
 	idTokens idtoken.Verifier, revocations idtoken.Revocations, rulesInflight *rules.Inflight, logger *slog.Logger) *Documents {
+	usage := documents.NewUsage(pool, nil, logger)
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
-		return documents.PurgeProject(ctx, pool, project)
+		return documents.PurgeProject(ctx, pool, usage, project)
 	})
 	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 	jwts := authn.NewServiceAccountJWTVerifier(svc, publicURL, logger)
@@ -92,7 +96,6 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	l := cfg.Documents.Limits
 	// The Listen hub serves the streams from the start; Boot binds it to the store it opens.
 	hub := newHubs(listen.Options{LagEvents: l.StreamLagEvents, SnapshotRows: l.SnapshotRows, Log: logger})
-	usage := documents.NewUsage(pool, nil, logger)
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
 		Rulesets: svc, IDTokens: idTokens, RulesInflight: rulesInflight,
@@ -206,7 +209,15 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
-	jobs.Go(func() { d.usage.Run(jctx, 0) })
+	// The usage's flushes outlive ctx: requests still draining after it ends count, and Close,
+	// once the server has drained them, runs the last flush.
+	var uctx context.Context
+	uctx, d.stopUsage = context.WithCancel(context.WithoutCancel(ctx))
+	d.usageDone = make(chan struct{})
+	go func() {
+		defer close(d.usageDone)
+		d.usage.Run(uctx, 0)
+	}()
 	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
 	jobs.Go(func() {
 		store.RunTTL(jctx, documents.TTLOptions{Every: d.cfg.TTLSweepInterval, Batch: d.cfg.TTLSweepBatch, Log: d.log})
@@ -221,12 +232,17 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close stops the retention job and the transactions' sweep, closes the Listen hub, and
-// releases the lock.
+// Close stops the retention job and the transactions' sweep, runs the usage's last flush, closes
+// the Listen hub, and releases the lock. It runs once the server has drained its requests, so the
+// last flush has their counts.
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()
 		<-d.jobsDone
+	}
+	if d.stopUsage != nil {
+		d.stopUsage()
+		<-d.usageDone
 	}
 	if d.hub != nil {
 		d.hub.close()

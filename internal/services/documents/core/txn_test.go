@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"math/rand/v2"
 	"strconv"
@@ -290,6 +291,53 @@ func TestPlainCommitRetriesItsWound(t *testing.T) {
 	}
 	if s.TransactionStats().Wounds != 1 {
 		t.Fatalf("stats %+v", s.TransactionStats())
+	}
+}
+
+// A plain commit wounded while the rules judge it is judged again, and what the judging counted
+// in the usage (CountUsage) counts once: for the attempt that commits.
+func TestWoundRetryCountsUsageOnce(t *testing.T) {
+	s, _ := newStore(t, Options{})
+	ctx := t.Context()
+	older := begin(t, s, admin, TransactionOptions{})
+	// Its first lock gives it its age (s3b).
+	if _, _, err := s.Get(ctx, testDB, ParsePath("u/E"), in(older)); !isCode(err, NotFound) {
+		t.Fatal(err)
+	}
+	var judged, counted atomic.Int64
+	read := make(chan error, 1)
+	judge := func(ctx context.Context, _ []Proposal, _ time.Time) error {
+		CountUsage(ctx, func() { counted.Add(1) })
+		if judged.Add(1) > 1 {
+			return nil
+		}
+		// The older reads D, which the commit holds: it wounds the commit, then waits for it.
+		go func() {
+			_, _, err := s.Get(context.WithoutCancel(ctx), testDB, ParsePath("u/D"), in(older))
+			read <- err
+		}()
+		for s.TransactionStats().Wounds == 0 {
+			time.Sleep(time.Millisecond)
+		}
+		return nil
+	}
+	plain := make(chan error, 1)
+	go func() {
+		_, err := s.Commit(WithAuthorizer(ctx, judge), testDB, []Write{set("u/D", doc())})
+		plain <- err
+	}()
+	if err := outcome(t, read); !isCode(err, NotFound) {
+		t.Fatalf("older read: %v", err)
+	}
+	pending(t, plain)
+	if err := s.Rollback(ctx, testDB, older); err != nil {
+		t.Fatal(err)
+	}
+	if err := outcome(t, plain); err != nil {
+		t.Fatalf("plain commit: %v", err)
+	}
+	if judged.Load() != 2 || counted.Load() != 1 {
+		t.Errorf("judged %d times, counted %d; want 2 and 1", judged.Load(), counted.Load())
 	}
 }
 
