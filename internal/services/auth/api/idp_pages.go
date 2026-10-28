@@ -19,7 +19,7 @@ import (
 
 // The pages the web SDK opens for signInWithPopup and signInWithRedirect, at
 // <emulator URL>/emulator/auth/{handler,iframe} after connectAuthEmulator and at
-// https://<authDomain>/__/auth/{handler,iframe} otherwise (docs/research/phase2-idp.md §2).
+// https://<authDomain>/__/auth/{handler,iframe} otherwise.
 //
 // The handler page starts a sign-in (the SDK's query), and is the provider's callback: a GET
 // with state and code from Google, a cross-site form POST from Apple. It hands the result to

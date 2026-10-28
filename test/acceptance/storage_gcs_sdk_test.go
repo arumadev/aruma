@@ -28,7 +28,7 @@ import (
 //
 // Both run under a network guard, and the test fails unless the guard saw them connect to the
 // recorder and nothing else: the Go program refuses every dial beyond loopback itself (its last
-// step), and Node loads test/experiments/netguard.cjs.
+// step), and Node loads test/e2e/netguard.cjs.
 //
 // It builds a Go program with the Google libraries and installs an npm package, so it runs only
 // with ARUMA_GCS_SDK=1 (Go and Node on PATH; the first run needs the module proxy and the npm
@@ -214,7 +214,7 @@ func (p *recorder) run(t *testing.T, dir string, cmd *exec.Cmd, env ...string) h
 	p.mu.Unlock()
 	guardLog := filepath.Join(t.TempDir(), "netguard.log")
 	if dir == "node" {
-		guard, err := filepath.Abs(filepath.Join("..", "experiments", "netguard.cjs"))
+		guard, err := filepath.Abs(filepath.Join("..", "e2e", "netguard.cjs"))
 		if err != nil {
 			t.Fatal(err)
 		}

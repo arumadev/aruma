@@ -7,7 +7,7 @@
 //
 // For each it builds test/smoke/genconfig, starts it with -serve -storage on a throwaway
 // database that genconfig drops when it stops, and runs the test in a Node process that refuses
-// every connection beyond loopback (test/experiments/netguard.cjs, its log in the run's
+// every connection beyond loopback (test/e2e/netguard.cjs, its log in the run's
 // directory). In the tls form, *.aruma.test also resolves to the front inside that process only
 // (test/compat/firebase-js/rtdb/hosts.cjs) and the run's CA is trusted (NODE_EXTRA_CA_CERTS).
 //
@@ -56,7 +56,7 @@ async function startServer(bin, mode) {
 async function run(bin, mode) {
   const server = await startServer(bin, mode);
   try {
-    const preload = ['--require', join(root, 'test', 'experiments', 'netguard.cjs')];
+    const preload = ['--require', join(root, 'test', 'e2e', 'netguard.cjs')];
     const env = { ...process.env, ARUMA_SMOKE_DIR: server.dir, ARUMA_SMOKE_MODE: mode, ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log') };
     for (const name of ['STORAGE_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST', 'GOOGLE_APPLICATION_CREDENTIALS', 'ARUMA_URL']) {
       delete env[name];

@@ -1,7 +1,6 @@
 # Cloud Storage for Firebase: reference captures
 
-What Aruma's Storage server must speak, recorded from the outside. The analysis is in
-`docs/research/storage/` (A to E); this directory holds the raw exchanges.
+What Aruma's Storage server must speak, recorded from the outside. The analysis (A to E) is not kept in this repository; this directory holds the raw exchanges.
 
 ## production/ — what exists, and why there is no production traffic here
 
@@ -21,7 +20,7 @@ object was written there. Nothing needed restoring.
 
 Everything else below comes from the **local Storage emulator**. The emulator is an oracle of
 the second rank (brief: production, then the emulator as a black box, then Google's SDK suites);
-`docs/research/storage/E-production-vs-emulator.md` lists where the emulator is known or
+The production-versus-emulator analysis (E) lists where the emulator is known or
 suspected to differ from production. The owner has since decided against production Storage
 captures (no Blaze plan), so production evidence comes only from the official docs, the
 firebase-tools conformance tests written to run against production (not those that depend on

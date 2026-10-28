@@ -5,7 +5,7 @@
 # Playwright against a real Aruma server with the database enabled and the rules of
 # ../rtdb-rules.json (not dev_open_rules), with every request off this machine blocked.
 #
-# Then the long-poll trap of test/experiments/rtdb-lp-browser.sh (a restart that leaves the SDK on
+# Then the long-poll trap of test/e2e/rtdb-lp-browser.sh (a restart that leaves the SDK on
 # long polling, the upgrade back, blocked localStorage), which this suite does not repeat.
 #
 #   test/e2e/web-rtdb/run.sh [playwright test arguments]
@@ -53,9 +53,9 @@ for major in 11 12 13; do
 done
 
 if [[ "${ARUMA_E2E_LP:-on}" != off ]]; then
-  log "the long-poll trap (test/experiments/rtdb-lp-browser.sh)"
-  (cd "$root/test/experiments/rtdb-lp-browser" && npm ci --no-audit --no-fund --silent)
-  "$root/test/experiments/rtdb-lp-browser.sh" >"$gen/lp-browser.json" || { cat "$gen/lp-browser.json" >&2; exit 1; }
+  log "the long-poll trap (test/e2e/rtdb-lp-browser.sh)"
+  (cd "$root/test/e2e/rtdb-lp-browser" && npm ci --no-audit --no-fund --silent)
+  "$root/test/e2e/rtdb-lp-browser.sh" >"$gen/lp-browser.json" || { cat "$gen/lp-browser.json" >&2; exit 1; }
   python3 -c 'import json, sys; c = json.load(open(sys.argv[1]))["checks"]; [print(f"  {v:3} {k}") for k, v in c.items()]' "$gen/lp-browser.json"
 fi
 log "web Realtime Database e2e passed"

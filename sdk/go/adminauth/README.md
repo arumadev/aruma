@@ -7,8 +7,6 @@ already uses `firebase.google.com/go/v4`. Results are the official `auth` types 
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
 
-[العربية](#العربية)
-
 ## The one line
 
 ```go
@@ -73,37 +71,3 @@ firebase-admin-go release changes them.
 ## License
 
 Apache-2.0.
-
----
-
-<div dir="rtl">
-
-## العربية
-
-حزمة `adminauth` تتحقق من رموز دخول Aruma ومن الـ session cookies، وتدير مستخدمي Aruma Auth، من
-خادم Go يستعمل `firebase.google.com/go/v4` أصلًا. ما تعيده هو أنواع `auth` الرسمية، وأخطاؤها
-تتعرّف عليها الدوال الرسمية مثل `auth.IsIDTokenExpired` و`auth.IsIDTokenRevoked` و`auth.IsUserNotFound`.
-
-Aruma غير تابع لـ Google ولا معتمد منها. Firebase علامة تجارية لـ Google LLC.
-
-### السطر الواحد
-
-بدل `app.Auth(ctx)` استدعِ `adminauth.NewClient(ctx, app, adminauth.WithCredentialsFile(...))`.
-لا يكشف `firebase.App` مفاتيحه، فيُذكر ملف المفتاح مرة أخرى، أو يُقرأ من
-`GOOGLE_APPLICATION_CREDENTIALS`. ويبقى `CustomToken` هو الرسمي نفسه دون تغيير.
-
-### الإعداد
-
-- **عنوان الخادم:** `WithURL`، ثم `ARUMA_URL`، ثم `token_uri` في ملف المفتاح. يجب أن يكون `https`
-  (و`http` على الجهاز المحلي فقط)، ولا يكون عنوان Google أبدًا.
-- **المفتاح:** `WithCredentialsFile` أو `WithCredentialsJSON`، ثم `GOOGLE_APPLICATION_CREDENTIALS`.
-- **المشروع:** `WithProjectID`، ثم `project_id` في ملف المفتاح.
-
-**حارس المحاكي:** يفشل `NewClient` إن وُجد `FIREBASE_AUTH_EMULATOR_HOST`. الخيار
-`AllowEmulatorHost()` يسمح بالبدء، إلا إن كان `GO_ENV` أو `NODE_ENV` يساوي `production`.
-
-### الترخيص
-
-Apache-2.0.
-
-</div>

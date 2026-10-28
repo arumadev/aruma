@@ -13,8 +13,8 @@ import (
 
 // Sources of the cases below:
 //
-//	[H66]  hidane ADR 0005 (#66), the emulator's list model, as docs/research/rules/B-design-
-//	       lessons.md §1.4 quotes it: a comparison on a constraint is true when one of the
+//	[H66]  hidane ADR 0005 (#66), the emulator's list model, as the design
+//	       notes quote it: a comparison on a constraint is true when one of the
 //	       field's filters alone implies it, else an error without a message, never false;
 //	       n >= 1 && n <= 1 does not imply n == 1; a filter that matches nothing implies
 //	       == true and == false.

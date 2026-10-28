@@ -30,10 +30,10 @@ import (
 // deploy without a change is "already up to date"; a compile error is printed as [E] line:column;
 // and without Storage the CLI says "Firebase Storage has not been set up".
 //
-// The CLI is configured as docs/research/experiments.md (T23) and C §5.1 say a developer
+// The CLI is configured as a developer
 // configures it, through the environment only, and reaches the server through a TLS front that
 // records every request (the CLI sends its credential only to https origins). It runs with a
-// home of its own, test/experiments/netguard.cjs refusing every connection that leaves loopback,
+// home of its own, test/e2e/netguard.cjs refusing every connection that leaves loopback,
 // and on macOS under sandbox-exec with outbound network limited to loopback; the test fails on
 // any refused attempt.
 //
@@ -319,13 +319,13 @@ func newFirebaseCLI(t *testing.T, bin, target, token string) *firebaseCLI {
 	if err := os.WriteFile(ca, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: c.front.Certificate().Raw}), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	guard, err := filepath.Abs(filepath.Join("..", "experiments", "netguard.cjs"))
+	guard, err := filepath.Abs(filepath.Join("..", "e2e", "netguard.cjs"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	c.guardLog = filepath.Join(c.home, "netguard.log")
 	c.env = []string{
-		// What a developer sets (docs/research/experiments.md T23, C §5.1): the management API
+		// What a developer sets: the management API
 		// origins, the CLI token, the informational IAM check off, and no update notifier.
 		"FIREBASE_API_URL=" + c.front.URL,
 		"FIREBASE_TOKEN_URL=" + c.front.URL,
@@ -405,7 +405,7 @@ func (c *firebaseCLI) run(dir string, args ...string) (string, error) {
 	return out, err
 }
 
-// loopbackOnly is the sandbox-exec profile of test/experiments/firebase-cli.sh: outbound network
+// loopbackOnly is the sandbox-exec profile used for the CLI: outbound network
 // to loopback and Unix sockets only.
 const loopbackOnly = `(version 1)(allow default)(deny network-outbound)(allow network-outbound (remote ip "localhost:*"))(allow network-outbound (remote unix-socket))`
 

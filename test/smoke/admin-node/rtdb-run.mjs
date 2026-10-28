@@ -3,7 +3,7 @@
 // It builds test/smoke/genconfig and starts it with -serve -rtdb-domain rtdb.aruma.test and a
 // TLS front, on a throwaway database that genconfig drops when it stops. Then it runs the test
 // in a Node process that trusts the front's CA (NODE_EXTRA_CA_CERTS), refuses every connection
-// beyond loopback (test/experiments/netguard.cjs, with its log in the run's directory) and
+// beyond loopback (test/e2e/netguard.cjs, with its log in the run's directory) and
 // resolves *.aruma.test to the front (test/compat/firebase-js/rtdb/hosts.cjs). With
 // ARUMA_RTDB_DATABASE_URL (below) it starts nothing, and the names resolve by the real DNS.
 //
@@ -15,8 +15,8 @@
 //                          use a genconfig -serve -rtdb-domain rtdb.aruma.test -rtdb-tls ...
 //                          already running, whose files are in ARUMA_SMOKE_DIR
 //   ARUMA_SMOKE_DIR with ARUMA_RTDB_DATABASE_URL
-//                          use a server behind a front of its own, such as Caddy (see
-//                          test/experiments/rtdb-caddy.sh): ARUMA_SMOKE_DIR holds the
+//                          use a server behind a front of its own, such as Caddy:
+//                          ARUMA_SMOKE_DIR holds the
 //                          project's service-account.json and an expected.json with projectId
 //                          and that databaseURL, ARUMA_RTDB_CA the CA to trust (optional), and
 //                          ARUMA_NETGUARD_LOOPBACK_NAMES the names the real DNS resolves to
@@ -70,7 +70,7 @@ async function startServer() {
 const server = await startServer();
 let code = 1;
 try {
-  const preload = ['--require', join(root, 'test', 'experiments', 'netguard.cjs')];
+  const preload = ['--require', join(root, 'test', 'e2e', 'netguard.cjs')];
   const env = { ...process.env, ARUMA_SMOKE_DIR: server.dir, ARUMA_NETGUARD_LOG: join(server.dir, 'netguard.log') };
   if (server.external) {
     // The real DNS and the front's own certificate: nothing is redirected.

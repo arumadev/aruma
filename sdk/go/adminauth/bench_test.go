@@ -18,7 +18,7 @@ import (
 )
 
 // Verification throughput against the live server TestMain starts, for the Phase 2
-// performance baseline (docs/performance/baseline-phase2.md):
+// performance baseline:
 //
 //	go test -run '^$' -bench Verify -benchtime 5s -cpu 1,4,8
 //

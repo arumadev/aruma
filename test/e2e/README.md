@@ -51,7 +51,7 @@ up again for the offline scenarios.
 Beyond the list: a persistent cache catching up after a reconnect (Android, iOS), a refreshed ID
 token on an open connection, `onDisconnect` update and cancel, and a query without `.indexOn`
 (web). The web runner ends with the long-poll trap of
-[test/experiments/rtdb-lp-browser.sh](../experiments/rtdb-lp-browser.sh) (`ARUMA_E2E_LP=off` skips it).
+[rtdb-lp-browser.sh](rtdb-lp-browser.sh) (`ARUMA_E2E_LP=off` skips it).
 
 The guards: on the web the browser resolves no host name but localhost, and every request and
 WebSocket is checked. On Android the iptables half covers the database's WebSockets (they are

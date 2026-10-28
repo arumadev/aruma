@@ -154,7 +154,7 @@ public enum ArumaRedirect {
     set { AuthEndpoints.storageRedirect = newValue }
   }
 
-  /// The S0-B spike's switch, kept for test/experiments/storage-path. The Storage redirect is now
+  /// The S0-B spike's switch, kept for the S0-B experiment. The Storage redirect is now
   /// on by default, and the patched FirebaseStorage is the production path.
   @available(*, deprecated, message: "use storageRedirect or Info.plist ArumaStorageRedirect")
   public static func setStorageSpike(_ on: Bool) {

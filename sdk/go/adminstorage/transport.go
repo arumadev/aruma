@@ -145,7 +145,7 @@ func noRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastRe
 
 // authTransport adds the access token to requests for the Aruma origin, and refuses any other:
 // the client knows no other server, and the token must never reach one (firebase-admin's
-// getDownloadURL sends it to firebasestorage.googleapis.com, docs/research/storage-production-path.md).
+// getDownloadURL sends it to firebasestorage.googleapis.com).
 // A resumable session's URL is the server's public URL, so WithURL must be that URL.
 type authTransport struct {
 	origin string

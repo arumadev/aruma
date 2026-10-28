@@ -87,7 +87,7 @@ export function namedResource(r) {
 // heldOut says whether a case of one of our topics belongs to the held-out
 // set: a quarter of the unpinned cases (about a fifth of all), chosen by a
 // fixed seed over topic/id. Pinned
-// cases (the ones docs/research/rules/A-oracle-findings.md cites) stay in the
+// cases (the ones the oracle findings note cites) stay in the
 // development set.
 export const HELDOUT_SEED = 'aruma-s0a-rules-heldout-v1';
 export function heldOut(topic, c) {

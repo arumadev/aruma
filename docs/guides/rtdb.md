@@ -71,7 +71,7 @@ let top = db.reference(withPath: board).queryOrdered(byChild: "score").queryLimi
 ```
 (من `test/e2e/ios-rtdb/Tests/RtdbE2ETests.swift`)
 
-**Admin Node:** `cert()` في `firebase-admin` يرسل توقيع المفتاح إلى Google ويتجاهل `token_uri`، فاستعمل اعتمادًا يطلب الرمز من Aruma. انسخ [aruma-credential.mjs](../../test/experiments/admin-node/aruma-credential.mjs) إلى مشروعك:
+**Admin Node:** `cert()` في `firebase-admin` يرسل توقيع المفتاح إلى Google ويتجاهل `token_uri`، فاستعمل اعتمادًا يطلب الرمز من Aruma. انسخ [aruma-credential.mjs](../../test/e2e/admin-node/aruma-credential.mjs) إلى مشروعك:
 
 ```js
 import { arumaCredential } from './aruma-credential.mjs';

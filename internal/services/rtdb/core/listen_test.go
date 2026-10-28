@@ -184,8 +184,7 @@ func TestListenTaggedWindow(t *testing.T) {
 
 // A write under many tagged listens at one path reads that path once and filters each query
 // once, whatever the number of listens: each listen reading the whole node again made a
-// write under ten clients' limitToLast(50) on 10,000 children take 300 ms instead of 35
-// (docs/performance/baseline-rtdb.md). Every listen still gets its push.
+// write under ten clients' limitToLast(50) on 10,000 children take 300 ms instead of 35. Every listen still gets its push.
 func TestTaggedListensShareOneRead(t *testing.T) {
 	store := newMemStore()
 	s := newTestService(t, store, Options{})

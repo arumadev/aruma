@@ -138,7 +138,7 @@ and must pass WebSocket upgrades (`Upgrade` and `Connection` headers).
 
 ## 6. Capacity: descriptors and the database pool
 
-Measured in [baseline-rtdb.md](../performance/baseline-rtdb.md):
+Measured in baseline-rtdb.md:
 
 - **Each connection holds one file descriptor** and about 40-45 KiB of memory (two goroutines, their
   stacks, and the session), plus about 5 KiB per listen. The process's descriptor limit therefore
@@ -278,7 +278,7 @@ aruma.example.com {
 
 ## 6. السعة: واصفات الملفات ومجمّع اتصالات Postgres
 
-من القياسات في [baseline-rtdb.md](../performance/baseline-rtdb.md):
+من القياسات في baseline-rtdb.md:
 
 - **كل اتصال يشغل واصف ملف واحدًا** ونحو 40-45 KiB من الذاكرة (goroutine اثنتان ومكدّساهما والجلسة)،
   ونحو 5 KiB لكل استماع. فحدّ الواصفات في العملية يحدّ عدد الاتصالات: ارفعه (`LimitNOFILE=` في وحدة

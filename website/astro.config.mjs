@@ -18,11 +18,6 @@ export default defineConfig({
       logo: { src: './src/assets/logo.svg', alt: 'Aruma' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/arumadev/aruma' }],
-      defaultLocale: 'root',
-      locales: {
-        root: { label: 'العربية', lang: 'ar', dir: 'rtl' },
-        en: { label: 'English', lang: 'en' },
-      },
       customCss: ['./src/styles/brand.css'],
       lastUpdated: false,
       head: [
@@ -33,39 +28,17 @@ export default defineConfig({
         { tag: 'meta', attrs: { name: 'twitter:image', content: ogImage } },
       ],
       sidebar: [
+        { label: 'Start', items: [{ slug: 'docs/getting-started' }] },
+        { label: 'Guides', items: [{ autogenerate: { directory: 'docs/guides' } }] },
         {
-          label: 'ابدأ',
-          translations: { en: 'Start' },
-          items: [{ slug: 'docs/getting-started' }],
-        },
-        {
-          label: 'الأدلة',
-          translations: { en: 'Guides' },
-          items: [{ autogenerate: { directory: 'docs/guides' } }],
-        },
-        {
-          label: 'المرجع',
-          translations: { en: 'Reference' },
+          label: 'Reference',
           items: [
-            { label: 'الإعداد (بالإنجليزية)', translations: { en: 'Configuration' }, link: `${site}${base}/en/docs/reference/configuration/` },
-            { label: 'واجهة اللوحة API (بالإنجليزية)', translations: { en: 'Console API' }, link: `${site}${base}/en/docs/reference/console-api/` },
+            { label: 'Configuration', slug: 'docs/reference/configuration' },
+            { label: 'Console API', slug: 'docs/reference/console-api' },
           ],
         },
-        {
-          label: 'تقارير التوافق',
-          translations: { en: 'Compatibility reports' },
-          items: [{ autogenerate: { directory: 'docs/compat' } }],
-        },
-        {
-          label: 'الأمان',
-          translations: { en: 'Security' },
-          items: [{ autogenerate: { directory: 'docs/security' } }],
-        },
-        {
-          label: 'القرارات المعمارية',
-          translations: { en: 'Architecture decisions' },
-          items: [{ autogenerate: { directory: 'docs/adr', collapsed: true } }],
-        },
+        { label: 'Compatibility reports', items: [{ autogenerate: { directory: 'docs/compat' } }] },
+        { label: 'Security', items: [{ autogenerate: { directory: 'docs/security' } }] },
       ],
     }),
   ],

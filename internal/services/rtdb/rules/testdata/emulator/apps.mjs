@@ -1,5 +1,4 @@
-// Twenty rules files shaped like those of real apps (testdata/apps), after the categories of
-// docs/research/rtdb/H-rules-usage-analysis.txt, each with data and operations a client of that
+// Twenty rules files shaped like those of real apps (testdata/apps), after the categories found in an analysis of public rules files, each with data and operations a client of that
 // app would send. capture.mjs records the emulator's verdicts in apps.golden.json.
 import fs from 'node:fs';
 

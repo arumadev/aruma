@@ -1,7 +1,7 @@
 // Package rulestest reads the rules oracle (test/oracle/rules, built by S0-A) into one Go type,
 // binds each case to the engine's public contract, and tallies how far the engine agrees.
 //
-// It is for tests and tools only, by convention (ADR-021 §6, docs/research/rules-layout.md):
+// It is for tests and tools only, by convention (ADR-021 §6):
 // the services never import it.
 //
 // The oracle has three provenances, in order of authority: deployed (real rules, real SDK

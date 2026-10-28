@@ -9,7 +9,7 @@
 // It patches dns.lookup (and dns.promises.lookup), and net.Socket.prototype.connect, where every
 // TCP connection ends up (http, https, tls and the built-in fetch alike). Only the copy of the
 // options handed to the socket changes: TLS still sends the name as SNI and checks the
-// certificate against it. Load it after test/experiments/netguard.cjs, which then sees a
+// certificate against it. Load it after test/e2e/netguard.cjs, which then sees a
 // loopback address and lets the connection through.
 'use strict';
 const dns = require('node:dns');

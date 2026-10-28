@@ -21,8 +21,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/auth/tokens"
 )
 
-// T24, X-2, X-3: the 22 Phase 2 tamper scenarios, one named subtest each, indexed in
-// docs/security/tamper-phase2.md (keep the names in step). Every forged ID token is put to each of Aruma's three
+// T24, X-2, X-3: the 22 Phase 2 tamper scenarios, one named subtest each. Every forged ID token is put to each of Aruma's three
 // verifiers: the server (accounts:lookup, and the refresh grant where a refresh token is
 // involved) and the Node and Go verification libraries. Scenarios whose feature is built on
 // another branch are written in full against the documented contract and skipped with the

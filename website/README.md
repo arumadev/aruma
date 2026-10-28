@@ -1,6 +1,6 @@
 # Aruma website
 
-The landing page and documentation, built with [Astro Starlight](https://starlight.astro.build). Arabic is the default (right to left), English is under `/en/`.
+The landing page and documentation, built with [Astro Starlight](https://starlight.astro.build). The site is English only.
 
 ```bash
 cd website
@@ -11,9 +11,9 @@ npm run build    # static site in dist/
 
 ## How the docs get in
 
-`../docs` stays the single source of truth. `scripts/sync-docs.mjs` runs before every dev and build. It copies the published sections (`adr`, `compat`, `guides`, `security`, plus the configuration and console API references) into `src/content/docs`, adds the frontmatter Starlight needs, rewrites relative links, and sends English files to the English locale. Those copies are git-ignored. Research notes, performance baselines and release notes are not published; links to them point at GitHub.
+`../docs` stays the single source of truth. `scripts/sync-docs.mjs` runs before every dev and build. It copies the published sections (`compat`, `guides`, `security`, plus the configuration and console API references) into `src/content/docs`, adds the frontmatter Starlight needs, and rewrites relative links. Those copies are git-ignored. Release notes are not published; links to them point at GitHub.
 
-Hand-written pages live in `src/content/docs`: the two landing pages (`index.mdx`, `en/index.mdx`) and the quick start (`docs/getting-started.md`, `en/docs/getting-started.md`).
+Hand-written pages live in `src/content/docs`: the landing page (`index.mdx`) and the quick start (`docs/getting-started.md`).
 
 ## Address
 

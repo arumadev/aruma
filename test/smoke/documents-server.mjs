@@ -1,7 +1,7 @@
 // Starts Aruma with the Document Database for the Node smoke runners (admin-node/documents-run.mjs,
 // web/documents-run.mjs): test/smoke/genconfig -serve -documents on a throwaway database that
 // genconfig drops when it stops, and runs a test file in a Node process that refuses every
-// connection beyond loopback (test/experiments/netguard.cjs).
+// connection beyond loopback (test/e2e/netguard.cjs).
 //
 //   ARUMA_SMOKE_ADDR       Aruma's listen address (default 127.0.0.1:0: any free port)
 //   ARUMA_SMOKE_DB_PREFIX  prefix of the throwaway database (default aruma_smoke_)
@@ -53,7 +53,7 @@ export async function startServer(bin, flags) {
 // runGuarded runs node --test on file under the network guard, with env added, and resolves
 // to its exit code.
 export async function runGuarded(file, cwd, env) {
-  const preload = ['--require', join(root, 'test', 'experiments', 'netguard.cjs')];
+  const preload = ['--require', join(root, 'test', 'e2e', 'netguard.cjs')];
   const childEnv = { ...process.env, ...env };
   for (const name of ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_FIRESTORE_EMULATOR_ADDRESS', 'GOOGLE_APPLICATION_CREDENTIALS',
     'GOOGLE_CLOUD_PROJECT', 'FIRESTORE_PREFER_REST', 'ARUMA_URL', 'NODE_EXTRA_CA_CERTS', 'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']) {

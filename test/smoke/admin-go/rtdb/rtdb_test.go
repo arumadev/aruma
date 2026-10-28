@@ -15,7 +15,7 @@
 //	ARUMA_SMOKE_DB_PREFIX  prefix of the throwaway database (default aruma_smoke_)
 //
 // ARUMA_SMOKE_DIR with ARUMA_RTDB_DATABASE_URL uses a server behind a front of its own, such as
-// Caddy (test/experiments/rtdb-caddy.sh), and starts nothing: ARUMA_SMOKE_DIR holds the
+// Caddy, and starts nothing: ARUMA_SMOKE_DIR holds the
 // project's service-account.json and an expected.json with projectId and that databaseURL, and
 // ARUMA_RTDB_CA is the one CA to trust (unset: the system's). The database host and the key
 // file's token_uri host are then resolved by the real DNS, and dialled only when every address

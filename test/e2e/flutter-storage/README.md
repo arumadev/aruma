@@ -31,7 +31,7 @@ test/e2e/flutter-storage/run.sh ios       # the patched FirebaseStorage mirror t
   `http://127.0.0.1:<port>/v0/b/<bucket>/o/<name>?alt=media&token=<the server's token>` literally.
 - **The round trip:** `refFromURL(link)` throws (firebase_storage's Dart parser,
   `utils.dart:24`, `:49-56`), and `refFromURL(fromArumaUrl(link))` gives the same bucket and
-  `fullPath`, for the operations' link and for the names `a b+é.txt`, `صورة ١.png` and
+  `fullPath`, for the operations' link and for the names `a b+é.txt`, an Arabic name with Arabic-Indic digits (`\u0635\u0648\u0631\u0629 \u0661.png`, "picture 1") and
   `50% off?#&=1.txt`, whose bytes are then read through both references and the link. The same
   holds for a link on a production host (`https://storage.example.com/…`).
 - **Refused:** links to `e2e/<uid>//x.txt`, `/e2e/<uid>/x.txt` and `e2e/<uid>/x/`: `fromArumaUrl`

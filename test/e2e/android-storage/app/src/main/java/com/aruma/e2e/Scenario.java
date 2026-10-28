@@ -39,8 +39,7 @@ import java.util.concurrent.TimeUnit;
  * optimizes it with the rest of the app, firebase-storage and aruma-redirect included, and only
  * this class is kept for the instrumented tests to call (proguard-e2e.pro).
  *
- * <p>The operations are the twelve of the S0-B experiment (docs/research/storage-production-path.md,
- * Android), now checked: each passes or fails, and the download URL is compared with the unified form
+ * <p>The operations are the twelve of the S0-B experiment (Android), now checked: each passes or fails, and the download URL is compared with the unified form
  * literally (ADR-022 §16), so a link on Google's host is a failure, not a warning.
  */
 public final class Scenario {

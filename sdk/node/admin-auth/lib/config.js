@@ -8,8 +8,7 @@ import { argumentError } from './errors.js';
 
 /**
  * The emulator variable switches the official firebase-admin in the same process to accept
- * unsigned tokens and to send "Bearer owner" to whatever host it names
- * (docs/research/phase2-admin-auth.md). Refuse to start with it set, unless the caller opts in
+ * unsigned tokens and to send "Bearer owner" to whatever host it names. Refuse to start with it set, unless the caller opts in
  * outside production.
  * @param {{allowEmulatorHost?: boolean}} options
  * @param {NodeJS.ProcessEnv} env

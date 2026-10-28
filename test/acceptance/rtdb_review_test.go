@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Properties of the security review of v0.2 (docs/security/review-v0.2.md) that no other test
+// Properties of the security review of v0.2 that no other test
 // covers on a real server.
 
 // getAt sends a GET for target to the test server, naming host in the request when it is

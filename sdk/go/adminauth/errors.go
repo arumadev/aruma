@@ -21,7 +21,7 @@ import (
 // type-assert *internal.FirebaseError, a type no other module can name. The library captures
 // that type from an error the official client produces offline, and builds its errors as
 // values of it, setting the exported fields ErrorCode, String and Ext["authErrorCode"]
-// (docs/research/phase2-admin-auth.md §1). Errors are returned unwrapped: the helpers do not
+// Errors are returned unwrapped: the helpers do not
 // look through fmt.Errorf("%w").
 
 // Auth error codes the official helpers compare (firebase-admin-go auth package).

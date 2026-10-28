@@ -99,7 +99,7 @@ type appleUser struct {
 }
 
 // SignInWithIdP signs in with a provider, creating, linking or confirming accounts under one
-// account per email (research: docs/research/phase2-idp.md §3).
+// account per email.
 func (s *Service) SignInWithIdP(ctx context.Context, p Project, in IdPInput) (*IdPResult, error) {
 	switch {
 	case in.PendingToken != "":

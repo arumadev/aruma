@@ -1,4 +1,4 @@
-// The eleven operations of the web Storage e2e (the S0-B list, docs/research/storage-production-path.md),
+// The eleven operations of the web Storage e2e (the S0-B list),
 // on the official SDK in production mode, as an app bundles it. Every bundle (Vite, webpack, esbuild,
 // SvelteKit, Next.js, Expo, Flutter's JS) calls run() with the SDK modules it imported, and the
 // results land in window.__done for Playwright.

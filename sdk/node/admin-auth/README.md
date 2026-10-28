@@ -7,8 +7,6 @@ that already uses `firebase-admin`. Results are the official `firebase-admin` ty
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
 
-[العربية](#العربية)
-
 ## The one line
 
 ```diff
@@ -72,47 +70,3 @@ Postgres (`ARUMA_TEST_DATABASE_URL`). Set `ARUMA_URL` and `ARUMA_TEST_DIR` to us
 ## License
 
 Apache-2.0.
-
----
-
-<div dir="rtl">
-
-## العربية
-
-مكتبة `@aruma/admin-auth` تتحقق من رموز دخول Aruma (ID tokens) ومن الـ session cookies، وتدير
-مستخدمي Aruma Auth، من خادم Node.js يستعمل `firebase-admin` أصلًا. ما تعيده هو أنواع
-`firebase-admin` الرسمية (`DecodedIdToken` و`UserRecord` وغيرهما)، وأخطاؤها هي رموز
-`FirebaseAuthError` الرسمية (`auth/id-token-expired` و`auth/user-not-found` وغيرهما).
-
-Aruma غير تابع لـ Google ولا معتمد منها. Firebase علامة تجارية لـ Google LLC.
-
-### السطر الواحد
-
-غيّر سطر الاستيراد فقط: `getAuth` من `@aruma/admin-auth` بدل `firebase-admin/auth`. يبقى
-`initializeApp` و`cert` بملف المفتاح الذي أصدره Aruma كما هما. و`createCustomToken` هو الرسمي
-نفسه دون تغيير.
-
-### الإعداد
-
-- **عنوان الخادم:** الخيار `url`، ثم المتغير `ARUMA_URL`، ثم `token_uri` في ملف المفتاح. يجب أن
-  يكون `https` (و`http` مسموح على الجهاز المحلي فقط)، ولا يكون عنوان Google أبدًا.
-- **مفتاح حساب الخدمة:** الخيار `credential`، ثم مفتاح `cert()` في التطبيق، ثم
-  `GOOGLE_APPLICATION_CREDENTIALS`.
-- **المشروع:** `projectId` في التطبيق، ثم `project_id` في ملف المفتاح.
-
-**حارس المحاكي:** ترفض `getAuth()` البدء إن وُجد `FIREBASE_AUTH_EMULATOR_HOST`، لأن
-`firebase-admin` في العملية نفسها يقبل حينها رموزًا غير موقّعة. الخيار
-`{ allowEmulatorHost: true }` يسمح بالبدء خارج الإنتاج فقط، ويُهمَل إن كان `NODE_ENV=production`.
-
-### التحقق
-
-تجلب المكتبة المفاتيح عبر مستند الاكتشاف للمُصدِر، وتقبل RS256 مع `kid` فقط، وتفحص `aud` و`iss`
-و`sub` و`exp` (دون تسامح) و`iat` و`auth_time` (خمس دقائق في المستقبل على الأكثر). والخيار
-`checkRevoked` يقرأ المستخدم ويقارن `auth_time` بـ`tokensValidAfterTime` كما يفعل
-`firebase-admin`.
-
-### الترخيص
-
-Apache-2.0.
-
-</div>

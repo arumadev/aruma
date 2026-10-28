@@ -1,6 +1,6 @@
 // A TLS-terminating reverse proxy for the RTDB suites in production mode, standing in for the
 // Caddy that fronts Aruma: it serves https and wss on a loopback port with the run's certificate
-// and forwards to a plain http target. Unlike test/experiments/tls-proxy.mjs it also forwards
+// and forwards to a plain http target. Unlike a plain TLS proxy it also forwards
 // WebSocket upgrades (/.ws), which is how the SDKs talk to RTDB. The Host header passes through
 // unchanged, as Caddy's reverse_proxy does, so the target sees <ns>.rtdb.aruma.test; it adds
 // X-Forwarded-Proto and X-Forwarded-For.

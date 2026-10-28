@@ -18,8 +18,7 @@ import (
 
 // Long polling at /.lp is the transport of a browser whose WebSocket failed once: the JS SDK
 // remembers the failure in localStorage and from then on starts with long polling, then
-// moves to a WebSocket as soon as one works, which clears the memory (ADR-020 §4,
-// docs/research/rtdb/J-lp-trap.md). Without it such a browser never connects again.
+// moves to a WebSocket as soon as one works, which clears the memory (ADR-020 §4). Without it such a browser never connects again.
 //
 // A long-poll connection is a protocol session the client reaches by id and password over a
 // series of GET requests (wire/lp.go has the envelope). The server holds one request at a

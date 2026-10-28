@@ -72,7 +72,7 @@ func (a *API) serveWS(w http.ResponseWriter, r *http.Request, target core.Target
 	}
 	defer a.untrack(c)
 	// The SDKs reconnect to the host the handshake names (h), so it is exactly the host and
-	// port this client used (ADR-018; docs/research/rtdb/J-lp-trap.md).
+	// port this client used (ADR-018).
 	c.sess.send(wire.EncodeHello(wire.Hello{Timestamp: a.svc.Now().UnixMilli(), Host: host, Session: c.sess.id}))
 	c.run()
 }

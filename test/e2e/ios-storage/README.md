@@ -20,7 +20,7 @@ both modes:
   listAll, the download URL through `URLSession.shared`, delete. `ArumaURL` is given as
   `http://LOCALHOST:<port>`, and `downloadURL()` must equal
   `http://localhost:<port>/v0/b/<bucket>/o/<name>?alt=media&token=<the server's token>` literally.
-- **Names:** `a b+é.txt` and `صورة ١.png`: `reference(forURL: link)`,
+- **Names:** `a b+é.txt` and an Arabic name with Arabic-Indic digits (`\u0635\u0648\u0631\u0629 \u0661.png`, "picture 1"): `reference(forURL: link)`,
   `reference(forURL: ArumaUrls.fromArumaUrl(link, bucket:))` and the original reference have the same
   `fullPath` and read the same bytes.
 - **Background upload:** FirebaseStorage turns the background session off on the simulator; the

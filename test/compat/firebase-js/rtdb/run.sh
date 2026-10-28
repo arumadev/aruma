@@ -29,8 +29,8 @@
 # first label), RTDB_EXTERNAL_CA the CA Node trusts for it (NODE_EXTRA_CA_CERTS; unset, the
 # system's), and RTDB_ADMIN_AUTH or RTDB_RULES_HOOK loads the rules. Its name must resolve, by
 # the real DNS, to this machine: the network guard lets that one name through only when every
-# address it resolves to is loopback (ARUMA_NETGUARD_LOOPBACK_NAMES). test/experiments/
-# rtdb-caddy.sh runs it behind Caddy.
+# address it resolves to is loopback (ARUMA_NETGUARD_LOOPBACK_NAMES). It also runs
+# behind Caddy.
 #
 # Before the tests, the target gets the suites' open rules (config/database.rules.json, as the
 # upstream emulator runner loads them) through PUT /.settings/rules.json with the target's admin
@@ -302,7 +302,7 @@ esac
 # Every Node process from here refuses connections off this machine (netguard.cjs). In
 # production mode hosts.cjs, loaded after it, sends *.aruma.test to the TLS front.
 export ARUMA_NETGUARD_LOG=$results/netguard.log
-node_options="--no-strip-types --require $root/test/experiments/netguard.cjs"
+node_options="--no-strip-types --require $root/test/e2e/netguard.cjs"
 unset RTDB_EMULATOR_PORT RTDB_EMULATOR_NAMESPACE FIREBASE_DATABASE_EMULATOR_HOST NODE_EXTRA_CA_CERTS
 if [[ $target == external ]]; then
   # The real DNS resolves the name, and the guard checks that it is this machine.

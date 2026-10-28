@@ -211,8 +211,8 @@ jobs:
           cache: npm
           cache-dependency-path: |
             test/e2e/web-rtdb/package-lock.json
-            test/experiments/rtdb-lp-browser/package-lock.json
-      # Then the long-poll trap of test/experiments/rtdb-lp-browser.sh, which needs psql (on the runner).
+            test/e2e/rtdb-lp-browser/package-lock.json
+      # Then the long-poll trap of test/e2e/rtdb-lp-browser.sh, which needs psql (on the runner).
       - name: Official SDK against a real server, no request to Google
         run: test/e2e/web-rtdb/run.sh
       - uses: actions/upload-artifact@v7

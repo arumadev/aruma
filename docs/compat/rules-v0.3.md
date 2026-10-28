@@ -1,10 +1,10 @@
 # توافق لغة قواعد الأمان (Firestore وCloud Storage): الإصدار 0.3
 
 - **الحالة:** كتب هيكله S1-D وملأ أرقامه S1-E بعد دمج المحرك، 2026-10-24. ويكمله S7 بالقيود والنشر، وثبّت S7-C أرقامه بعد دمج S7-B1.
-- **القرار:** [ADR-021](../adr/ADR-021-rules-language.md)، والقبول في §6: ‏98% أو أكثر على مجموعة التطوير، وعلى
+- **القرار:** ADR-021، والقبول في §6: ‏98% أو أكثر على مجموعة التطوير، وعلى
   المحجوزة كلٌّ على حدة، لكل مصدر وحده، ولا فرق واحد نكون فيه أكثر تساهلًا من المصدر الأعلى.
 - **المرجع:** [test/oracle/rules/](../../test/oracle/rules/README.md) (S0-A)، ونتائجه في
-  [A-oracle-findings.md](../research/rules/A-oracle-findings.md)، والفروق بين المحاكي وTest API في
+  A-oracle-findings.md، والفروق بين المحاكي وTest API في
   [parity-exceptions.md](../../test/oracle/rules/parity-exceptions.md).
 
 ## المصادر

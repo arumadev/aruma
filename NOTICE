@@ -30,7 +30,7 @@ Files: test/oracle/rules/imported/pyric/ (Firestore and Cloud Storage Security
 Rules observations and the rules corpus they were recorded from).
 
 This product includes tools that modify the following projects inside the
-apps they build (ADR-022 §16, docs/research/storage-production-path.md).
+apps they build (ADR-022 §16).
 
 firebase-android-sdk (https://github.com/firebase/firebase-android-sdk)
 Copyright Google LLC

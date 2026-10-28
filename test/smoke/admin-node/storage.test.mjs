@@ -3,7 +3,7 @@
 // firebase-admin/storage, next to firebase-admin initialised with the key file Aruma issued.
 // Uploads of each kind, downloads with the CRC check, getDownloadURL, copies, and the Bearer on
 // every request the client makes, the resumable session's start and chunks included, measured
-// again with key files that carry universe_domain (docs/research/storage-production-path.md).
+// again with key files that carry universe_domain.
 //
 // Run it through storage-run.mjs (npm run test:storage): it starts the server, in the loopback
 // and the TLS form, and preloads the network guard, which refuses every connection beyond
@@ -20,10 +20,10 @@ import { initializeApp, cert, deleteApp } from 'firebase-admin/app';
 import { Storage } from '@google-cloud/storage';
 import { OAuth2Client } from 'google-auth-library';
 import { getStorage, getDownloadURL } from '@aruma/admin-storage';
-import { arumaCredential } from '../../experiments/admin-node/aruma-credential.mjs';
+import { arumaCredential } from '../../e2e/admin-node/aruma-credential.mjs';
 
 const require = createRequire(import.meta.url);
-const netguard = require.resolve('../../experiments/netguard.cjs');
+const netguard = require.resolve('../../e2e/netguard.cjs');
 assert.ok(require.cache[netguard], 'run this file through storage-run.mjs (npm run test:storage): the netguard is not loaded');
 const { attempts } = require(netguard);
 

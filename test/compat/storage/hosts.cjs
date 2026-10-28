@@ -4,7 +4,7 @@
 // (front.mjs), which hands the request to Aruma as a runtime redirect would. Nothing on the
 // machine changes: /etc/hosts stays as it is, and no name is ever looked up in the real DNS.
 //
-//   NODE_OPTIONS="--require /abs/test/experiments/netguard.cjs --require /abs/hosts.cjs"
+//   NODE_OPTIONS="--require /abs/test/e2e/netguard.cjs --require /abs/hosts.cjs"
 //   ARUMA_TEST_HOSTS=firebasestorage.googleapis.com,identitytoolkit.googleapis.com
 //   ARUMA_TEST_TLS_PORT=9412
 //

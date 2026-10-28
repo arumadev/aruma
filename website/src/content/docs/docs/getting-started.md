@@ -1,45 +1,45 @@
 ---
-title: البدء السريع
-description: ابنِ اللوحة، شغّل خادم Aruma محليًا، واضبطه للإنتاج وأدره من سطر الأوامر.
+title: Quick start
+description: Build the console, start a local Aruma server, configure it for production and operate it from the command line.
 ---
 
-المتطلبات: Go 1.26 أو أحدث، وPostgreSQL 18 (مثلًا عبر [DBngin](https://dbngin.com) أو [Postgres.app](https://postgresapp.com))، وNode 24 لبناء اللوحة.
+Requirements: Go 1.26+, PostgreSQL 18 (for example through [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com)), and Node 24 to build the console.
 
 ```bash
-make dashboard   # يبني اللوحة ويضمّنها في الثنائي (مرة واحدة)
-make dev         # ينشئ .env بمفتاح عشوائي عند أول تشغيل، ثم القاعدة والـ migrations، ثم الخادم
+make dashboard   # build the console and embed it in the binary (once)
+make dev         # create .env with a random key on first run, then the database, migrations and the server
 ```
 
-افتح <http://localhost:8080>. أول تشغيل يطبع في السجل رمز إعداد لمرة واحدة (`code`). أدخله في صفحة الإعداد لإنشاء حسابك الأول.
+Open <http://localhost:8080>. The first start prints a one-time setup `code` in the log. Enter it on the setup page to create your first account.
 
-إن كانت أدوات Postgres خارج `PATH`، فاضبط `ARUMA_PG_BIN`، مثلًا `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin`.
+If the Postgres tools are not on your `PATH`, set `ARUMA_PG_BIN`, for example `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin`.
 
-## إعداد الخادم
+## Configure a server
 
-ثلاثة إعدادات إلزامية، والباقي له قيم افتراضية.
+Three settings are required. Everything else has a default.
 
-| المتغير | المعنى |
+| Variable | Meaning |
 |---|---|
-| `ARUMA_DATABASE_URL` | عنوان اتصال PostgreSQL |
-| `ARUMA_PUBLIC_URL` | العنوان الذي تصل منه المكتبات، مثل `https://aruma.example.com` |
-| `ARUMA_MASTER_KEY` | 32 بايت عشوائية بـ base64 (`openssl rand -base64 32`). منه تُشتق كل المفاتيح |
+| `ARUMA_DATABASE_URL` | PostgreSQL connection URL |
+| `ARUMA_PUBLIC_URL` | The address your SDKs reach, for example `https://aruma.example.com` |
+| `ARUMA_MASTER_KEY` | 32 random bytes in base64 (`openssl rand -base64 32`). All other keys are derived from it |
 
-الإعداد ملف YAML اختياري (`--config` أو `ARUMA_CONFIG`) ومتغيرات `ARUMA_*` تتقدّم عليه. المرجع الكامل في [الإعداد](/aruma/en/docs/reference/configuration/) (بالإنجليزية)، و[`aruma.example.yaml`](https://github.com/arumadev/aruma/blob/main/aruma.example.yaml) يعرض كل مفتاح.
+Configuration is an optional YAML file (`--config` or `ARUMA_CONFIG`) with `ARUMA_*` environment variables taking precedence. The full reference is in [Configuration](/aruma/docs/reference/configuration/), and [`aruma.example.yaml`](https://github.com/arumadev/aruma/blob/main/aruma.example.yaml) shows every key.
 
-## التشغيل والصيانة
+## Operate it
 
 ```bash
-aruma migrate up|status                 # الخادم لا ينفّذ DDL أبدًا، ويرفض الإقلاع على مخطط قديم
+aruma migrate up|status                 # the server never runs DDL and refuses to start on an old schema
 aruma serve
 aruma accounts create --email you@example.com
-aruma backup --out aruma.dump           # pg_dump بالصيغة المخصّصة
-aruma restore --in aruma.dump --yes     # بعد إيقاف الخادم، وفي معاملة واحدة
+aruma backup --out aruma.dump           # pg_dump, custom format
+aruma restore --in aruma.dump --yes     # with the server stopped, in a single transaction
 aruma config check
 ```
 
-## من سطر الأوامر
+## Use it from the command line
 
-أنشئ رمز CLI من اللوحة (حسابي ← رموز CLI)، ثم:
+Create a CLI token in the console (My account, CLI tokens), then:
 
 ```bash
 arumactl login --server https://aruma.example.com
@@ -50,8 +50,8 @@ arumactl sa create --project chat-app backend
 arumactl sa keys create --project chat-app backend@chat-app.sa.aruma.example.com --out key.json
 ```
 
-أداة `firebase` الرسمية تعمل أيضًا عبر المتغيرات `FIREBASE_API_URL` و`FIREBASE_TOKEN_URL` و`FIREBASE_TOKEN`. التفاصيل في [docs/research/experiments.md](https://github.com/arumadev/aruma/blob/main/docs/research/experiments.md).
+The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`.
 
-## اربط تطبيقك
+## Connect your app
 
-نزّل ملف إعداد التطبيق من اللوحة وضعه في تطبيقك بدل ملف Firebase. وحيث تحتاج المنصة، أضف سطر البناء الواحد الموصوف في [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk). وللقاعدة اللحظية انظر [الدليل](/aruma/docs/guides/rtdb/).
+Download the app's configuration file from the console and put it in your app in place of the Firebase one. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk). For the Realtime Database see the [guide](/aruma/docs/guides/rtdb/).
