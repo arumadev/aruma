@@ -47,8 +47,8 @@ Aruma قبل الإصدار 1.0 وتحت تطوير نشط. الخدمات تص�
 | **المنصة**: المشاريع والتطبيقات ومفاتيح API وحسابات الخدمة واللوحة وManagement API | متاحة | اختبارات القبول، واختبارات العزل بين المشاريع في CI، وأداة `firebase` تعمل عليها |
 | **المصادقة (Auth)** | صدرت في [v0.1.0](docs/compat/auth-v0.1.md) | 27 من 27 سيناريو P0، و180 اختبار Auth رسميًا ناجحًا من Firebase JS، والتحقق على Web وiOS وAndroid وNode |
 | **قاعدة البيانات اللحظية (RTDB)** | صدرت في [v0.2.0](docs/compat/rtdb-v0.2.md)، وتُفعَّل بـ `ARUMA_RTDB_ENABLED` | 332 من 332 اختبارًا رسميًا لـ RTDB على `databaseURL` بنمط الإنتاج |
-| **قواعد الأمان (Security Rules)** و**Storage** | قيد التطوير للإصدار v0.3 ([storage](docs/compat/storage-v0.3.md)، [rules](docs/compat/rules-v0.3.md)) | اختبارات Storage الرسمية ومسارات الإنتاج على iOS وAndroid والويب قيد الإنجاز |
-| **Firestore** | مخطَّط | |
+| **قواعد الأمان (Security Rules)** و**Storage** | صدرت في [v0.3.0](docs/releases/v0.3.0.md) ([storage](docs/compat/storage-v0.3.md)، [rules](docs/compat/rules-v0.3.md)) | 145 من 153 اختبار Storage رسميًا، وكل ما بقي فرق موثّق؛ ومحرك القواعد يوافق الإنتاج والمحاكي في كل حالة معدودة من أوراكله؛ ومسارات الإنتاج على الويب وAndroid وiOS وFlutter |
+| **قاعدة المستندات (متوافقة مع Firestore)** | نسخة مرشحة [v0.4.0-rc.1](docs/releases/v0.4.0-rc.1.md)، وتُفعَّل بـ `ARUMA_DOCUMENTS_ENABLED` ([التوافق](docs/compat/documents-v0.4.md)) | إعادة تشغيل تسجيلات من الإنتاج في كل اختبار، واختبارات الويب على Chromium وFirefox وWebKit، وfirebase-tools ومكتبات Admin؛ ومجموعتا Android وiOS الرسميتان لم تُشغَّلا بعد |
 | **الإشعارات وApp Check وRemote Config وFunctions** | مخطَّطة بعد الخدمات الأساسية | |
 
 كل فرق عن Firebase موثَّق بمصدره وتصنيفه في تقارير التوافق تحت [`docs/compat`](docs/compat) و[القرارات المعمارية](docs/adr).

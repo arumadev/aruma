@@ -77,7 +77,7 @@ The Document Database is off by default. Turn it on with `documents.enabled: tru
 
 - **One instance.** The Document Database runs on one Aruma process per Postgres database: the process takes a session advisory lock on a dedicated connection at startup, waiting up to 30 seconds. Another process on the same database serves everything else and answers the Document Database with `UNAVAILABLE` until the lock is free. The connection must reach Postgres itself: a pooler in transaction mode (pgbouncer `pool_mode=transaction`) does not keep the lock.
 - **HTTP/2 behind a proxy.** gRPC clients need HTTP/2 end to end. A TLS proxy in front of Aruma must speak HTTP/2 without TLS (h2c) to it; in Caddy, `transport http { versions h2c 2 }`. A proxy that falls back to HTTP/1.1 breaks the listeners. iOS trusts only certificates from a public authority.
-- **Until security rules arrive**, only admins reach the data: a service account of the project, the project's owner (`aruma_pat_`), and the dev owner below. Anyone else is refused with `PERMISSION_DENIED`, unless `dev_open_rules` opens the database to this machine.
+- **Security rules** decide what an app's users reach: every project starts with closed rules (`allow read, write: if false;`) until its own are published (`firebase deploy --only firestore:rules` or the dashboard). Admins are past the rules, as in production: a service account of the project, the project's owner (`aruma_pat_`), and the dev owner below. So is anyone on this machine when `dev_open_rules` is on.
 
 The Admin SDKs send the Document Database a JWT signed with the service account's key on every call, and Go sends it over plain HTTP/2 (h2c) as readily as over TLS. Anyone who sees it can replay it for up to an hour, so an admin credential (that JWT, `aruma_sat_` or `aruma_pat_`) is accepted only:
 
@@ -90,7 +90,7 @@ Anything else is refused with `UNAUTHENTICATED`, and the client's address is log
 | Key | Variable | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `ARUMA_DOCUMENTS_ENABLED` | `false` | Serve the Document Database |
-| `dev_open_rules` | `ARUMA_DOCUMENTS_DEV_OPEN_RULES` | `false` | Let clients on this machine read and write every database without admin credentials, until security rules arrive. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and it applies only to loopback peers |
+| `dev_open_rules` | `ARUMA_DOCUMENTS_DEV_OPEN_RULES` | `false` | Let clients on this machine read and write every database past the security rules, without admin credentials. Any page open in a browser on this machine is such a client. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and it applies only to loopback peers |
 | `dev_owner_token` | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | `false` | Accept `Bearer owner`, which the Admin SDKs send in emulator mode, as an admin of every project, from a loopback peer only. The server refuses to start with it unless `public_url` and `listen` are loopback addresses, and logs a warning when it is on. Off, `owner` is refused and logged, as on every other surface |
 | `index_enforcement` | `ARUMA_DOCUMENTS_INDEX_ENFORCEMENT` | `enforce` | How queries meet production's composite-index rule: `enforce` refuses a query that needs an index with production's error and Firebase console link; `warn` serves it and logs the index it needs; `off` serves every query, as the emulator does |
 
