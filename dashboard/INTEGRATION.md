@@ -52,7 +52,7 @@ Points worth keeping in mind:
 
 ## Contract assumptions
 
-The client follows `docs/api/console.md` as of `phase1`, including the CLI token change:
+The client follows `docs/reference/console-api.md` as of `phase1`, including the CLI token change:
 `POST /me/tokens` sends `currentPassword` and shows a wrong password on the field (400 with a
 `currentPassword` field violation) or the retry time (429 `Retry-After`). Notes:
 
@@ -118,7 +118,7 @@ every pair the screens use, in both schemes.
 ## Authentication screens (Phase 2)
 
 The Auth section (`/project/auth/…`: Users, Sign-in methods, Templates, Mailbox, Settings) uses
-the routes in `docs/api/console.md`: users, settings and signing keys; "Auth email" (templates,
+the routes in `docs/reference/console-api.md`: users, settings and signing keys; "Auth email" (templates,
 SMTP, the dev mailbox, password reset); and "Auth: Google and Apple sign-in". The shapes are in
 `src/lib/api/types.ts`. Notes on how the screens use them:
 

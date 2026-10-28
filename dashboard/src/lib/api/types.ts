@@ -1,4 +1,4 @@
-// Shapes of the console API (/console/v1/), mirroring docs/api/console.md.
+// Shapes of the console API (/console/v1/), mirroring docs/reference/console-api.md.
 
 export type Locale = 'ar' | 'en';
 
@@ -178,7 +178,7 @@ export interface FlutterSelection {
   ios?: string;
 }
 
-// Auth: a project's users, sign-in settings, providers and email (docs/api/console.md).
+// Auth: a project's users, sign-in settings, providers and email (docs/reference/console-api.md).
 
 export interface AuthProviderInfo {
   providerId: string;

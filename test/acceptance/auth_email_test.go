@@ -548,7 +548,7 @@ func TestAuthEmailSMTPDelivery(t *testing.T) {
 	}
 }
 
-// The console's template, mailbox and reset routes (docs/api/console.md).
+// The console's template, mailbox and reset routes (docs/reference/console-api.md).
 func TestAuthEmailConsole(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")

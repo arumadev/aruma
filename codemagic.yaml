@@ -75,7 +75,7 @@ workflows:
       - test/e2e/ios-auth/.generated/xcodebuild.log
       - test/e2e/ios-auth/.generated/server.log
     # Codemagic emails the build's results to the addresses here. Add the owner's address when
-    # connecting the repository (docs/compat/auth-v0.1.md, the guards section).
+    # connecting the repository (docs/reference/compatibility.md, the guards section).
     # publishing:
     #   email:
     #     recipients:

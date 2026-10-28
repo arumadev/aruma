@@ -57,7 +57,7 @@ func TestSplitCostAsProduction(t *testing.T) {
 
 	// Production refuses a 1 MiB split into 524,288 parts: "Unable to evaluate the expression as
 	// the maximum memory usage of 1000 has been reached." Here the allocation limit refuses it,
-	// with Aruma's own text (docs/compat/rules-v0.3.md).
+	// with Aruma's own text (docs/reference/compatibility.md).
 	m = newTestMeter()
 	many := doubled(t, m, "a,", 19)
 	_, err = callMethod(m, many, "split", []Value{String(",")})

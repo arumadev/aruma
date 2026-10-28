@@ -33,7 +33,7 @@
 #   test/e2e/flutter-storage/run.sh android|ios
 #
 #   ANDROID_SERIAL      the device (default: the only one connected)
-#   ANDROID_HOME        the Android SDK (default /Volumes/Work/android-sdk)
+#   ANDROID_HOME        the Android SDK (default $HOME/Library/Android/sdk)
 #   ARUMA_E2E_NDK_DIR   an installed NDK of Flutter's version (default: found under ANDROID_HOME or
 #                       ~/Library/Android/sdk), so that Gradle does not download one
 #   ARUMA_E2E_BUILD_TYPES  Android build types (default "debug release")
@@ -63,7 +63,7 @@ cd "$root"
 
 log() { printf '\n==> %s\n' "$*"; }
 notice=META-INF/aruma/firebase-storage-MODIFIED.txt
-: "${ANDROID_HOME:=/Volumes/Work/android-sdk}"
+: "${ANDROID_HOME:=$HOME/Library/Android/sdk}"
 export ANDROID_HOME
 adb=$ANDROID_HOME/platform-tools/adb
 app_id=com.aruma.smoke
@@ -307,7 +307,7 @@ data=$(xcrun simctl get_app_container "$sim" "$app_id" data)
 installed=$(xcrun simctl get_app_container "$sim" "$app_id" app)
 rm -f "$data/tmp/aruma-e2e.json"
 # simctl launch --stdout/--stderr: the simulator side opens these files, and when they are on
-# another volume than the system's (the repository on /Volumes/Work, say) it cannot, and the launch
+# another volume than the system's (the repository on an external drive, say) it cannot, and the launch
 # fails with "The request to open "com.aruma.smoke" failed ... denied by service delegate", every
 # time. So the app writes them under this user's temporary directory, on the system volume, and
 # they are copied into $gen once it is done.

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// The console's Realtime Database routes (docs/api/console.md): the data browser and the rules
+// The console's Realtime Database routes (docs/reference/console-api.md): the data browser and the rules
 // editor, on a real server and Postgres.
 
 func consoleDB(project string) string { return "/console/v1/projects/" + project + "/database" }

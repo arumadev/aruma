@@ -374,7 +374,7 @@ func javaNumber(s string) bool {
 
 // parseJavaLong reads s as Java's Long.parseLong does: a sign and decimal digits, nothing else.
 // A digit is any Unicode decimal digit, as Character.digit reads it (production, the review's
-// probes of the Rules Test API, 2026-10-24: int('١٢') == 12, int('１') == 1).
+// probes of the Rules Test API, 2026-10-24: int() of two Arabic-Indic digits gives 12, int() of a fullwidth digit one gives 1).
 func parseJavaLong(s string) (int64, bool) {
 	body := s
 	neg := false

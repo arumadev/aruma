@@ -467,7 +467,7 @@ func (d *Database) read(ctx context.Context, tx StoreTx, c *command, now time.Ti
 // found by counting the rows before any is loaded, so one read cannot hold the writer, and
 // every client of the database behind it, nor its memory. A query reads the whole node and
 // filters it, so the count is the node's. A query listen reads its node again on every write
-// below it (taggedPushes), which this does not bound (docs/compat/rtdb-v0.2.md).
+// below it (taggedPushes), which this does not bound (docs/reference/compatibility.md).
 func (d *Database) load(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
 	if d.readRows > 0 {
 		n, err := tx.CountRows(ctx, p, d.readRows)

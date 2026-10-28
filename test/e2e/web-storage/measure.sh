@@ -23,7 +23,7 @@
 # Under test/ci/egress-guard.sh (ARUMA_EGRESS_GUARD) it installs nothing and fails when an app is
 # not installed. Every measured value is a check: an ok line, or a FAILED one.
 #
-# The versions are the ones measured (docs/compat/storage-v0.3.md, S6-W), and every other package
+# The versions are the ones measured (docs/reference/compatibility.md, S6-W), and every other package
 # resolves as the registry stood then (npm install --before), so each run installs the same tree.
 set -euo pipefail
 
@@ -263,7 +263,7 @@ next_app() {
     fi
     if [[ $b == turbopack-bare ]]; then
       # The control: without transpilePackages the Pages Router's server loads the SDK unrewritten
-      # and reaches for Google's host, which its netguard blocks (docs/compat/storage-v0.3.md).
+      # and reaches for Google's host, which its netguard blocks (docs/reference/compatibility.md).
       pages=$(pages_check "http://127.0.0.1:$dev_port/pages-ssr")
       stop_dev
       leak=$(blocked "$gen/netguard-next-$b.log" 'firebasestorage\.googleapis\.com')

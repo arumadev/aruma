@@ -12,7 +12,7 @@ import (
 // any other number a float: so the Rules Test API reads a token (the review's probes,
 // 2026-10-24: a claim level of 2 or 2.0 is int, 2.5 float, nested ones alike), and so exp, iat
 // and auth_time are ints. Deployed rules, which read a real ID token, are not measured yet: the
-// rule is provisional (docs/compat). Claims are what a decoded JWT holds: nil, bools, strings,
+// rule is provisional (docs/reference/compatibility.md). Claims are what a decoded JWT holds: nil, bools, strings,
 // numbers (any Go integer or float type, or json.Number), []any and map[string]any, at any
 // depth; a time.Time is a timestamp; a claim of any other type is left out. A request without a
 // user has Null() instead.

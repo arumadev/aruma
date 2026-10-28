@@ -80,7 +80,7 @@ rules:                             # Firestore and Storage security rules (ADR-0
     regex_bytes: 4194304           # the estimated programs of one ruleset's literal patterns
     compiled_rulesets_bytes: 134217728  # compiled rulesets kept in memory, by weight; one
                                    # ruleset may weigh a quarter of it
-storage:                           # Cloud Storage for Firebase (ADR-022); see docs/configuration.md
+storage:                           # Cloud Storage for Firebase (ADR-022); see docs/reference/configuration.md
   enabled: false                   # off by default
   # data_dir: /srv/aruma/storage   # required when enabled: an absolute path on a local disk,
                                    # mounted before Aruma starts; back it up with the database
@@ -105,7 +105,7 @@ storage:                           # Cloud Storage for Firebase (ADR-022); see d
     upload_requests_per_ip: 64     # concurrent upload and write requests
     min_bytes_per_second: 4096     # slower over 30 seconds, an upload is cut
     list_max_results: 1000         # the largest page of a listing (at most 1000)
-documents:                         # Document Database (ADR-024 to ADR-029); see docs/configuration.md
+documents:                         # Document Database (ADR-024 to ADR-029); see docs/reference/configuration.md
   enabled: false                   # Firestore-compatible: gRPC (h2c or TLS) and REST on this port
   # dev_open_rules: true           # let clients on this machine read and write every database
                                    # without admin credentials until security rules arrive;

@@ -9,7 +9,7 @@ import (
 // Exclusion returns why a case does not count towards the agreement, or "" when it counts. The
 // excluded cases are still run and listed: they are what the oracle cannot say about the
 // engine, not what the engine may get wrong. Each reason is one of the classes of
-// docs/compat/rules-v0.3.md: the case is not a decision, its source did not run it, it is a Test
+// docs/reference/compatibility.md: the case is not a decision, its source did not run it, it is a Test
 // API artefact (parity-exceptions.md), or it is an emulator bug.
 //
 // The rules are about the case's data, so a new case of the same kind is excluded without a new
@@ -29,7 +29,7 @@ func Exclusion(c *Case) string {
 	case c.Request.Method == "write" || c.Request.Method == "read":
 		// The abstract verbs: allow read and allow write name them, but a real request is get,
 		// list, create, update or delete. read was added after the one held-out run, where
-		// aruma/methods/method_read_verb met it (docs/compat/rules-v0.3.md).
+		// aruma/methods/method_read_verb met it (docs/reference/compatibility.md).
 		return "Test API artefact: it takes the method " + c.Request.Method + ", which no real request has"
 	}
 	if c.Provenance == TestAPI {

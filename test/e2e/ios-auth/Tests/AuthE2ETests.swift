@@ -6,7 +6,7 @@ import XCTest
 /// The official FirebaseAuth for iOS in production mode (no useEmulator), configured only with the
 /// GoogleService-Info.plist Aruma generated and sent to Aruma by ArumaRedirect (ArumaURL in the
 /// host app's Info.plist), against a real server, with every other request refused (LoopbackGuard).
-/// The scenarios follow test/e2e/web-auth and docs/compat/auth-p0-scenarios.md.
+/// The scenarios follow test/e2e/web-auth and docs/reference/compatibility.md.
 ///
 /// run.sh passes the server through TEST_RUNNER_ARUMA_URL, TEST_RUNNER_ARUMA_PROJECT_ID and
 /// TEST_RUNNER_ARUMA_CLI_TOKEN (xcodebuild hands TEST_RUNNER_* to the tests without the prefix).

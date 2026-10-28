@@ -107,8 +107,8 @@ func ruleString(s string) rules.Value {
 // metadataValue is the custom metadata as a map, null when there is none (unset-null-metadata
 // ALLOW, unset-empty-metadata DENY). The download tokens are never in it (ADR-022 §9).
 //
-// The map's order is provisional (docs/compat/storage-v0.3.md): rules.Map, by key. The Test API
-// keeps the order a request sends, which values() follows (rules.MapInOrder; docs/compat/
+// The map's order is provisional (docs/reference/compatibility.md): rules.Map, by key. The Test API
+// keeps the order a request sends, which values() follows (rules.MapInOrder; docs/reference/compatibility.md
 // rules-v0.3.md), but it takes request verbatim, so it says nothing of the service; jsonb keeps
 // no order, and a Patch's metadata is a Go map. Nothing measured shows what a deployed bucket
 // gives values(), so no order-keeping storage is built on it.

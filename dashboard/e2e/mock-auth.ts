@@ -11,7 +11,7 @@ import type {
   SmtpSettings,
 } from '../src/lib/api/types';
 
-// The Auth part of the mock console API: /projects/{project}/auth/… (docs/api/console.md, and
+// The Auth part of the mock console API: /projects/{project}/auth/… (docs/reference/console-api.md, and
 // the provider and email shapes in INTEGRATION.md). Deterministic, one fresh copy per test.
 
 const T = (iso: string) => `2026-10-${iso}Z`;

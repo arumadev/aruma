@@ -1,7 +1,7 @@
 import type { DataChild, JsonValue, RuleError } from '../src/lib/api/types';
 
 // The Realtime Database part of the mock console API: /projects/{project}/database/…
-// (docs/api/console.md). One in-memory tree and rules document per project, fresh per test.
+// (docs/reference/console-api.md). One in-memory tree and rules document per project, fresh per test.
 
 type Tree = { [key: string]: JsonValue };
 

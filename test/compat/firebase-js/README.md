@@ -2,7 +2,7 @@
 
 `run.sh` runs the Auth integration tests that Firebase publishes with its open-source SDKs,
 written for the Auth emulator, against a throwaway Aruma server. Results and the
-classification of every non-passing test: [docs/compat/firebase-js-suites.md](../../../docs/compat/firebase-js-suites.md).
+classification of every non-passing test: [docs/reference/compatibility.md](../../../docs/reference/compatibility.md).
 
 The Realtime Database suites run from `rtdb/`, against the emulator or Aruma:
 `run.sh rtdb --target emulator|aruma --mode emulator|production` (see

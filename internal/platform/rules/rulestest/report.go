@@ -7,7 +7,7 @@ import (
 )
 
 // Report tallies results by provenance and source, in a form pasted into
-// docs/compat/rules-v0.3.md.
+// docs/reference/compatibility.md.
 type Report struct {
 	Results []Result
 }

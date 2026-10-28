@@ -8,7 +8,7 @@ import (
 )
 
 // The console's Auth routes: users, sign-in settings and signing keys of a project the caller
-// owns (docs/api/console.md).
+// owns (docs/reference/console-api.md).
 
 func consoleAuth(project string) string { return "/console/v1/projects/" + project + "/auth" }
 

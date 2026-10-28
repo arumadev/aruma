@@ -411,7 +411,7 @@ func TestAuthAdminEmailActionLinks(t *testing.T) {
 
 // createUser and updateUser take a password without an email, as Firebase does:
 // firebase-admin's own listUsers integration test creates {uid, password} users
-// (docs/compat/firebase-js-suites.md). The password provider appears with the email.
+// (docs/reference/compatibility.md). The password provider appears with the email.
 func TestAuthAdminPasswordWithoutEmail(t *testing.T) {
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
