@@ -6,6 +6,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/httpx"
@@ -81,10 +84,10 @@ func splitCollection(rel string) (parent, id string) {
 	return rel[:i], rel[i+1:]
 }
 
-// pageParams reads ?pageSize= (defaultPage when absent, at most maxPage) and ?pageToken=.
-func pageParams(r *http.Request) (int32, string, error) {
+// pageParams reads ?pageSize= (def when absent, at most maxPage) and ?pageToken=.
+func pageParams(r *http.Request, def int) (int32, string, error) {
 	q := r.URL.Query()
-	size := defaultPage
+	size := def
 	if v := q.Get("pageSize"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n <= 0 {
@@ -132,7 +135,7 @@ func (h *handlers) listCollections(w http.ResponseWriter, r *http.Request) {
 		h.m.Fail(w, r, err)
 		return
 	}
-	size, token, err := pageParams(r)
+	size, token, err := pageParams(r, collectionsPage)
 	if err != nil {
 		h.m.Fail(w, r, err)
 		return
@@ -168,7 +171,7 @@ func (h *handlers) listDocuments(w http.ResponseWriter, r *http.Request) {
 		h.m.Fail(w, r, err)
 		return
 	}
-	size, token, err := pageParams(r)
+	size, token, err := pageParams(r, defaultPage)
 	if err != nil {
 		h.m.Fail(w, r, err)
 		return
@@ -238,6 +241,10 @@ type documentBody struct {
 	UpdateMask []string `json:"updateMask"`
 	// Exists, when set, is the edit's precondition: true for a document that must exist.
 	Exists *bool `json:"exists"`
+	// UpdateTime, when set, is the edit's precondition instead: the document's updateTime as
+	// the editor read it, so an edit made over another's fails, as the Firebase console's edits
+	// verify (f7-production-console.md §1).
+	UpdateTime string `json:"updateTime"`
 }
 
 // fieldsOf reads a body's fields as the REST API reads a Document's, with its errors' texts.
@@ -319,8 +326,19 @@ func (h *handlers) updateDocument(w http.ResponseWriter, r *http.Request) {
 	if in.UpdateMask != nil {
 		req.UpdateMask = &pb.DocumentMask{FieldPaths: in.UpdateMask}
 	}
-	if in.Exists != nil {
+	switch {
+	case in.Exists != nil && in.UpdateTime != "":
+		h.m.Fail(w, r, apierr.Invalid("updateTime", "An edit takes exists or updateTime, not both."))
+		return
+	case in.Exists != nil:
 		req.CurrentDocument = &pb.Precondition{ConditionType: &pb.Precondition_Exists{Exists: *in.Exists}}
+	case in.UpdateTime != "":
+		at, err := time.Parse(time.RFC3339Nano, in.UpdateTime)
+		if err != nil {
+			h.m.Fail(w, r, apierr.Invalid("updateTime", "updateTime must be an RFC 3339 time."))
+			return
+		}
+		req.CurrentDocument = &pb.Precondition{ConditionType: &pb.Precondition_UpdateTime{UpdateTime: timestamppb.New(at)}}
 	}
 	d, err := h.svc.UpdateDocument(r.Context(), t.call, req)
 	if err == nil {

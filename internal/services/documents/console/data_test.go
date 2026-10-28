@@ -82,6 +82,16 @@ func TestDocuments(t *testing.T) {
 	if got := fieldsJSON(t, set.json); got != `{"only":{"integerValue":"1"}}` {
 		t.Errorf("set: %s", got)
 	}
+	// The Firebase console's edit: an updateTime precondition, so an edit over a stale read
+	// fails and one over the current read goes through.
+	if res := e.do(owner, "PATCH", path(project, "/document", "path", "users/u1"), map[string]any{
+		"fields": map[string]any{}, "updateMask": []string{"only"}, "updateTime": upd.json["updateTime"],
+	}); res.status() != "FAILED_PRECONDITION" {
+		t.Errorf("edit over a stale read: %d %s", res.code, res.body)
+	}
+	e.ok(owner, "PATCH", path(project, "/document", "path", "users/u1"), map[string]any{
+		"fields": map[string]any{"only": map[string]any{"integerValue": "2"}}, "updateMask": []string{"only"}, "updateTime": set.json["updateTime"],
+	})
 	// exists: true on a document that does not exist is NOT_FOUND, production's precondition.
 	if res := e.do(owner, "PATCH", path(project, "/document", "path", "users/nope"), map[string]any{"exists": true}); res.status() != "NOT_FOUND" {
 		t.Errorf("update with exists of a missing document: %d %s", res.code, res.body)
@@ -109,7 +119,7 @@ func TestDocuments(t *testing.T) {
 		actions = append(actions, a.action+" "+a.target)
 	}
 	wantActions := []string{"documents.document.create users/u1", "documents.document.create users/" + auto.json["id"].(string),
-		"documents.document.update users/u1", "documents.document.update users/u1", "documents.document.delete users/u1"}
+		"documents.document.update users/u1", "documents.document.update users/u1", "documents.document.update users/u1", "documents.document.delete users/u1"}
 	if !slices.Equal(actions, wantActions) {
 		t.Errorf("audit:\n got %q\nwant %q", actions, wantActions)
 	}

@@ -162,11 +162,13 @@ func (h *handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 	h.m.Fail(w, r, docError(err))
 }
 
-// Page sizes of the data browser. defaultPage is a guess until R7 records the Firebase
-// console's (ADR-030 §3).
+// Page sizes of the data browser. collectionsPage is the Firebase console's listCollectionIds
+// pageSize (f7-production-console.md §2); defaultPage, a collection's documents, is a guess:
+// the console reads them over Listen, without a page size that was recorded (ADR-030).
 const (
-	defaultPage = 50
-	maxPage     = core.MaxPageSize
+	defaultPage     = 50
+	collectionsPage = 300
+	maxPage         = core.MaxPageSize
 )
 
 // getInfo describes the project's database: whether the server serves it, its name, and the
@@ -185,6 +187,7 @@ func (h *handlers) getInfo(w http.ResponseWriter, r *http.Request) {
 	if h.svc != nil {
 		out["limits"] = map[string]any{
 			"pageSize":            defaultPage,
+			"collectionsPageSize": collectionsPage,
 			"maxPageSize":         maxPage,
 			"documentBytes":       value.MaxDocumentSize,
 			"fieldDepth":          value.MaxDepth,
