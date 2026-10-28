@@ -1,8 +1,0 @@
-{
-  "name": "aruma-experiment-firebase-cli",
-  "private": true,
-  "description": "T23: firebase-tools pointed at Aruma through environment variables only.",
-  "dependencies": {
-    "firebase-tools": "^15.34.0"
-  }
-}
