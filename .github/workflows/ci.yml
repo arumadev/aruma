@@ -45,6 +45,8 @@ jobs:
           sudo apt-get install -y -q postgresql-client-18
       - name: Lint (gofmt, vet, dependency rules)
         run: make lint
+      - name: Repo hygiene (English docs and comments, no local paths, docs layout)
+        run: test/ci/repo-hygiene.sh
       - name: Generated query code is current
         run: make sqlc-check
       - name: Generated protobuf code is current (and the third_party merge rule holds)
