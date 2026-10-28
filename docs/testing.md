@@ -7,7 +7,7 @@ This page explains what runs, where it runs, and how to run the main suites your
 ## The layers
 
 1. **Unit and acceptance tests** in Go. They start a real server on a real Postgres and call it over HTTP, WebSocket and gRPC.
-2. **Official SDKs, unchanged,** talking to a real Aruma server: web, Node, Go, Android, iOS and Flutter.
+2. **Official SDKs** talking to a real Aruma server: web, Node, Go, Android, iOS and Flutter. Where a platform needs an Aruma helper package, the suite uses it.
 3. **Firebase's own test suites,** written for the Firebase emulators, run against Aruma. Every failure is classified.
 4. **Recorded behaviour.** Answers recorded from real Firebase are replayed against Aruma.
 5. **Concurrency checks.** Linearizability for the Document Database. Kill-and-restart durability for the Realtime Database.
@@ -52,7 +52,7 @@ The acceptance tests in `test/acceptance` start the real server and use it as a 
 
 ## Official SDKs against Aruma
 
-The end-to-end suites in `test/e2e` use the official Firebase SDKs, unchanged. A runner starts a real server on a throwaway database. The SDK gets its settings from the config files Aruma generates, the same way a developer would. The code under test calls no emulator API.
+The end-to-end suites in `test/e2e` use the official Firebase SDKs, with the Aruma helper package where a platform needs one (see [SDK packages](sdks.md)). A runner starts a real server on a throwaway database. The SDK gets its settings from the config files Aruma generates, the same way a developer would. Apart from the web Auth run in emulator mode, the code under test calls no emulator API.
 
 | Platform | SDKs | Where it runs |
 |---|---|---|
@@ -88,7 +88,7 @@ Rules for reading the recordings:
 - **Production wins.** Where Aruma differs from a production recording, that is a bug, unless the difference is listed in a parity-exceptions file with its reason and a test that proves it.
 - **The emulator ranks second.** Where the emulator and production disagree, Aruma follows production.
 - **Exceptions are checked.** The Document Database test fails if an exception names a test that does not exist. There are 24 exceptions: 16 where Aruma is stricter than Firebase on purpose, 7 that are provisional, and 1 where the emulator is wrong and Aruma follows production.
-- **Storage has no production recordings.** Creating a default Storage bucket needs a paid plan, so Storage is checked against the emulator, Google's documentation and the SDK sources.
+- **Storage has almost no production recordings.** `test/oracle/storage/production/` holds one probe of Google's answers for a project without a default bucket. Creating a default Storage bucket needs a paid plan, so the rest of Storage is checked against the emulator, Google's documentation and the SDK sources.
 - **Where production was not recorded,** the design record marks the behaviour as a guess.
 
 ## Concurrency and durability

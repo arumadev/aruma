@@ -38,11 +38,11 @@ Aruma reads `X-Forwarded-For` only from addresses in `trusted_proxies`. Its own 
 
 ## How SDKs reach Aruma
 
-Apps keep the official Firebase SDKs in their normal production mode. They do not use emulator mode.
+Apps keep the official Firebase SDKs and take their settings from the config file Aruma generates. There are two ways to point an SDK at Aruma. In production mode (recommended) the SDK is set up exactly as for Firebase, and a redirect library handles the addresses it has compiled in. Where an SDK offers a `connect*Emulator` function, you can call it with Aruma's address instead. That suits development and builds you cannot change, but it turns off some of the SDK's own checks. Aruma does not accept `Bearer owner` either way.
 
 - **Config file.** You download `firebaseConfig`, `google-services.json`, `GoogleService-Info.plist` or the Flutter equivalent from the console. It carries Aruma's values for `apiKey`, `appId`, `authDomain`, `storageBucket` and `databaseURL`.
 - **Redirect libraries** point the parts of an SDK that have a fixed Google address at Aruma. They are small packages in `sdk/`: `@aruma/web` (a build plugin and a fetch shim for Web), `ArumaRedirect` (iOS), `aruma-redirect` and a Gradle plugin (Android), and a Flutter package. The Cloud Storage and Document Database hosts are replaced at build time or through SDK settings.
-- **One-line option for Web Auth.** `connectAuthEmulator(auth, "https://<aruma>", { disableWarnings: true })` after `getAuth()`. Aruma serves Google's own Auth paths, so no other change is needed.
+- **Emulator-function option for Web Auth.** `connectAuthEmulator(auth, "https://<aruma>", { disableWarnings: true })` after `getAuth()`. Aruma serves Google's own Auth paths, so no redirect library is needed. See [Connecting a web app to Aruma Auth](guides/auth-web.md).
 - **Your server.** The official `verifyIdToken` rejects Aruma tokens, because they are issued under Aruma's address, not Google's. Swap one import for `@aruma/admin-auth` (Node) or `adminauth` (Go). Any OIDC library can also verify Aruma tokens through the discovery document at `<public_url>/issuers/<project_id>/.well-known/openid-configuration`.
 - **Admin SDKs** use a service account key downloaded from the console. They send a JWT signed with that key. The `firebase` tool uses a CLI token and environment variables such as `FIREBASE_API_URL`.
 
@@ -63,7 +63,7 @@ Security rules for Firestore and Storage run in one hand-written Go engine. Rule
 ## Tenancy
 
 - **Project.** Has a `project_id` (6 to 30 characters, lowercase letters, digits and hyphens, never reused) and a 12-digit `project_number` that the server generates. Deleting a project or app is soft for 30 days and can be undone in that time.
-- **Isolation.** The `project_number` is the first column of every key in every data table. Every query on a project table takes it as a condition, and a CI test checks this. Aruma does not use PostgreSQL row-level security.
+- **Isolation.** Every project's data is reached through its project number, directly or through a project-scoped parent such as a Realtime Database id. A CI test fails any SQL query on a project table that neither filters by project nor carries a reviewed scope annotation. Aruma does not use PostgreSQL row-level security. The annotated queries (58 today) are lookups by a key that is unique across projects, such as a token hash or an app id, lists by owner, and background jobs that work across all projects. Each states its reason.
 - **App.** Belongs to one project and one platform (`web`, `ios` or `android`). Its `app_id` is `1:<project_number>:<platform>:<16 hex>`.
 - **API key.** One per platform per project. It starts with `Aru` and is 39 characters long. It is not a secret and gives no admin right. It only tells Aruma which project a request is for, and its restrictions (referrers, bundle IDs, package and SHA-1) are enforced like Google's.
 - **Service account.** Named `<name>@<project_id>.sa.<project_domain>`. Its private key is shown once when you create it and is never stored; Aruma keeps only the public key. Admin SDKs use it to get tokens (`aruma_sat_…`) from `/oauth2/v1/token`.
@@ -100,7 +100,7 @@ Most limits can be changed. See [configuration](reference/configuration.md) for 
 
 ## Design records
 
-Aruma was built from numbered design records. Code comments across the repository cite them by number, for example "ADR-021 §4". The full records are not published. This table lists every record, so a citation can be read without them. Numbers 001 to 003, 005 and 006 are not in this table because they are not part of this set.
+Aruma was built from numbered design records. Code comments across the repository cite them by number, for example "ADR-021 §4". The full records are not published. This table lists every record, so a citation can be read without them.
 
 | ID | Title | What it decides |
 |---|---|---|
@@ -109,8 +109,6 @@ Aruma was built from numbered design records. Code comments across the repositor
 | ADR-008 | Single entry point | One port and one domain, routed by path; `/metrics` on a private address; trusted proxies; shared body and timeout limits. |
 | ADR-009 | Data tooling | pgx without an ORM, sqlc for queries, goose migrations per schema, no DDL in `aruma serve`, `project_number` first in every key, PostgreSQL 18 minimum. |
 | ADR-010 | Secure defaults | A list of defaults every release must meet (closed sign-up, CSRF, rate limits, closed CORS, security headers, no secrets in logs) and how each secret is hashed or encrypted. |
-| ADR-011 | Estimation calibration | A planning record on how work size is measured. No effect on behavior. |
-| ADR-012 | Durations: measured and estimated | A planning record of how long work took. No effect on behavior. |
 | ADR-013 | What counts as "one line" | The only app change allowed per platform (one Web Auth line, one import swap on the server); declared exceptions for Google and Apple sign-in and the `firebase` tool; the Admin emulator variable is refused. |
 | ADR-014 | Hosting the Auth endpoints | The Auth route table; open CORS without cookies for client routes only; authorized domains, `state` tokens and API key restrictions enforced on the server. |
 | ADR-015 | Services layout and boundaries | Each service is its own package layer; services plug into the console through one mount type; dependency rules are checked by a test. |

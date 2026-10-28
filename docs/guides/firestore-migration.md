@@ -10,7 +10,7 @@ In Aruma the service is called the **Document Database**, described as "Firestor
 
 | Feature | Status |
 |---|---|
-| Web (`firebase` 11, 12 and 13): full (WebChannel) and lite (REST) | Supported, with `@aruma/web` (below). Live-browser test suite: not finished yet |
+| Web (`firebase` 11, 12 and 13): full (WebChannel) and lite (REST) | Supported, with `@aruma/web` (below). Firebase 13 verified (21/21 on Chromium, Firefox and WebKit); 11 and 12 not verified yet |
 | Admin Node (`firebase-admin`) and Admin Go (`cloud.google.com/go/firestore`) | Supported over gRPC and REST (`preferRest`). See `test/smoke/admin-node` and `test/smoke/admin-go/documents` |
 | Android, iOS and Flutter | The transport is tried on Android 27.0.1 and iOS 12.19.3 (ADR-027). **Their full test suites are not finished, so this is not verified yet.** Flutter uses the same native SDKs |
 | The `firebase` tool | `deploy --only firestore:indexes` and `firestore:rules`, `firestore:indexes`, `firestore:databases:list` and `get`, and `firestore:delete -r`. `TestDocumentsWithTheFirebaseCLI` proves them with firebase-tools 15.34.0 under the network guard |
@@ -85,7 +85,7 @@ The file holds `indexes` (composite indexes of both scopes, COLLECTION and COLLE
 
 **Not verified:** exporting a large live project with every index shape (Datastore mode, other scopes). If a line is refused, the reply names it. Tell us about it.
 
-The tool reaches Aruma only if you set the environment (a CLI token from the dashboard: My account > CLI tokens). This is what the test sets:
+The tool reaches Aruma only if you set the environment (a CLI token from the dashboard: Account > CLI tokens). This is what the test sets:
 
 ```sh
 A=https://aruma.example.com

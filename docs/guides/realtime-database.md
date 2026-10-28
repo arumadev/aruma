@@ -92,7 +92,7 @@ q := c.NewRef("scores").OrderByChild("score").LimitToFirst(3)
 ```
 (From `test/smoke/admin-go/rtdb/rtdb_test.go`. `AuthOverride` in `firebase.Config` makes calls obey the rules.)
 
-**The `firebase` tool** (Aruma's address on https, and a CLI token from the dashboard: My account > CLI tokens):
+**The `firebase` tool** (Aruma's address on https, and a CLI token from the dashboard: Account > CLI tokens):
 
 ```sh
 export FIREBASE_API_URL=https://aruma.example.com FIREBASE_TOKEN_URL=https://aruma.example.com \

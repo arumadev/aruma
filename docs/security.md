@@ -107,7 +107,7 @@ Also out of scope today: phone sign-in, multi-factor authentication, email-link 
 
 ## Reviews
 
-Every release has had a security review by a reviewer who did not write the code. The reviewer reproduced each finding against a real server, and every fix came with a test that failed before the fix and runs in CI. Severity labels are the reviewer's own.
+Each final release from v0.1 to v0.3 had a security review by a reviewer who did not write the code. The reviewer reproduced each finding against a real server, and most fixes came with a test that failed before the fix and runs in CI. Severity labels are the reviewer's own. The v0.4 release candidate has no review of its own yet.
 
 ### v0.1: accounts, console and Auth
 
@@ -124,7 +124,15 @@ v0.1 was reviewed in three passes: the platform and console, the Auth service as
 
 - High, all fixed: `signUp` with an `idToken` could replace an account's password or email using a stolen or old token; an email-change token stayed valid after takeover protection and after revocation; a session started in the revocation second survived it.
 - Medium, all fixed: account-creation limit bypass through `signUp`; full rate-limit tables disabled password sign-in for everyone (now the oldest entry is evicted); emergency key rotation took up to five minutes to reach the Admin libraries (now 60 seconds).
-- Low: the Go library followed redirects (fixed). A 15-minute lockout after repeated wrong passwords is accepted. Seven low findings were still open at the v0.1 review: a timing difference in password-reset mail between registered and unknown emails; email matching can replace another linked Google or Apple identity without a notice; Apple refresh tokens are not revoked at Apple except on account deletion; non-strict base64 for token signatures; a trailing dot in a hostname bypassing the Google-domain check in the Admin libraries; a rotation race in the signer cache; no alert to the old address on a direct email change with protection off.
+- Low, fixed: the Go library followed redirects. Low, accepted: a 15-minute lockout after repeated wrong passwords, as in Firebase.
+- Low, open: seven findings were open at the end of the Auth review. They are tracked for a fix and are not accepted:
+  - password-reset mail takes a different time for a registered email than for an unknown one;
+  - signing in by email match can replace another linked Google or Apple identity without a notice;
+  - Apple refresh tokens are not revoked at Apple, except when the account is deleted;
+  - token signatures are decoded with non-strict base64;
+  - the Admin libraries' check for Google domains does not normalize every hostname form;
+  - key rotation can race with the signer cache;
+  - a direct email change with protection off sends no alert to the old address.
 - Informational, all accepted: `localhost` is authorized by default; `needConfirmation` reveals that an email has an account when a provider token is held; and similar low-impact items that match Firebase.
 - A set of 22 tamper scenarios (forged tokens, replayed and swapped OAuth state, cross-project tokens, admin-field injection, secret dumps, rate limits) all pass against the server and both Admin libraries.
 - Dependencies: no reachable vulnerabilities in Go or npm dependencies. One advisory in an unused package (`x/crypto/openpgp`) has no published fix and is not called.
@@ -137,7 +145,7 @@ v0.1 was reviewed in three passes: the platform and console, the Auth service as
 - Informational: removing a user's email left a password provider on the old address, blocking re-registration.
 - Checked and sound: token signing and verification, refresh tokens, custom tokens, console CSRF and cookies, email tokens and `continueUrl` checks, Google sign-in, SQL parameterization, and malformed-input fuzzing (no crash).
 
-**Accepted at v0.1:** limits are in memory and per server; the seven open low findings above.
+**Accepted at v0.1:** limits are in memory and per server. The seven open low findings above are not accepted; they are open.
 
 ### v0.2: Realtime Database
 
@@ -176,7 +184,7 @@ Scope: the Storage byte-serving and upload paths, the rules engine, the new mana
 - Major: an empty data directory was accepted even when the database held objects. After an unmounted disk, reads failed and new uploads were written to the system disk, then lost when the disk came back. Aruma now refuses to start in that case.
 - Major: errors from function call cycles grew quadratically. Fixed.
 - Major: a web app using Aruma for Auth only sent its Aruma ID token to Google's Storage host. Fixed with a runtime guard and a build failure.
-- Major: the same app also sent the token to Firestore and callable functions at Google. Firestore is fixed in v0.4 (Aruma serves it and the web package routes to it, with runtime and build-time guards, including Node's gRPC transport). **Callable functions are still open:** Aruma does not serve them, so do not use them in an app that signs in with Aruma Auth. The README says so.
+- Major: the same app also sent the token to Firestore and callable functions at Google. Firestore is fixed in v0.4 (Aruma serves it and the web package routes to it, with runtime and build-time guards, including Node's gRPC transport). **Callable functions are still open:** Aruma does not serve them, so do not use them in an app that signs in with Aruma Auth. The [README](../README.md) and [known differences](reference/known-differences.md) say so.
 - Minor: console rule compilation bypassed the compile limit (fixed; a publish-pile-up case is deferred and documented); Android strict mode did not refuse Storage hosts (fixed); the Node redirect scope was wider than documented (documentation fixed); the iOS mirror's contents were not pinned (now pinned by commit and tree and checked in the build).
 
 **Checked and sound:** upload and download token handling, constant-time comparison, no tokens in logs, rules failing closed, `media` response headers, Range handling, gzip streaming with fixed memory, multipart limits, object names, slow-client timeouts, disk-full and `fsync` failure handling, reservation recovery, console CSRF, and management routes. `npm audit` found no vulnerabilities in the three npm packages. `govulncheck` found one reachable advisory in `crypto/x509`, fixed by pinning Go 1.27.3.
@@ -194,7 +202,7 @@ Scope: the Storage byte-serving and upload paths, the rules engine, the new mana
 - A reservation left ambiguous by a database outage at commit stays reserved until the next start.
 - Per-IP limits are in memory, for one server.
 
-**Not verified in this review:** Android and iOS builds, and ext4 and XFS behavior when a disk is removed (measured on APFS only).
+**Not verified in this review:** Android and iOS apps were not built (the SDK packages were checked by reading code and running small Node scripts), and ext4 and XFS behavior when a disk is removed (measured on APFS only).
 
 ### v0.4
 

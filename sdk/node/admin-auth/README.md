@@ -23,8 +23,10 @@ Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of G
 
 ## Install
 
+The package is not published to npm yet. Install it from your clone of this repository:
+
 ```sh
-npm install @aruma/admin-auth firebase-admin@^14
+npm install /path/to/aruma/sdk/node/admin-auth firebase-admin@^14
 ```
 
 `firebase-admin` 14 is a peer dependency. Node.js 20 or later.

@@ -5,13 +5,13 @@ Your app uses the official `firebase` package as it is, with the config file fro
 | Mode | What you add | When |
 |---|---|---|
 | **Production mode (recommended)** | The `@aruma/web` package and one line in `vite.config`. **Nothing in the app code** | Always, and especially in production |
-| Emulator mode | One `connectAuthEmulator` line after `getAuth()` (ADR-013) | Development, or a project whose build tool you cannot change |
+| Emulator-function mode | One `connectAuthEmulator` line after `getAuth()`, with Aruma's address | Development, or a project whose build tool you cannot change |
 
 ## Production mode (recommended)
 
 The SDK stays in its normal mode, exactly as with Firebase. `@aruma/web` redirects only the Auth requests to your server.
 
-1. **Install the package:** `npm install --save-dev @aruma/web` (from `sdk/web/aruma-web` in this repository until it is published).
+1. **Install the package:** `npm install --save-dev /path/to/aruma/sdk/web/aruma-web`, using your clone of this repository. The package is not published to npm yet.
 2. **Add the line to `vite.config`:**
 
 ```js
@@ -24,6 +24,8 @@ export default defineConfig({
 ```
 
 3. **The app does not change:** `initializeApp(firebaseConfig)` with the Aruma config file, then `getAuth(app)`, with no `connectAuthEmulator`.
+
+**Warning: Cloud Functions.** Do not call Cloud Functions with `httpsCallable` from an app that signs in with Aruma Auth. Aruma does not serve Functions, so the SDK sends the user's Aruma ID token to Google. The package refuses requests to Google's Storage and Firestore hosts, but not to Functions. See [known differences](../reference/known-differences.md).
 
 **How it works:**
 - Aruma serves Google's own paths under its domain (ADR-014), so the redirect only swaps the host:
@@ -58,7 +60,7 @@ install({ url: 'https://aruma.example.com' });
 
 **Tested:** `ARUMA_E2E_MODE=production test/e2e/web-auth/run.sh`, and `production-build` for build mode. All flows pass on firebase 11, 12 and 13 with zero requests to Google. A further test installs the package after the SDK is imported. For details and risks, see `sdk/web/aruma-web/README.md`.
 
-## Emulator mode (development)
+## Emulator-function mode (development)
 
 ### Steps
 

@@ -164,7 +164,7 @@ Downloads served by Aruma are hardened: content is sent under `sandbox`, PDFs ar
 | Browsers | Supported | Browser test matrix 14 of 14 on Chromium, Firefox and WebKit. |
 | Android | Supported | `dev.aruma.storage` redirect library; `refFromURL` works. |
 | iOS | Supported | A patched mirror of the Firebase Storage SDK; `refFromURL` works. |
-| Flutter (mobile) | Supported | `aruma_storage` plugin. `refFromURL` with an Aruma link throws, because `firebase_storage` only accepts Google hosts; use `fromArumaUrl`. Verified by `test/e2e/flutter-storage` in the iOS Storage workflow. |
+| Flutter (mobile) | Partial | `aruma_storage` plugin. `refFromURL` with an Aruma link throws, because `firebase_storage` only accepts Google hosts, so app code needs one `fromArumaUrl` call; this is why it is Partial. Verified by `test/e2e/flutter-storage` in the iOS Storage workflow. |
 | Admin Node (`@google-cloud/storage` 8.4.0), Admin Go (`cloud.google.com/go/storage` 1.62.1) | Supported | 12 of 12 steps each, through the GCS JSON API. The `@aruma/admin-storage` package passes 15 of 15 checks. |
 | firebase-tools 15.34.0 | Supported | Rules deploy and init, end to end. |
 
@@ -207,7 +207,7 @@ Known differences from production:
 Aruma's rules engine is compared with three sources: rules published on real Storage, Google's Rules Test API, and the Firebase emulators.
 
 - Development set: 100% agreement with each source (3,643 counted cases against the Rules Test API, 1,985 against the emulators, 87 against published rules). Aruma never allowed a request that a higher-ranked source denied.
-- A second set, kept out of development and measured once: 99.2% against the Rules Test API (246 of 248) and 99.6% against the emulators (239 of 240), with no over-permissive case. After the three differences were classified and one binding bug fixed, a rerun gave 100%.
+- A second set, kept out of development and measured once: 99.2% against the Rules Test API (246 of 248) and 99.6% against the emulators (239 of 240), with no over-permissive case. Two cases were later reclassified as test-tool artifacts and one binding bug was fixed. A rerun with the current classification gave 100% on both. It reconfirms the result and is not a new measurement.
 - Grammar: 1,940 distinct rules files compile with the same result and the same first-error position as production (100%); error text matches in 577 of 577, and the Firestore and Storage service declarations parse identically in 1,892 of 1,892.
 - Random rules compared with the emulator: 7 seeds, 6,300 generated cases, 1 difference (the `float` index above, production agrees with the emulator).
 - Fuzzing of the parser, evaluator and regex engine.

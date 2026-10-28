@@ -2,7 +2,7 @@
 
 This page takes you from nothing to a web app that signs a user in against your own Aruma server. It uses a local server and the Auth service. Other services and platforms are in the [guides](README.md#guides).
 
-You need Go 1.26 or later, PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
+You need Go 1.27.3 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
 
 ## 1. Run Aruma
 
@@ -52,7 +52,7 @@ In the dashboard:
 
 Authentication with email and password is on by default. Turn other sign-in methods on under **Authentication**.
 
-The same steps work from the command line. Create a CLI token in the dashboard (My account, CLI tokens), then:
+The same steps work from the command line. Create a CLI token in the dashboard (Account, then CLI tokens), then:
 
 ```bash
 bin/arumactl login --server http://localhost:8080

@@ -8,10 +8,11 @@ For each difference you get what Firebase does, what Aruma does, and what it mea
 
 | Topic | Firebase | Aruma | What it means for your app |
 |---|---|---|---|
-| Emulator mode | The SDKs have emulator functions and variables, and `Bearer owner` is an admin token in the emulators | `Bearer owner` and unsigned tokens are always refused. The only exception is the Document Database on a loopback development server with `documents.dev_owner_token` | Do not use emulator functions or `*_EMULATOR_HOST` variables against a real Aruma server. Use the config file Aruma generates |
+| Emulator mode | The SDKs have emulator functions and variables, and `Bearer owner` is an admin token in the emulators | `Bearer owner` and unsigned tokens are always refused. The only exception is the Document Database on a loopback development server with `documents.dev_owner_token` | Do not set `*_EMULATOR_HOST` variables for a real Aruma server. Use the config file Aruma generates. On the web, `connectAuthEmulator` with Aruma's address is a development option (see the [web Auth guide](../guides/auth-web.md)); other emulator functions are not a supported way to connect |
 | Fixed Google addresses | SDKs call Google hosts such as `firebasestorage.googleapis.com` | Aruma serves the same paths, but SDKs with a hard-coded host need a redirect: a build plugin, a small library, or an SDK setting | Each platform needs the redirect described in its guide. Without it, the SDK talks to Google |
 | API key shape | `AIza…` | `Aru…` (39 characters), one per platform per project | Treat it as opaque. Code that checks for `AIza` fails |
 | Project domain | Google domains for the auth domain, bucket and database | Your own domain: `authDomain` is the project domain, and the bucket is `<project_id>.<project_domain>` | Changing `project_domain` changes bucket names, so stored links break |
+| Cloud Functions (`httpsCallable`) | The SDK calls your function at Google with the user's ID token | Aruma does not serve Cloud Functions, and the web package does not block these calls. An app that signs in with Aruma Auth sends the user's Aruma ID token to Google when it calls a function | Do not call Cloud Functions from an app that signs in with Aruma Auth |
 
 ## Authentication
 
@@ -42,6 +43,7 @@ For each difference you get what Firebase does, what Aruma does, and what it mea
 | REST credentials | Legacy database secrets in `?auth=` | Database secrets do not exist. `?auth=` takes a user's ID token; `Bearer` or `access_token` takes an admin token only. An invalid `?auth=` is ignored and the request runs as anonymous | Use an admin token for REST admin work |
 | JSONP | `callback=` is supported | Ignored; the reply is plain JSON | Do not use `callback=` |
 | REST write size | Up to 256 MB | 16 MB by default (`rtdb.limits.rest_write_bytes`, configurable) | Large REST imports need the operator to raise the limit |
+| Negative zero | — | A stored `-0.0` is returned as `0.0`. It can show on Android, iOS and the Admin SDKs | Do not rely on the sign of zero |
 | Large reads | A single request has a size cap and fails with "Data requested exceeds the maximum size that can be accessed with a single request." | Same error, but the cap counts stored rows: 1,000,000 per read by default (configurable) | Use `shallow=true` or narrower queries |
 
 ## Cloud Storage
@@ -93,4 +95,5 @@ The Document Database speaks the Firestore protocols. Its protocol names stay Fi
 | Admin credentials | — | Accepted only over TLS to Aruma, through a trusted proxy that sets `X-Forwarded-Proto: https`, or from loopback on a development server. Otherwise `UNAUTHENTICATED` | Run the Admin SDKs against an https address. A Node client with `ssl: false` sends `Bearer owner` and is refused |
 | Certificates | — | iOS trusts only certificates from a public authority, so a self-signed or private-CA certificate cannot connect from iOS. Node's `firebase-admin` needs `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` for a private authority | Use a public certificate on the proxy |
 | Instances | Managed | One Aruma process per database, held by an advisory lock. A second process answers the Document Database with `UNAVAILABLE`. A pooler in transaction mode does not hold the lock | Connect Aruma to PostgreSQL directly |
+| Other known differences | — | Differences between production Firestore and the emulator or an SDK's assumption are listed in `test/oracle/documents/parity-exceptions.json`, each with the test that proves it. There are 24: 16 where Aruma is stricter than Firebase on purpose, 7 provisional (no production recording yet), and 1 where the emulator is wrong and Aruma follows production | Read that file for the exact cases |
 | Not yet checked | — | The full Android and iOS test suites, and Admin SDKs other than Node and Go, have not been run against it | Test your own app before you move to production |

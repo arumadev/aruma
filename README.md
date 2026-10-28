@@ -8,12 +8,12 @@
 <br>
 
 **A self-hosted backend that speaks the official Firebase SDKs.**
-One Go binary and PostgreSQL. Your apps keep the official SDKs.
+One Go binary and PostgreSQL. Your apps keep the official SDKs; a few platforms need a small helper (see [SDK packages](docs/sdks.md)).
 
 <br>
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1446D8?style=flat-square)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.26+-0FD8C6?style=flat-square&logo=go&logoColor=white)](go.mod)
+[![Go](https://img.shields.io/badge/Go-1.27.3-0FD8C6?style=flat-square&logo=go&logoColor=white)](go.mod)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-1446D8?style=flat-square&logo=postgresql&logoColor=white)](#quick-start)
 [![Status](https://img.shields.io/badge/status-pre--1.0-0A7D73?style=flat-square)](#status)
 
@@ -25,11 +25,11 @@ One Go binary and PostgreSQL. Your apps keep the official SDKs.
 
 ## What Aruma is
 
-Aruma is a self-hosted replacement for Firebase. It is one Go binary with PostgreSQL and an embedded Next.js dashboard. It serves Firebase Auth, Realtime Database, Cloud Storage, Security Rules and the Document Database (Firestore-compatible) to the official Firebase SDKs, so you change a config file and not your application code.
+Aruma is a self-hosted replacement for Firebase. It is one Go binary with PostgreSQL and an embedded Next.js dashboard. It serves Firebase Auth, Realtime Database, Cloud Storage, Security Rules and the Document Database (Firestore-compatible) to the official Firebase SDKs, so for Auth, Realtime Database and Firestore on supported setups you change a config file and not your application code. Storage on iOS uses a patched build of the Storage SDK, Flutter Storage needs one helper call (`fromArumaUrl`), and servers that verify ID tokens use Aruma's admin libraries. See [SDK packages](docs/sdks.md).
 
 It is for developers and teams who use Firebase and want to run the backend themselves, on a small VPS or on their own servers, with their data in a PostgreSQL they control.
 
-Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites run against Aruma. Every difference is documented in [known differences](docs/reference/known-differences.md).
+Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites run against Aruma. Differences we know of are documented in [known differences](docs/reference/known-differences.md).
 
 ## Status
 
@@ -47,7 +47,7 @@ Aruma is pre-1.0. The latest release is [v0.3.0](docs/CHANGELOG.md#v030). The Do
 
 ## Quick start
 
-You need Go 1.26+, PostgreSQL 18 and Node 24 (to build the dashboard).
+You need Go 1.27.3, PostgreSQL 18 and Node 24 (to build the dashboard). If you have an older `go`, it downloads Go 1.27.3 by itself unless `GOTOOLCHAIN=local` is set.
 
 ```bash
 git clone https://github.com/arumadev/aruma.git && cd aruma
@@ -87,7 +87,9 @@ flowchart LR
     Console --> PG
 ```
 
-Projects are kept apart by a `project_number` that is the first column of every key in every data table. Every query on a project table takes it as a condition, and a CI test checks this. Aruma does not use PostgreSQL row-level security. See [architecture](docs/architecture.md#tenancy).
+Every project's data is reached through its project number, directly or through a project-scoped parent such as a Realtime Database id. A CI test fails any SQL query on a project table that neither filters by project nor carries a reviewed scope annotation. Aruma does not use PostgreSQL row-level security. See [architecture](docs/architecture.md#tenancy).
+
+**Cloud Functions.** Aruma does not serve Cloud Functions. If an app signs in with Aruma Auth and calls a function with `httpsCallable`, the SDK sends the user's Aruma ID token to Google. Do not use callable functions in such an app. See [known differences](docs/reference/known-differences.md).
 
 ## The dashboard
 

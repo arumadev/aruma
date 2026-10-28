@@ -10,7 +10,7 @@ Thanks for helping. Aruma aims to be a backend that official Firebase SDKs can t
 
 ## Set up
 
-Requirements: Go 1.26+, PostgreSQL 18, and Node 24 (only to build the console).
+Requirements: Go 1.27.3 (an older `go` downloads it unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, and Node 24 (only to build the console).
 
 ```bash
 make dashboard   # build the console once
@@ -37,7 +37,7 @@ A pull request should:
 
 ## Documentation
 
-- Documentation is in English. This includes `README.md`, everything under `docs/`, code comments, and the READMEs next to the code. CI fails if a Markdown file outside `dashboard/` and `test/oracle/` has Arabic letters, or if a code comment has them. Translations of the dashboard live in `dashboard/messages/`.
+- Documentation is in English. This includes `README.md`, everything under `docs/`, code comments, and the READMEs next to the code. `test/ci/repo-hygiene.sh` fails on Arabic letters in Markdown and MDX files and in code comments (full-line comments and comments after code, in Go, TypeScript, JavaScript, Java, Kotlin, Swift, Dart, proto, shell, YAML, Python and SQL files). It skips `dashboard/`, `test/oracle/` and any `testdata/` directory. Translations of the dashboard live in `dashboard/messages/`.
 - Documentation is for people who use or run Aruma. Write what a reader needs to do something or to decide something. Do not add working notes, research notes, plans or design records. Keep those in the issue or the pull request.
 - Where things go:
   - `docs/getting-started.md`: the first run.
@@ -46,7 +46,7 @@ A pull request should:
   - `docs/architecture.md`, `docs/security.md`, `docs/testing.md`, `docs/benchmarks.md`: how Aruma works and how it is checked.
   - `docs/sdks.md`: the packages under `sdk/`. Each package has its own README.
   - `docs/CHANGELOG.md`: one section per release. Add your change to the newest section when a user can notice it.
-- Use plain, short sentences. Link to other pages with relative links, and keep every link working. `test/ci/repo-hygiene.sh` checks the rules above, and it also fails on a new top-level entry under `docs/` and on paths from a developer's machine.
+- Use plain, short sentences. Link to other pages with relative links, and keep every link working. `test/ci/repo-hygiene.sh` checks the rules above, and it also fails on a new top-level entry under `docs/` and on paths from a developer's machine (`/Volumes/`, `/Users/` except `/Users/Shared/`, and `/home/<name>/`).
 
 ## Security issues
 

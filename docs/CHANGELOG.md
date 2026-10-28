@@ -122,12 +122,12 @@ emulator is wrong and production is followed. Where production was not recorded,
 Final v0.4.0 depends on these.
 
 - **The official Android and iOS Firestore suites,** and the mobile host settings. The transport was
-  tried on Android 27.0.1 and iOS 12.19.3 , not measured by the full suites. **iOS needs
+  tried on Android 27.0.1 and iOS 12.19.3, not measured by the full suites. **iOS needs
   a public test domain with a certificate from a public authority:** it trusts only its bundled
-  roots, so a self-signed or private-CA certificate cannot connect . Flutter uses the
+  roots, so a self-signed or private-CA certificate cannot connect. Flutter uses the
   same native libraries.
 - **Firebase JS 11 and 12 variants** of the Document Database suites (the web e2e runs Firebase 13).
-- **Black-box conformance cases for 19 MUSTs** from earlier build stages. They are covered by unit tests
+- **Black-box conformance cases for 19 requirements.** They are covered by unit tests
   and by the replays of the recordings, but not yet by cases run against a running server.
 - **The conformance suite against a live server in CI.**
 - **Fault injection and load.**

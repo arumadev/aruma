@@ -1,13 +1,13 @@
 ---
 title: Keep the Firebase SDK. Own your backend.
-description: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL, and your application code does not change. Open source under Apache 2.0.
+description: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL. For Auth, Realtime Database and Firestore on supported setups your application code does not change. Open source under Apache 2.0.
 template: splash
 hero:
   title: Keep the Firebase SDK. Own your backend.
-  tagline: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL, and your application code does not change.
+  tagline: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL. For Auth, Realtime Database and Firestore on supported setups, your application code does not change.
   actions:
     - text: Get started
-      link: /aruma/docs/getting-started/
+      link: docs/getting-started/
       icon: right-arrow
     - text: GitHub
       link: https://github.com/arumadev/aruma
@@ -23,7 +23,7 @@ Firebase gives you excellent client SDKs and a managed backend you can't leave. 
 
 <CardGrid>
   <Card title="Keep the official SDKs" icon="puzzle">
-    Web, iOS, Android, Flutter and the Admin SDKs run in their normal production mode, with no emulator mode. You swap the configuration file, and on some platforms add one line of build configuration. Your application code stays the same.
+    Web, iOS, Android, Flutter and the Admin SDKs run in their normal production mode, with no emulator mode. You swap the configuration file, and on some platforms add one line of build configuration. For Auth, Realtime Database and Firestore on supported setups your application code stays the same. Storage on iOS uses a patched build of the Storage SDK, Flutter Storage needs one helper call (`fromArumaUrl`), and servers that verify ID tokens use Aruma's admin libraries.
   </Card>
   <Card title="Own your data" icon="seti:db">
     Run it on a cheap VPS, on your own servers, or wherever PostgreSQL runs. One binary, one database, no per-operation billing.
@@ -32,7 +32,7 @@ Firebase gives you excellent client SDKs and a managed backend you can't leave. 
     Apache 2.0. Read the code, run the tests, send a patch.
   </Card>
   <Card title="Built to be verified" icon="approve-check">
-    Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites are run against Aruma. The numbers are in the status table below.
+    Behavior is checked against real Firebase and the official emulators, and the official Firebase test suites are run against Aruma.
   </Card>
 </CardGrid>
 
@@ -42,27 +42,27 @@ Firebase gives you excellent client SDKs and a managed backend you can't leave. 
 
 1. Create a project and an app from the dashboard or with `arumactl`.
 2. Download the app's configuration file: `google-services.json`, `GoogleService-Info.plist`, or the Web and Flutter equivalents.
-3. Put it in your app in place of the Firebase one. Your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk).
+3. Put it in your app in place of the Firebase one. For Auth, Realtime Database and Firestore on supported setups, your application code does not change. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk).
 
 </Steps>
 
-Projects are kept apart by a `project_number` that is the first column of every key in every data table, and a CI test checks that every query uses it. Aruma does not use PostgreSQL row-level security. See [architecture](/aruma/docs/architecture/#tenancy).
+Every project's data is reached through its project number, directly or through a project-scoped parent such as a Realtime Database id. A CI test fails any SQL query on a project table that neither filters by project nor carries a reviewed scope annotation. Aruma does not use PostgreSQL row-level security. See [architecture](docs/architecture/#tenancy).
 
 ## Status
 
-Aruma is pre-1.0. The latest release is [v0.3.0](/aruma/docs/changelog/#v030). The Document Database is in the release candidate [v0.4.0-rc.1](/aruma/docs/changelog/#v040-rc1), and some of its verification is still pending.
+Aruma is pre-1.0. The latest release is [v0.3.0](docs/changelog/#v030). The Document Database is in the release candidate [v0.4.0-rc.1](docs/changelog/#v040-rc1), and some of its verification is still pending.
 
 | Service | Status | Details |
 |---|---|---|
-| **Platform**: projects, apps, API keys, service accounts, dashboard, Management API | Released | [Architecture](/aruma/docs/architecture/) |
-| **Authentication** | Released in v0.1.0 | [Compatibility](/aruma/docs/reference/compatibility/#auth) |
-| **Realtime Database** | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#realtime-database) |
-| **Security Rules** | Released in v0.3.0 | [Compatibility](/aruma/docs/reference/compatibility/#security-rules) |
-| **Cloud Storage** | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#cloud-storage) |
-| **Document Database (Firestore-compatible)** | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](/aruma/docs/reference/compatibility/#firestore) |
+| **Platform**: projects, apps, API keys, service accounts, dashboard, Management API | Released | [Architecture](docs/architecture/) |
+| **Authentication** | Released in v0.1.0 | [Compatibility](docs/reference/compatibility/#auth) |
+| **Realtime Database** | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](docs/reference/compatibility/#realtime-database) |
+| **Security Rules** | Released in v0.3.0 | [Compatibility](docs/reference/compatibility/#security-rules) |
+| **Cloud Storage** | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](docs/reference/compatibility/#cloud-storage) |
+| **Document Database (Firestore-compatible)** | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](docs/reference/compatibility/#firestore) |
 | **Cloud Messaging, App Check, Remote Config, Functions** | Planned | |
 
-Every difference from Firebase is documented in [known differences](/aruma/docs/reference/known-differences/).
+Differences from Firebase that we know of are documented in [known differences](docs/reference/known-differences/).
 
 ## The console
 
@@ -92,7 +92,7 @@ make dashboard   # build the console and embed it in the binary (once)
 make dev         # create .env with a random key, then the database, migrations and the server
 ```
 
-Then open `http://localhost:8080`. The full steps are in the [quick start](/aruma/docs/getting-started/).
+Then open `http://localhost:8080`. The full steps are in the [quick start](docs/getting-started/).
 
 :::note
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.

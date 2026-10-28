@@ -55,8 +55,10 @@ host (ADR-014), so a redirect is only a host rewrite:
 
 ## Install
 
+The package is not published to npm yet. Install it from your clone of this repository:
+
 ```sh
-npm install --save-dev @aruma/web
+npm install --save-dev /path/to/aruma/sdk/web/aruma-web
 ```
 
 It needs Node 20.19 or later (the build tools load ES modules with `require`).
