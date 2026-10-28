@@ -127,17 +127,19 @@ export interface ExemptionForm {
 
 /**
  * The indexes to PUT for an exemption: only the enabled ones are listed. A scope the exemption
- * leaves alone keeps what the automatic settings give it (collection: all three, group: none),
- * since anything not listed is disabled.
+ * leaves alone keeps what the database's automatic settings give it (automaticSettings of the
+ * fields, so a `__default__` override counts), since anything not listed is disabled.
  */
-export function exemptionIndexes(form: Pick<ExemptionForm, 'scopes' | 'kinds'>): Index[] {
+export function exemptionIndexes(form: Pick<ExemptionForm, 'scopes' | 'kinds'>, defaults: Record<QueryScope, KindSet>): Index[] {
   const make = (scope: QueryScope, kind: Kind): Index => ({
     queryScope: scope,
     fields: [kind === 'ARRAYS' ? { arrayConfig: 'CONTAINS' } : { order: kind }],
   });
   const out: Index[] = [];
-  for (const k of KINDS) if (form.scopes.COLLECTION ? form.kinds[k] : true) out.push(make('COLLECTION', k));
-  if (form.scopes.COLLECTION_GROUP) for (const k of KINDS) if (form.kinds[k]) out.push(make('COLLECTION_GROUP', k));
+  for (const scope of SCOPES) {
+    const on = form.scopes[scope] ? form.kinds : defaults[scope];
+    for (const k of KINDS) if (on[k]) out.push(make(scope, k));
+  }
   return out;
 }
 
@@ -162,6 +164,12 @@ export const isExemption = (f: Field) => f.indexConfig?.usesAncestorConfig === f
 
 /** The TTL policies: fields with a ttlConfig. */
 export const hasTtl = (f: Field) => Boolean(f.ttlConfig);
+
+/**
+ * Whether the group already has a TTL policy, on any of its fields: the console allows one per
+ * collection group. The server itself accepts more, so this is the console's own rule.
+ */
+export const ttlGroupTaken = (fields: Field[], group: string) => fields.some((f) => hasTtl(f) && groupOf(f.name) === group.trim());
 
 /** The page of a list, 0-based, and how many pages there are (at least one). */
 export function pageOf<T>(items: T[], page: number, size: number): { rows: T[]; pages: number; page: number } {

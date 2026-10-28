@@ -20,7 +20,7 @@ import { useErrorText } from '@/lib/errors';
 import { useResource } from '@/lib/hooks/useResource';
 import * as api from '../api';
 import styles from './Indexes.module.css';
-import { fieldPathOf, groupOf, hasTtl, idProblem, pathProblem } from './indexes';
+import { fieldPathOf, groupOf, hasTtl, idProblem, pathProblem, ttlGroupTaken } from './indexes';
 import { POLL_MS } from './ManualTab';
 
 /**
@@ -94,6 +94,7 @@ export function TtlTab() {
       )}
       {creating && (
         <CreateDialog
+          policies={policies}
           onClose={() => setCreating(false)}
           onCreated={() => {
             setCreating(false);
@@ -121,7 +122,7 @@ export function TtlTab() {
   );
 }
 
-function CreateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateDialog({ policies, onClose, onCreated }: { policies: api.Field[]; onClose: () => void; onCreated: () => void }) {
   const t = useTranslations('documents.indexes.ttl.form');
   const tCommon = useTranslations('common');
   const errorText = useErrorText();
@@ -131,7 +132,7 @@ function CreateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const groupProblem = idProblem(group);
+  const groupProblem = idProblem(group) ?? (ttlGroupTaken(policies, group) ? 'taken' : undefined);
   const fieldProblem = pathProblem(field);
 
   async function submit() {

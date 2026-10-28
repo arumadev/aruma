@@ -148,6 +148,14 @@ test.describe('data browser', () => {
     // The rest of the document is as it was, its int64 to the last bit.
     expect(api.documents.store('chat-app').docs.get('users/alice')?.fields.age).toEqual({ integerValue: '9223372036854775807' });
 
+    // A negative zero reaches the server as one: JSON would write a plain 0.
+    await page.getByRole('button', { name: l('تعديل الحقل ratio', 'Edit field ratio') }).click();
+    await dialog.getByLabel(l('القيمة', 'Value')).fill('-0');
+    await dialog.getByRole('button', { name: l('تحديث', 'Update') }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('list', { name: l('حقول alice', 'Fields of alice') })).toContainText('ratio: -0 (double)');
+    expect(api.calls.filter((c) => c.method === 'PATCH').at(-1)?.body).toMatchObject({ fields: { ratio: { doubleValue: '-0' } } });
+
     // A nested field is edited by its path; another writer got there first.
     await page.getByRole('button', { name: l('تعديل الحقل address.city', 'Edit field address.city') }).click();
     api.documents.store('chat-app').touch('users/alice');

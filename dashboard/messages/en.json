@@ -1350,7 +1350,8 @@
           "problem": {
             "required": "Required",
             "slash": "Can't contain a forward slash (/)",
-            "name": "Can't start and end with double underscores (__)"
+            "name": "Can't start and end with double underscores (__)",
+            "taken": "You can set one TTL policy per collection group."
           }
         }
       }

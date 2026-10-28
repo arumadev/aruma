@@ -189,6 +189,10 @@ test.describe('indexes', () => {
     await open(page, url('indexes'), l(...TITLE));
     await page.getByRole('tab', { name: l('مدة البقاء', 'Time to live') }).click();
     await expect(page.getByText(l('لا سياسات لعرضها', 'No policies to display'))).toBeVisible();
+    let puts = 0;
+    page.on('request', (r) => {
+      if (r.method() === 'PUT' && r.url().includes('/documents/ttl')) puts++;
+    });
     for (const attempt of [0, 1]) {
       await page.getByRole('button', { name: l('إنشاء سياسة', 'Create policy') }).click();
       const dialog = page.getByRole('dialog');
@@ -201,10 +205,12 @@ test.describe('indexes', () => {
         await expect(row).toContainText('sessions');
         await expect(row).toContainText(l('تعمل', 'Serving'));
       } else {
-        await expect(dialog.getByRole('alert')).toBeVisible();
+        // The console refuses a second policy in the group before asking the server.
+        await expect(dialog.getByText(l('يمكنك ضبط سياسة TTL واحدة لكل مجموعة مجموعات.', 'You can set one TTL policy per collection group.')).nth(1)).toBeVisible();
         await dialog.getByRole('button', { name: l('إلغاء', 'Cancel') }).click();
       }
     }
+    expect(puts).toBe(1);
     expect(docs.ttl).toHaveLength(1);
     await page.getByRole('button', { name: l('مزيد من الإجراءات لسياسة sessions', 'More actions for the policy of sessions') }).click();
     await page.getByRole('menuitem', { name: l('حذف', 'Delete') }).click();

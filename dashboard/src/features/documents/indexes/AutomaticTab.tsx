@@ -126,6 +126,7 @@ export function AutomaticTab() {
       </Card>
       {editing && (
         <ExemptionDialog
+          defaults={settings}
           initial={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -183,7 +184,17 @@ function Chips({ on }: { on: KindSet }) {
 }
 
 /** The two steps of an exemption: the field and its scopes, then the three toggles. */
-function ExemptionDialog({ initial, onClose, onSaved }: { initial: ExemptionForm | null; onClose: () => void; onSaved: () => void }) {
+function ExemptionDialog({
+  initial,
+  defaults,
+  onClose,
+  onSaved,
+}: {
+  initial: ExemptionForm | null;
+  defaults: Record<api.QueryScope, KindSet>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const t = useTranslations('documents.indexes.automatic.form');
   const tAuto = useTranslations('documents.indexes.automatic');
   const tCommon = useTranslations('common');
@@ -202,7 +213,7 @@ function ExemptionDialog({ initial, onClose, onSaved }: { initial: ExemptionForm
     setPending(true);
     setError(null);
     try {
-      await api.setExemption(project.projectId, form.collection.trim(), form.field.trim(), { indexes: exemptionIndexes(form) });
+      await api.setExemption(project.projectId, form.collection.trim(), form.field.trim(), { indexes: exemptionIndexes(form, defaults) });
       onSaved();
     } catch (err) {
       setError(err);
