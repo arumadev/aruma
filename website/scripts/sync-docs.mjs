@@ -31,7 +31,8 @@ const ORDER = {
   'getting-started.md': 1, 'sdks.md': 2, 'architecture.md': 3, 'security.md': 4, 'testing.md': 5,
   'benchmarks.md': 6, 'CHANGELOG.md': 7,
   'guides/auth-web.md': 1, 'guides/auth-admin.md': 2, 'guides/realtime-database.md': 3,
-  'guides/firestore-migration.md': 4, 'guides/operations.md': 5,
+  'guides/storage.md': 4, 'guides/security-rules.md': 5, 'guides/firestore.md': 6,
+  'guides/firestore-migration.md': 7, 'guides/mobile-apps.md': 8, 'guides/operations.md': 9,
   'reference/configuration.md': 1, 'reference/compatibility.md': 2, 'reference/known-differences.md': 3,
   'reference/console-api.md': 4,
 };

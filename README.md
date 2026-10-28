@@ -40,9 +40,9 @@ Aruma is pre-1.0. The latest release is [v0.3.0](docs/CHANGELOG.md#v030). The Do
 | Platform: projects, apps, API keys, service accounts, dashboard, Management API | Released | [Architecture](docs/architecture.md) |
 | Authentication | Released in v0.1.0 | [Compatibility](docs/reference/compatibility.md#auth), [web guide](docs/guides/auth-web.md), [Admin guide](docs/guides/auth-admin.md) |
 | Realtime Database | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](docs/reference/compatibility.md#realtime-database), [guide](docs/guides/realtime-database.md) |
-| Security Rules | Released in v0.3.0 | [Compatibility](docs/reference/compatibility.md#security-rules) |
-| Cloud Storage | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](docs/reference/compatibility.md#cloud-storage) |
-| Document Database (Firestore-compatible) | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](docs/reference/compatibility.md#firestore), [migration guide](docs/guides/firestore-migration.md) |
+| Security Rules | Released in v0.3.0 | [Compatibility](docs/reference/compatibility.md#security-rules), [guide](docs/guides/security-rules.md) |
+| Cloud Storage | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](docs/reference/compatibility.md#cloud-storage), [guide](docs/guides/storage.md) |
+| Document Database (Firestore-compatible) | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](docs/reference/compatibility.md#firestore), [guide](docs/guides/firestore.md), [migration guide](docs/guides/firestore-migration.md) |
 | Cloud Messaging, App Check, Remote Config, Functions | Planned | |
 
 ## Quick start
@@ -101,7 +101,7 @@ Every Aruma server ships with a dashboard, embedded in the same binary. Create p
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/console-rtdb.png" alt="Aruma dashboard: Realtime Database rules and databaseURL"></td>
+    <td width="50%"><img src="docs/assets/console-rtdb.png" alt="Aruma dashboard: Realtime Database data and databaseURL"></td>
     <td width="50%"><img src="docs/assets/console-storage.png" alt="Aruma dashboard: Cloud Storage usage"></td>
   </tr>
 </table>
@@ -110,7 +110,7 @@ Every Aruma server ships with a dashboard, embedded in the same binary. Create p
 
 - [Getting started](docs/getting-started.md)
 - [Documentation index](docs/README.md)
-- Guides: [web Auth](docs/guides/auth-web.md), [Admin Auth](docs/guides/auth-admin.md), [Realtime Database](docs/guides/realtime-database.md), [Firestore migration](docs/guides/firestore-migration.md), [operations](docs/guides/operations.md)
+- Guides: [web Auth](docs/guides/auth-web.md), [Admin Auth](docs/guides/auth-admin.md), [Realtime Database](docs/guides/realtime-database.md), [Cloud Storage](docs/guides/storage.md), [security rules](docs/guides/security-rules.md), [Firestore](docs/guides/firestore.md), [Firestore migration](docs/guides/firestore-migration.md), [mobile apps](docs/guides/mobile-apps.md), [operations](docs/guides/operations.md)
 - Reference: [configuration](docs/reference/configuration.md), [compatibility](docs/reference/compatibility.md), [known differences](docs/reference/known-differences.md), [console API](docs/reference/console-api.md)
 - [Architecture](docs/architecture.md), [security](docs/security.md), [testing](docs/testing.md), [benchmarks](docs/benchmarks.md)
 - [Changelog](docs/CHANGELOG.md)

@@ -13,6 +13,10 @@ Start with [Getting started](getting-started.md). All pages are in English.
 - [Connecting a web app to Aruma Auth](guides/auth-web.md): the `@aruma/web` package and its modes.
 - [Verifying users on your server](guides/auth-admin.md): the Node and Go Admin helpers for tokens and users.
 - [Connecting your app to Aruma Realtime Database](guides/realtime-database.md): the database URL and each platform.
+- [Connecting your app to Aruma Cloud Storage](guides/storage.md): enabling Storage, each platform, download links and rules.
+- [Security rules](guides/security-rules.md): writing, deploying and testing rules for all three services.
+- [Using Firestore with Aruma](guides/firestore.md): a new app on the Document Database, its indexes, listeners and limits.
+- [Pointing mobile apps at Aruma](guides/mobile-apps.md): the Android, iOS and Flutter redirect packages, config files and TLS.
 - [Moving your app's Firestore to Aruma](guides/firestore-migration.md): SDK settings, indexes, rules, TTL and data for the Document Database.
 - [Operations](guides/operations.md): domains, certificates, proxies, timeouts and capacity.
 
