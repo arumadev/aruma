@@ -65,11 +65,17 @@ func (s *Service) allowList(ctx context.Context, a admitted, lq listQuery, readT
 	if err != nil {
 		return err
 	}
-	return s.judgeList(ctx, a, rs, lq, &lookups{store: s.o.Store, db: a.db, readTime: readTime}, rules.NewPooledBudget(), s.now())
+	return s.judgeList(ctx, a, rs, lq, &lookups{store: s.o.Store, db: a.db, readTime: readTime, usage: s.o.Usage}, rules.NewPooledBudget(), s.now())
 }
 
-// judgeList decides lq under rs, every way of it sharing the lookups and their budget.
+// judgeList decides lq under rs, every way of it sharing the lookups and their budget. The usage
+// counts the decision, once.
 func (s *Service) judgeList(ctx context.Context, a admitted, rs *rules.Ruleset, lq listQuery, l rules.Documents,
+	budget *rules.Budget, now time.Time) error {
+	return s.countRule(ctx, a, s.decideList(ctx, a, rs, lq, l, budget, now))
+}
+
+func (s *Service) decideList(ctx context.Context, a admitted, rs *rules.Ruleset, lq listQuery, l rules.Documents,
 	budget *rules.Budget, now time.Time) error {
 	if rs == nil {
 		return wire.PermissionDenied()

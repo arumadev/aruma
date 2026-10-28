@@ -93,7 +93,7 @@ test.describe('projects', () => {
     await expect(appId).toHaveAttribute('dir', 'ltr');
     await expect(page.locator('html')).toHaveAttribute('dir', l('rtl', 'ltr'));
     // Authentication and Realtime Database are available; the three other services are still to come.
-    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(3);
+    await expect(page.getByText(l('قريبًا', 'Coming soon'))).toHaveCount(2);
     await expect(page.getByRole('link', { name: l('المصادقة', 'Authentication') }).last()).toHaveAttribute('href', '/project/auth/?id=chat-app');
     await expect(page.getByRole('link', { name: l('قاعدة البيانات اللحظية', 'Realtime Database') }).last()).toHaveAttribute(
       'href',

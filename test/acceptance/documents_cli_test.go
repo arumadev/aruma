@@ -32,6 +32,12 @@ import (
 //
 //   - a deploy --force of a smaller file deletes the indexes and overrides it lacks;
 //
+//   - the TTL policy of a field override deletes a document past its expireAt and no other (the
+//     sweeper runs every second in the test); firestore:databases:list and :get answer;
+//
+//   - the rules read back from the server and the exported indexes, deployed together, create
+//     and change nothing;
+//
 //   - firebase firestore:delete -r deletes a document and its descendants (allDescendants
 //     queries), and nothing beside them.
 //
@@ -90,6 +96,42 @@ func TestDocumentsWithTheFirebaseCLI(t *testing.T) {
 	cli.ok(proj, "deploy", "--only", "firestore:indexes", "--project", "cli-app", "--non-interactive")
 	unchanged(t, cli, "the second deploy")
 
+	// TTL deletes: the policy on sessions.expireAt is ACTIVE, so the sweeper (every second
+	// here) deletes the document past its expireAt, and nothing else: not one expiring later,
+	// not one whose expireAt is not a timestamp.
+	sessions := db + "/documents/sessions"
+	past := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+	future := time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
+	docName := "projects/cli-app/databases/(default)/documents/sessions/"
+	ttlCommit := `{"writes":[` +
+		`{"update":{"name":"` + docName + `old","fields":{"expireAt":{"timestampValue":"` + past + `"}}}},` +
+		`{"update":{"name":"` + docName + `new","fields":{"expireAt":{"timestampValue":"` + future + `"}}}},` +
+		`{"update":{"name":"` + docName + `text","fields":{"expireAt":{"stringValue":"` + past + `"}}}}]}`
+	if code, b := documentsCall(t, e, pat, http.MethodPost, db+"/documents:commit", ttlCommit); code != 200 {
+		t.Fatalf("commit: %d %s", code, b)
+	}
+	for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(100 * time.Millisecond) {
+		if code, _ := documentsCall(t, e, pat, http.MethodGet, sessions+"/old", ""); code == 404 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the expired document sessions/old was not deleted by TTL in 30 s")
+		}
+	}
+	for _, id := range []string{"new", "text"} {
+		if code, b := documentsCall(t, e, pat, http.MethodGet, sessions+"/"+id, ""); code != 200 {
+			t.Errorf("after the TTL sweep, sessions/%s: %d %s", id, code, b)
+		}
+	}
+
+	// firestore:databases:list and :get answer for (default).
+	if out := cli.ok(proj, "firestore:databases:list", "--project", "cli-app"); !strings.Contains(out, "(default)") {
+		t.Errorf("firestore:databases:list does not show (default):\n%s", out)
+	}
+	if out := cli.ok(proj, "firestore:databases:get", "(default)", "--project", "cli-app"); !strings.Contains(out, "(default)") {
+		t.Errorf("firestore:databases:get does not show (default):\n%s", out)
+	}
+
 	// --force with one index and no override: the rest is deleted, the overrides reverted
 	// (PATCH {field.name} with {}).
 	cli.write(proj, "firestore.indexes.json", cliIndexesSmall)
@@ -134,6 +176,43 @@ func TestDocumentsWithTheFirebaseCLI(t *testing.T) {
 		!strings.Contains(string(b), `"rulesetName":"projects/cli-app/rulesets/`) {
 		t.Errorf("after deploy --only firestore:rules, the release: %d %s", code, b)
 	}
+
+	// The round trip of rules, indexes, exemptions and TTL together: deploy the full file,
+	// export the indexes, read the deployed rules back from the firebaserules API, deploy
+	// those, and nothing changes: no ruleset created, no index or field touched.
+	cli.write(proj, "firestore.indexes.json", cliIndexes)
+	cli.ok(proj, "deploy", "--only", "firestore", "--project", "cli-app", "--non-interactive")
+	waitOperations(t, e, pat)
+	exp = exportJSON(t, cli.ok(proj, "firestore:indexes", "--project", "cli-app"))
+	if got, want := specOf(t, exp), specOf(t, []byte(cliIndexes)); !reflect.DeepEqual(got, want) {
+		t.Errorf("the export after the full deploy differs:\n got %s\nwant %s", got, want)
+	}
+	code, b := documentsCall(t, e, pat, http.MethodGet, "/v1/projects/cli-app/releases/cloud.firestore", "")
+	var rel struct {
+		RulesetName string `json:"rulesetName"`
+	}
+	if code != 200 || json.Unmarshal(b, &rel) != nil {
+		t.Fatalf("release: %d %s", code, b)
+	}
+	code, b = documentsCall(t, e, pat, http.MethodGet, "/v1/"+rel.RulesetName, "")
+	var rs struct {
+		Source struct {
+			Files []struct{ Content string } `json:"files"`
+		} `json:"source"`
+	}
+	if code != 200 || json.Unmarshal(b, &rs) != nil || len(rs.Source.Files) != 1 {
+		t.Fatalf("ruleset: %d %s", code, b)
+	}
+	cli.write(proj, "firestore.rules", rs.Source.Files[0].Content)
+	cli.write(proj, "firestore.indexes.json", string(exp))
+	cli.ok(proj, "deploy", "--only", "firestore", "--project", "cli-app", "--non-interactive")
+	unchanged(t, cli, "the deploy of the exported rules and indexes")
+	if n := countHops(cli, "POST ", "/rulesets"); n != 0 {
+		t.Errorf("the deploy of the exported rules created %d rulesets, want 0:\n  %s", n, strings.Join(cli.sentHops(), "\n  "))
+	}
+	if got, want := specOf(t, exportJSON(t, cli.ok(proj, "firestore:indexes", "--project", "cli-app"))), specOf(t, []byte(cliIndexes)); !reflect.DeepEqual(got, want) {
+		t.Errorf("after the round trip:\n got %s\nwant %s", got, want)
+	}
 }
 
 const cliIndexes = `{
@@ -170,7 +249,9 @@ const cliIndexesSmall = `{
 // TLS front on loopback (ADR-029 §3 rule 7).
 func documentsEnv(t *testing.T) *Env {
 	t.Helper()
-	e := newEnv(t, map[string]string{"ARUMA_DOCUMENTS_ENABLED": "true", "ARUMA_LISTEN": "127.0.0.1:0"})
+	e := newEnv(t, map[string]string{"ARUMA_DOCUMENTS_ENABLED": "true", "ARUMA_LISTEN": "127.0.0.1:0",
+		// The TTL sweeper runs every second, not every hour.
+		"ARUMA_DOCUMENTS_TTL_SWEEP_INTERVAL": "1s"})
 	if err := e.App.Documents.Boot(t.Context(), documents.InstanceOptions{}); err != nil {
 		t.Fatal(err)
 	}

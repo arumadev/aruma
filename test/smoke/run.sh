@@ -111,7 +111,7 @@ run_admin_node_documents() {
 }
 
 run_firebase_tools_documents() {
-  log "firebase-tools-documents: firebase deploy --only firestore:indexes, firestore:indexes, firestore:delete -r"
+  log "firebase-tools-documents: deploy of rules and indexes (exemptions, TTL), export, TTL deletes, databases:list/get, firestore:delete -r"
   (cd "$root/test/acceptance/testdata/firebase-cli" && npm ci --no-audit --no-fund --silent)
   ARUMA_FIREBASE_CLI=1 go test -count=1 -run '^TestDocumentsWithTheFirebaseCLI$' ./test/acceptance/
 }

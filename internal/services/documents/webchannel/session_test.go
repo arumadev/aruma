@@ -43,13 +43,13 @@ func TestEndedSessionReleased(t *testing.T) {
 	base := heapMiB()
 	bad := map[string]string{"Authorization": "Bearer not-a-token"}
 	big := addDoc(1, "aruma-ref-wc/"+strings.Repeat("x", 4<<20))
+	// Each forward follows its own handshake: four 4 MiB handshakes in a row can outlast the
+	// expiry on a slow machine, and the first session would be gone before its forward.
 	var cs []*client
 	for range 4 {
 		c, _ := handshake(t, x.url, bad, big)
 		cs = append(cs, c)
-	}
-	time.Sleep(200 * time.Millisecond)
-	for _, c := range cs {
+		time.Sleep(200 * time.Millisecond)
 		if st, body := c.postRaw("count=1&ofs=1&req0___data__=" + url.QueryEscape(big)); st != http.StatusOK {
 			t.Errorf("forward on an ended session: %d %s", st, body)
 		}

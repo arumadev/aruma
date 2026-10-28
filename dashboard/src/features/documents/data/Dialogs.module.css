@@ -1,0 +1,48 @@
+.pathLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.pathLabel {
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+}
+
+.idLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.idLine > :first-child {
+  flex: 1 1 240px;
+}
+
+.idLine > button {
+  margin-block-start: var(--space-2);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-label-large);
+  list-style: none;
+}
+
+.steps > [aria-current] {
+  color: var(--md-sys-color-primary);
+}
+
+.hint {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-small);
+}

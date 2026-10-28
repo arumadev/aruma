@@ -122,6 +122,10 @@ var denied = map[string][]string{
 	"internal/services/documents/rest": {"internal/services/documents/grpc", "internal/services/documents/webchannel"},
 	"internal/services/documents/webchannel": {"internal/services/documents/core",
 		"internal/services/documents/listen"},
+	// The dashboard's routes stand on the service layer, as the transports do, never on a
+	// transport: every operation is the one the Firestore APIs serve (ADR-030).
+	"internal/services/documents/console": {"internal/services/documents/grpc", "internal/services/documents/rest",
+		"internal/services/documents/webchannel", "internal/services/documents/listen"},
 }
 
 func TestDependencyRules(t *testing.T) {

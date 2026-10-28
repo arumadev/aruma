@@ -47,6 +47,9 @@ type Ruleset struct {
 	Name       string // projects/{project}/rulesets/{uuid}
 	Files      []rules.File
 	CreateTime time.Time
+	// Service is the service the ruleset was compiled for: the console's rules history lists
+	// one service's alone. The firebaserules API does not show it.
+	Service rules.Service
 }
 
 // Release points a name (cloud.firestore, firebase.storage/<bucket>) at a ruleset.
@@ -174,7 +177,8 @@ func (s *Service) ListRulesets(ctx context.Context, p *authn.Principal, project 
 	}
 	page.Items = make([]Ruleset, 0, len(rows))
 	for _, r := range rows {
-		page.Items = append(page.Items, Ruleset{Name: rulesetName(proj.ProjectID, r.RulesetID), CreateTime: r.CreateTime})
+		page.Items = append(page.Items, Ruleset{Name: rulesetName(proj.ProjectID, r.RulesetID), CreateTime: r.CreateTime,
+			Service: rules.Service(r.Service)})
 	}
 	return page, nil
 }
@@ -576,7 +580,7 @@ func toRuleset(projectID string, r queries.ControlRuleset) (Ruleset, error) {
 	if err := json.Unmarshal(r.Files, &files); err != nil {
 		return Ruleset{}, fmt.Errorf("rules: ruleset %s: %w", r.RulesetID, err)
 	}
-	out := Ruleset{Name: rulesetName(projectID, r.RulesetID), CreateTime: r.CreateTime}
+	out := Ruleset{Name: rulesetName(projectID, r.RulesetID), CreateTime: r.CreateTime, Service: rules.Service(r.Service)}
 	for _, f := range files {
 		out.Files = append(out.Files, rules.File{Name: f.Name, Content: f.Content})
 	}

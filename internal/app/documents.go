@@ -36,6 +36,8 @@ import (
 // errNotBooted's text. Boot is not run from the request path, since it may wait 30 seconds for
 // the single-instance lock.
 type Documents struct {
+	// API is the service layer every transport and the dashboard's routes call.
+	API   *docapi.Service
 	GRPC  *docgrpc.Handler
 	REST  *docrest.Handler
 	store *bootStore
@@ -51,6 +53,12 @@ type Documents struct {
 	// hub is the Listen hub, the store's Notifier (ADR-026 §2), rebuilt when the
 	// single-instance lock is taken again after its loss (ADR-026 §5).
 	hub *hubs
+	// usage counts the dashboard's usage; Boot starts its flushes, and Close's last one keeps
+	// the counts across a restart.
+	usage *documents.Usage
+	// stopUsage ends the usage's flushes, not ctx (Boot), and usageDone closes after the last.
+	stopUsage context.CancelFunc
+	usageDone chan struct{}
 	// stopJobs ends the jobs Boot started (the retention, the index builds, the transactions'
 	// sweep), and jobsDone
 	// closes when they have.
@@ -65,8 +73,9 @@ type Documents struct {
 // key, so that one issued before a restart is answered as expired, not forged (ADR-025 §7.5).
 func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, keys *crypto.Keys, m *metrics.Metrics,
 	idTokens idtoken.Verifier, revocations idtoken.Revocations, rulesInflight *rules.Inflight, logger *slog.Logger) *Documents {
+	usage := documents.NewUsage(pool, nil, logger)
 	svc.OnProjectPurged(func(ctx context.Context, project int64) error {
-		return documents.PurgeProject(ctx, pool, project)
+		return documents.PurgeProject(ctx, pool, usage, project)
 	})
 	publicURL := strings.TrimSuffix(cfg.PublicBaseURL().String(), "/")
 	jwts := authn.NewServiceAccountJWTVerifier(svc, publicURL, logger)
@@ -90,7 +99,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	api := docapi.New(docapi.Options{
 		Store: store, Auth: resolver, Projects: svc, DevOpenRules: cfg.Documents.DevOpenRules,
 		Rulesets: svc, IDTokens: idTokens, RulesInflight: rulesInflight,
-		IndexEnforcement: enforcement, Listen: hub, Logger: logger,
+		IndexEnforcement: enforcement, Listen: hub, Usage: usage, Logger: logger,
 	})
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
@@ -118,9 +127,10 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 		},
 	})
 	return &Documents{
+		API:   api,
 		GRPC:  streams,
 		REST:  docrest.New(docrest.Options{Service: api, Channel: channel, Logger: logger}),
-		store: store, pool: pool, cfg: l, log: logger, hub: hub,
+		store: store, pool: pool, cfg: l, log: logger, hub: hub, usage: usage,
 		txns: documents.TxnConfig{
 			Key:             keys.DocumentsTransactionKey(),
 			WaitTimeout:     l.TxnWaitTimeout,
@@ -199,6 +209,15 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
 	jobs.Go(func() { store.RunTransactions(jctx) })
+	// The usage's flushes outlive ctx: requests still draining after it ends count, and Close,
+	// once the server has drained them, runs the last flush.
+	var uctx context.Context
+	uctx, d.stopUsage = context.WithCancel(context.WithoutCancel(ctx))
+	d.usageDone = make(chan struct{})
+	go func() {
+		defer close(d.usageDone)
+		d.usage.Run(uctx, 0)
+	}()
 	jobs.Go(func() { store.RunIndexBuilds(jctx, documents.IndexBuildOptions{Log: d.log}) })
 	jobs.Go(func() {
 		store.RunTTL(jctx, documents.TTLOptions{Every: d.cfg.TTLSweepInterval, Batch: d.cfg.TTLSweepBatch, Log: d.log})
@@ -213,12 +232,17 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	return ensureDatabases(ctx, d.pool, store)
 }
 
-// Close stops the retention job and the transactions' sweep, closes the Listen hub, and
-// releases the lock.
+// Close stops the retention job and the transactions' sweep, runs the usage's last flush, closes
+// the Listen hub, and releases the lock. It runs once the server has drained its requests, so the
+// last flush has their counts.
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()
 		<-d.jobsDone
+	}
+	if d.stopUsage != nil {
+		d.stopUsage()
+		<-d.usageDone
 	}
 	if d.hub != nil {
 		d.hub.close()

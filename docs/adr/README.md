@@ -30,6 +30,7 @@
 | [ADR-027](ADR-027-documents-transport-and-protos.md) | قاعدة المستندات: النقل (connect على المنفذ الواحد) والـ protos، وسطح المتصفح، ويحل محل جزء من ADR-010 S-8 بشرط | مسودة (v0.4، F0) |
 | [ADR-028](ADR-028-documents-v04-scope-and-verification.md) | قاعدة المستندات: الاسم ونطاق 0.4 وجهاز التحقق | مسودة (v0.4، F0) |
 | [ADR-029](ADR-029-documents-admin-auth.md) | قاعدة المستندات: مصادقة Admin بـ JWT حساب الخدمة، ويحل محل جزء من ADR-010 S-3 وS-11 على سطحها | مسودة (v0.4، F0) |
+| [ADR-030](ADR-030-documents-console.md) | قاعدة المستندات: واجهة اللوحة (console API) | مسودة (v0.4، F7) |
 
 ## الصيغة
 

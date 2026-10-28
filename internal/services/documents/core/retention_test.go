@@ -111,7 +111,7 @@ func TestPurgeProject(t *testing.T) {
 	}
 
 	for range 2 { // idempotent
-		if err := PurgeProject(ctx, pool, testDB.Project); err != nil {
+		if err := PurgeProject(ctx, pool, nil, testDB.Project); err != nil {
 			t.Fatal(err)
 		}
 	}

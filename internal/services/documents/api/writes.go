@@ -122,6 +122,7 @@ func (s *Service) commitWrites(ctx context.Context, a admitted, ws []*pb.Write, 
 	if err != nil {
 		return core.CommitResult{}, s.fail(ctx, err)
 	}
+	s.o.Usage.Wrote(a.db.Project, writes)
 	return res, nil
 }
 
@@ -189,7 +190,9 @@ func (s *Service) BatchWrite(ctx context.Context, c Call, req *pb.BatchWriteRequ
 	for range min(batchWriteParallel, len(writes)) {
 		wg.Go(func() {
 			for i := range next {
-				results[i], errs[i] = s.o.Store.Commit(ctx, a.db, writes[i:i+1])
+				if results[i], errs[i] = s.o.Store.Commit(ctx, a.db, writes[i:i+1]); errs[i] == nil {
+					s.o.Usage.Wrote(a.db.Project, writes[i:i+1])
+				}
 			}
 		})
 	}

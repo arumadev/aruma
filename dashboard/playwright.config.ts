@@ -10,6 +10,8 @@ import type { Options } from './e2e/fixtures';
 //
 // Set ARUMA_DASHBOARD_URL to a real `aruma serve` with the dashboard embedded and Storage enabled
 // to run e2e/live-storage.spec.ts on the server itself, under its own Content-Security-Policy.
+// With the Document Database enabled as well (and ARUMA_DOCUMENTS_DEV_OWNER_TOKEN=true, for the
+// spec's concurrent REST write), the same URL runs e2e/live-documents.spec.ts.
 
 const PORT = 4173;
 const live = Boolean(process.env.ARUMA_API_URL);
@@ -38,10 +40,11 @@ export default defineConfig<Options>({
     acceptDownloads: true,
   },
   projects: [
-    { name: 'ar-rtl', testIgnore: /live(-storage)?\.spec/, use: { ...browser, locale: 'ar', appLocale: 'ar' } },
-    { name: 'en-ltr', testIgnore: /live(-storage)?\.spec/, use: { ...browser, locale: 'en-US', appLocale: 'en' } },
+    { name: 'ar-rtl', testIgnore: /live(-storage|-documents)?\.spec/, use: { ...browser, locale: 'ar', appLocale: 'ar' } },
+    { name: 'en-ltr', testIgnore: /live(-storage|-documents)?\.spec/, use: { ...browser, locale: 'en-US', appLocale: 'en' } },
     ...(live ? [{ name: 'live', testMatch: /live\.spec/, use: { ...browser, appLocale: 'ar' as const } }] : []),
     ...(dashboard ? [{ name: 'live-storage', testMatch: /live-storage\.spec/, use: { ...browser, baseURL: dashboard, appLocale: 'en' as const } }] : []),
+    ...(dashboard ? [{ name: 'live-documents', testMatch: /live-documents\.spec/, use: { ...browser, baseURL: dashboard, appLocale: 'en' as const } }] : []),
   ],
   webServer: {
     command: 'node e2e/serve.mjs',
