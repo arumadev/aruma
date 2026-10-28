@@ -250,6 +250,42 @@ func (u *Usage) seed() {
 	})
 }
 
+// CountUsage runs count, a count of the usage, at once; or, in a commit's attempt to take its
+// locks (lockWrites), once that attempt is known to be the commit's last. An attempt a wound
+// retries counts nothing, so the rules' decisions on a commit, and their lookups, count once.
+func CountUsage(ctx context.Context, count func()) {
+	if a, ok := ctx.Value(usageAttemptKey{}).(*usageAttempt); ok {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		a.counts = append(a.counts, count)
+		return
+	}
+	count()
+}
+
+type usageAttemptKey struct{}
+
+// usageAttempt holds the counts of one attempt of a commit to take its locks.
+type usageAttempt struct {
+	mu     sync.Mutex
+	counts []func()
+}
+
+func withUsageAttempt(ctx context.Context) (context.Context, *usageAttempt) {
+	a := new(usageAttempt)
+	return context.WithValue(ctx, usageAttemptKey{}, a), a
+}
+
+// count runs the attempt's counts.
+func (a *usageAttempt) count() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for _, c := range a.counts {
+		c()
+	}
+	a.counts = nil
+}
+
 // Forget drops what project counted and has not flushed, and its listeners and connections, so
 // that no later flush writes a row for it: the purge of a deleted project (PurgeProject) calls it
 // before it deletes the project's hours. A flush under way finishes first.
