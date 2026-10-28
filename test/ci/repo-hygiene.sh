@@ -13,14 +13,14 @@
 #   d. nothing at the top level of docs/ except the allowed entries
 #
 # "Arabic letters" means these ranges: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF,
-# U+FE70-FEFF.
+# U+FE70-FEFC (U+FEFF is the byte order mark, not a letter).
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 python3 - <<'PY'
 import os, re, subprocess, sys
 
-RANGES = ((0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF))
+RANGES = ((0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF), (0xFB50, 0xFDFF), (0xFE70, 0xFEFC))
 ARABIC = re.compile('[' + ''.join(chr(a) + '-' + chr(b) for a, b in RANGES) + ']')
 LOCAL_PATH = re.compile(r'/Volumes/|/Users/(?!Shared/)|/home/[A-Za-z0-9._-]+/')
 SKIP_DIRS = ('dashboard/', 'test/oracle/')
