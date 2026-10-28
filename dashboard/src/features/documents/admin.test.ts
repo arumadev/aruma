@@ -15,6 +15,7 @@ import {
   listedFields,
   newCompositeForm,
   pageOf,
+  ttlGroupTaken,
 } from './indexes/indexes';
 import { authPayload, lineMarks, methodNoun, parseData, pathProblem, refusedIssues, toValue } from './rules/rulesText';
 import { merge, niceMax, perDay, points, emptyRow } from './usage/usage';
@@ -122,14 +123,37 @@ describe('index helpers', () => {
 
   it('lists only the enabled kinds of an exemption, and leaves an unchosen scope as it was', () => {
     const kinds = { ASCENDING: true, DESCENDING: true, ARRAYS: false };
-    const only = exemptionIndexes({ scopes: { COLLECTION: true, COLLECTION_GROUP: false }, kinds });
+    const fresh = automaticSettings([]);
+    const only = exemptionIndexes({ scopes: { COLLECTION: true, COLLECTION_GROUP: false }, kinds }, fresh);
     expect(only.map((i) => [i.queryScope, i.fields[0]])).toEqual([
       ['COLLECTION', { order: 'ASCENDING' }],
       ['COLLECTION', { order: 'DESCENDING' }],
     ]);
-    const group = exemptionIndexes({ scopes: { COLLECTION: false, COLLECTION_GROUP: true }, kinds });
+    const group = exemptionIndexes({ scopes: { COLLECTION: false, COLLECTION_GROUP: true }, kinds }, fresh);
     expect(group.filter((i) => i.queryScope === 'COLLECTION')).toHaveLength(3);
     expect(group.filter((i) => i.queryScope === 'COLLECTION_GROUP')).toHaveLength(2);
+  });
+
+  it('keeps the untouched scope as a changed __default__ override has it', () => {
+    const override: Field = {
+      name: 'projects/p/databases/(default)/collectionGroups/__default__/fields/*',
+      indexConfig: {
+        indexes: [
+          { queryScope: 'COLLECTION', fields: [{ order: 'ASCENDING' }] },
+          { queryScope: 'COLLECTION_GROUP', fields: [{ arrayConfig: 'CONTAINS' }] },
+        ],
+      },
+    };
+    const defaults = automaticSettings([override]);
+    const kinds = { ASCENDING: false, DESCENDING: true, ARRAYS: false };
+    expect(exemptionIndexes({ scopes: { COLLECTION: true, COLLECTION_GROUP: false }, kinds }, defaults).map((i) => [i.queryScope, i.fields[0]])).toEqual([
+      ['COLLECTION', { order: 'DESCENDING' }],
+      ['COLLECTION_GROUP', { arrayConfig: 'CONTAINS' }],
+    ]);
+    expect(exemptionIndexes({ scopes: { COLLECTION: false, COLLECTION_GROUP: true }, kinds }, defaults).map((i) => [i.queryScope, i.fields[0]])).toEqual([
+      ['COLLECTION', { order: 'ASCENDING' }],
+      ['COLLECTION_GROUP', { order: 'DESCENDING' }],
+    ]);
   });
 
   it('opens an exemption in the form it was made with', () => {
@@ -148,6 +172,9 @@ describe('index helpers', () => {
     expect(isExemption(field)).toBe(true);
     expect(isExemption({ ...field, name: 'projects/p/databases/(default)/collectionGroups/__default__/fields/__default__' })).toBe(false);
     expect(isExemption({ name: field.name, indexConfig: { usesAncestorConfig: true } })).toBe(false);
+    // The server omits a false usesAncestorConfig.
+    expect(isExemption({ name: field.name, indexConfig: { indexes: field.indexConfig!.indexes } })).toBe(true);
+    expect(isExemption({ name: field.name, ttlConfig: { state: 'ACTIVE' } })).toBe(false);
   });
 
   it('takes the automatic settings from the default override, or a new database’s', () => {
@@ -160,6 +187,18 @@ describe('index helpers', () => {
       indexConfig: { indexes: [{ queryScope: 'COLLECTION', fields: [{ order: 'ASCENDING' }] }] },
     };
     expect(automaticSettings([override]).COLLECTION).toEqual({ ASCENDING: true, DESCENDING: false, ARRAYS: false });
+  });
+
+  it('takes a collection group with a TTL policy on any of its fields as taken', () => {
+    const f = (group: string, field: string, ttl: boolean): Field => ({
+      name: `projects/p/databases/(default)/collectionGroups/${group}/fields/${field}`,
+      ...(ttl && { ttlConfig: { state: 'ACTIVE' as const } }),
+    });
+    const fields = [f('sessions', 'expiresAt', true), f('posts', 'at', false)];
+    expect(ttlGroupTaken(fields, 'sessions')).toBe(true);
+    expect(ttlGroupTaken(fields, ' sessions ')).toBe(true);
+    expect(ttlGroupTaken(fields, 'posts')).toBe(false);
+    expect(ttlGroupTaken(fields, 'other')).toBe(false);
   });
 
   it('pages a list', () => {

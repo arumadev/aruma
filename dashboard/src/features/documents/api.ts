@@ -173,11 +173,16 @@ export interface Operation {
   response?: Record<string, unknown>;
 }
 
-/** What the server counts for the project's database; available is false while it counts nothing. */
-export interface DocumentsUsage {
-  available: boolean;
-  counters: Record<string, number>;
-  note?: string;
+/**
+ * A request body ready for JSON.stringify: a doubleValue of -0 becomes the string "-0", which the
+ * server's REST decoder reads as -0 (a number, the way JSON.stringify writes it, loses the sign).
+ */
+export function toWire<T>(body: T): T {
+  if (Array.isArray(body)) return body.map(toWire) as T;
+  if (body === null || typeof body !== 'object') return body;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body)) out[k] = k === 'doubleValue' && Object.is(v, -0) ? '-0' : toWire(v);
+  return out as T;
 }
 
 const docs = (p: string) => `/projects/${encodeURIComponent(p)}/documents`;
@@ -206,10 +211,10 @@ export const getDocument = (p: string, path: string, signal?: AbortSignal) => re
 
 /** Creates a document in the collection at path; one that exists already is ALREADY_EXISTS. */
 export const createDocument = (p: string, collectionPath: string, body: { documentId?: string; fields: Fields }) =>
-  request<Doc>(`${docs(p)}/documents`, { method: 'POST', query: { path: collectionPath }, body });
+  request<Doc>(`${docs(p)}/documents`, { method: 'POST', query: { path: collectionPath }, body: toWire(body) });
 
 export const updateDocument = (p: string, path: string, body: DocumentWrite) =>
-  request<Doc>(`${docs(p)}/document`, { method: 'PATCH', query: { path }, body });
+  request<Doc>(`${docs(p)}/document`, { method: 'PATCH', query: { path }, body: toWire(body) });
 
 /** Deletes a document, not its subcollections. */
 export const deleteDocument = (p: string, path: string) => request<object>(`${docs(p)}/document`, { method: 'DELETE', query: { path } });
@@ -271,10 +276,6 @@ export const clearTtlPolicy = (p: string, group: string, field: string) =>
 
 export const listOperations = (p: string, signal?: AbortSignal) => request<{ operations: Operation[] }>(`${docs(p)}/operations`, { signal });
 
-// Usage.
-
-export const getUsage = (p: string, signal?: AbortSignal) => request<DocumentsUsage>(`${docs(p)}/usage`, { signal });
-
 // The Rules Playground and the usage counters (ADR-030 §7, §8).
 
 export type SimulateMethod = 'get' | 'create' | 'update' | 'delete';
@@ -317,7 +318,7 @@ export interface SimulateResult {
 
 /** Judges one request by the rules, writing nothing. A source that does not compile is INVALID_ARGUMENT. */
 export const simulateRules = (p: string, body: SimulateRequest, signal?: AbortSignal) =>
-  request<SimulateResult>(`${docs(p)}/rules:simulate`, { method: 'POST', body, signal });
+  request<SimulateResult>(`${docs(p)}/rules:simulate`, { method: 'POST', body: toWire(body), signal });
 
 export type UsagePeriod = '60m' | '24h' | '7d' | '30d';
 

@@ -38,6 +38,7 @@ import {
   type KindSet,
 } from './indexes';
 import { Pager, usePager } from './Pager';
+import { useOperationWatch } from './useOperationWatch';
 
 /** The automatic single-field indexes, what the database does by default, and the fields that differ. */
 export function AutomaticTab() {
@@ -54,6 +55,7 @@ export function AutomaticTab() {
   const exemptions = fields.filter(isExemption);
   const pager = usePager(exemptions, 25);
   const settings = automaticSettings(fields);
+  const watch = useOperationWatch(project.projectId, list.reload);
 
   return (
     <div className={styles.stack}>
@@ -126,9 +128,11 @@ export function AutomaticTab() {
       </Card>
       {editing && (
         <ExemptionDialog
+          defaults={settings}
           initial={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSaved={(op) => {
+            watch(op);
             setEditing(null);
             notify(t('saved'));
             list.reload();
@@ -142,7 +146,7 @@ export function AutomaticTab() {
           danger
           onClose={() => setClearing(null)}
           onConfirm={async () => {
-            await api.clearExemption(project.projectId, groupOf(clearing.name), fieldPathOf(clearing.name));
+            watch(await api.clearExemption(project.projectId, groupOf(clearing.name), fieldPathOf(clearing.name)));
             notify(t('deleted'));
             list.reload();
           }}
@@ -183,7 +187,17 @@ function Chips({ on }: { on: KindSet }) {
 }
 
 /** The two steps of an exemption: the field and its scopes, then the three toggles. */
-function ExemptionDialog({ initial, onClose, onSaved }: { initial: ExemptionForm | null; onClose: () => void; onSaved: () => void }) {
+function ExemptionDialog({
+  initial,
+  defaults,
+  onClose,
+  onSaved,
+}: {
+  initial: ExemptionForm | null;
+  defaults: Record<api.QueryScope, KindSet>;
+  onClose: () => void;
+  onSaved: (op: api.Operation) => void;
+}) {
   const t = useTranslations('documents.indexes.automatic.form');
   const tAuto = useTranslations('documents.indexes.automatic');
   const tCommon = useTranslations('common');
@@ -202,8 +216,7 @@ function ExemptionDialog({ initial, onClose, onSaved }: { initial: ExemptionForm
     setPending(true);
     setError(null);
     try {
-      await api.setExemption(project.projectId, form.collection.trim(), form.field.trim(), { indexes: exemptionIndexes(form) });
-      onSaved();
+      onSaved(await api.setExemption(project.projectId, form.collection.trim(), form.field.trim(), { indexes: exemptionIndexes(form, defaults) }));
     } catch (err) {
       setError(err);
       setPending(false);

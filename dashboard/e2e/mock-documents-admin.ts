@@ -99,7 +99,12 @@ export class MockDocumentsAdmin {
 
   private dispatch(method: string, sub: string, q: URLSearchParams, body: Body): Reply | null {
     if (sub === '' && method === 'GET') {
-      return ok({ enabled: true, databaseId: '(default)', name: DB });
+      return ok({
+        enabled: true,
+        databaseId: '(default)',
+        name: DB,
+        limits: { pageSize: 50, collectionsPageSize: 300, maxPageSize: 1000, documentBytes: 1048576, fieldDepth: 20, requestBytes: 1048576, recursiveDeleteDocs: 5000 },
+      });
     }
     const route = `${method} ${sub}`;
     if (route === 'GET /rules') {
@@ -163,15 +168,13 @@ export class MockDocumentsAdmin {
       const field = q.get('field')!;
       const name = `${DB}/collectionGroups/${group}/fields/${field}`;
       this.fields = this.fields.filter((f) => f.name !== name);
-      if (method === 'PUT') this.fields.push({ name, indexConfig: { usesAncestorConfig: false, indexes: body.indexConfig!.indexes } });
+      if (method === 'PUT') this.fields.push({ name, indexConfig: { indexes: body.indexConfig!.indexes } });
       return ok({ name: `${DB}/operations/op${++this.counter}`, done: true });
     }
     if (route === 'GET /ttl') return ok({ fields: this.ttl });
     if (route === 'PUT /ttl' || route === 'DELETE /ttl') {
       const name = `${DB}/collectionGroups/${q.get('group')}/fields/${q.get('field')}`;
-      if (method === 'PUT' && this.ttl.some((f) => f.name.includes(`/collectionGroups/${q.get('group')}/`))) {
-        return fail(400, 'FAILED_PRECONDITION', 'This collection group already has a TTL policy.');
-      }
+      // Like the server (core/ttl.go), it takes any number of policies in a group: one per group is the console's rule.
       this.ttl = this.ttl.filter((f) => f.name !== name);
       if (method === 'PUT') this.ttl.push({ name, ttlConfig: { state: 'ACTIVE' } });
       return ok({ name: `${DB}/operations/op${++this.counter}`, done: true });

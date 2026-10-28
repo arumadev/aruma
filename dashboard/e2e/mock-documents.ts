@@ -148,7 +148,6 @@ export class MockDocuments {
         limits: { pageSize: s.pageSize, collectionsPageSize: 300, maxPageSize: 1000, documentBytes: 1048576, fieldDepth: 20, requestBytes: 1048576, recursiveDeleteDocs: s.deleteStep },
       });
     }
-    if (route === 'GET usage') return ok({ available: false, counters: {}, note: 'This server does not count reads, writes or deletes per project yet.' });
 
     if (route === 'GET collections') {
       const depth = ids(path).length;

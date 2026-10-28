@@ -20,8 +20,9 @@ import { useErrorText } from '@/lib/errors';
 import { useResource } from '@/lib/hooks/useResource';
 import * as api from '../api';
 import styles from './Indexes.module.css';
-import { fieldPathOf, groupOf, hasTtl, idProblem, pathProblem } from './indexes';
+import { fieldPathOf, groupOf, hasTtl, idProblem, pathProblem, ttlGroupTaken } from './indexes';
 import { POLL_MS } from './ManualTab';
+import { useOperationWatch } from './useOperationWatch';
 
 /**
  * Time-to-live policies: one timestamp field per collection group whose documents expire. The
@@ -41,6 +42,7 @@ export function TtlTab() {
   const policies = (list.data?.fields ?? []).filter(hasTtl);
   const creatingNow = policies.some((f) => f.ttlConfig?.state === 'CREATING');
   const { reload } = list;
+  const watch = useOperationWatch(project.projectId, reload);
 
   useEffect(() => {
     if (!creatingNow) return;
@@ -94,8 +96,10 @@ export function TtlTab() {
       )}
       {creating && (
         <CreateDialog
+          policies={policies}
           onClose={() => setCreating(false)}
-          onCreated={() => {
+          onCreated={(op) => {
+            watch(op);
             setCreating(false);
             notify(t('created'));
             list.reload();
@@ -109,7 +113,7 @@ export function TtlTab() {
           danger
           onClose={() => setClearing(null)}
           onConfirm={async () => {
-            await api.clearTtlPolicy(project.projectId, groupOf(clearing.name), fieldPathOf(clearing.name));
+            watch(await api.clearTtlPolicy(project.projectId, groupOf(clearing.name), fieldPathOf(clearing.name)));
             notify(t('deleted'));
             list.reload();
           }}
@@ -121,7 +125,7 @@ export function TtlTab() {
   );
 }
 
-function CreateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateDialog({ policies, onClose, onCreated }: { policies: api.Field[]; onClose: () => void; onCreated: (op: api.Operation) => void }) {
   const t = useTranslations('documents.indexes.ttl.form');
   const tCommon = useTranslations('common');
   const errorText = useErrorText();
@@ -131,7 +135,7 @@ function CreateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const groupProblem = idProblem(group);
+  const groupProblem = idProblem(group) ?? (ttlGroupTaken(policies, group) ? 'taken' : undefined);
   const fieldProblem = pathProblem(field);
 
   async function submit() {
@@ -140,8 +144,7 @@ function CreateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
     setPending(true);
     setError(null);
     try {
-      await api.setTtlPolicy(project.projectId, group.trim(), field.trim());
-      onCreated();
+      onCreated(await api.setTtlPolicy(project.projectId, group.trim(), field.trim()));
     } catch (err) {
       setError(err);
       setPending(false);
