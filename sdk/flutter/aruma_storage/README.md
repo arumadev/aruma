@@ -5,8 +5,6 @@ Use the **official `firebase_storage`** for Flutter, in its normal production mo
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
 
-[العربية](#العربية)
-
 ## The production path
 
 On Android and iOS, firebase_storage calls the native SDKs, so a Flutter app takes their production
@@ -66,20 +64,3 @@ dependencies:
 - No dependencies: plain Dart, usable from any Flutter platform.
 
 `test/e2e/flutter-storage` runs it on a device against a real server. Unit tests: `dart test`.
-
-## العربية
-
-حزمة Dart صغيرة لاستعمال `firebase_storage` الرسمية مع خادم Aruma في وضع الإنتاج (بلا `useStorageEmulator`).
-
-- **مسار الإنتاج:** firebase_storage على Android وiOS تستدعي المكتبات الأصلية، فيأخذ تطبيق Flutter مسارها
-  (ADR-022 §16.4): إضافة Gradle `dev.aruma.storage` على Android، ومرآة FirebaseStorage المرقّعة بـ
-  `swift package config set-mirror` على iOS (SwiftPM). فيعيد `getDownloadURL()` الرابط الموحّد على Aruma، ويفتحه
-  `Image.network` (`dart:io`) دون أن يذهب إلى Google. وAuth عبر aruma-redirect وArumaRedirect كالمعتاد.
-- `ArumaStorageRedirect=false` يجعل مسار البناء إلزاميًا: التطبيق المبني بدونه يتوقف عند الإقلاع.
-- **`fromArumaUrl`:** firebase_storage تحلّل رابط http(s) **في Dart** ولا تقبل إلا مضيف Google و`localhost`
-  و`10.0.2.2` (`utils.dart:24`، `:49-56`)، فيرمي `refFromURL(await ref.getDownloadURL())` على مضيف Aruma.
-  `fromArumaUrl(link)` تحوّله إلى `gs://<bucket>/<path>` بالاسم مفكوكًا كما هو، فيعيد `refFromURL` المرجع نفسه.
-- ترفض (`NotStorageUrlException`) الشكل المسبوق `<aruma>/firebasestorage.googleapis.com/v0/…`، والأسماء التي لا
-  يحملها مرجع: مقطع فارغ (`a//b`)، أو `/` في أولها أو آخرها، لأنها تشير إلى كائن آخر. وكذلك تفعل نسختا Android وiOS.
-- الإصدارات المقيسة: firebase_core 4.15.2 وfirebase_storage 13.6.1 وfirebase_auth 6.7.1 (firebase-ios-sdk 12.19.3)؛
-  خط 5.x يحتاج Xcode 26.2.

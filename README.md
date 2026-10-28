@@ -17,8 +17,6 @@ One Go binary and PostgreSQL. Your apps keep the official SDKs and your applicat
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-1446D8?style=flat-square&logo=postgresql&logoColor=white)](#quick-start)
 [![Status](https://img.shields.io/badge/status-pre--1.0-0A7D73?style=flat-square)](#status)
 
-[English](README.md) · [العربية](README.ar.md)
-
 [Quick start](#quick-start) · [Status](#status) · [How it works](#how-it-works) · [Configuration](docs/configuration.md) · [Docs](#documentation) · [Contributing](CONTRIBUTING.md)
 
 </div>

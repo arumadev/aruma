@@ -19,8 +19,6 @@ arumaStorage {
 }
 ```
 
-## English
-
 ### What it changes
 
 firebase-storage builds every request and every download URL from one field,
@@ -99,22 +97,3 @@ lines in `android/settings.gradle(.kts)` and `android/app/build.gradle(.kts)`.
 - Tested on an API 33 emulator with BoM 35.0.2 (firebase-storage 23.0.0), in debug. Not yet on a physical device.
 
 Run the unit tests: `./gradlew test`.
-
-## العربية
-
-### الفكرة
-
-مكتبة firebase-storage لـ Android تبني كل طلب وكل رابط تنزيل من حقل واحد، `NetworkRequest.PROD_BASE_URL`، يضبطه
-`<clinit>` بـ `Uri.parse("https://firebasestorage.googleapis.com/v0")`. هذه الإضافة تبدّل ذلك النص وحده في ذلك الصنف وحده
-إلى `<url>/v0` وقت البناء، بواجهة instrumentation في AGP. فتذهب الطلبات إلى Aruma، ويعيد `getDownloadUrl()` الرابط الموحّد
-على Aruma، فيعمل في أي حمّال (Coil وGlide وWebView وMediaPlayer) ولا يتسرّب إلى Google. هذا مسار الإنتاج (ADR-022 §16.2)،
-والتحويل وقت التشغيل في aruma-redirect احتياط.
-
-- المضيف يُكتب lowercase، وبلا منفذ افتراضي (لا `:443`)، وبلا مسار.
-- **الفشل مغلق بثلاث طبقات:** الـ visitor يرمي إن لم يجد النص مرة واحدة في `<clinit>`، ومهمة `verify<Variant>ArumaStorage`
-  تفحص الأصناف النهائية وتفشل إن بقي نص Google (مثلًا حين يُستثنى الصنف بـ `excludes`)، وaruma-redirect يوقف التطبيق عند
-  الإقلاع إن بقي `PROD_BASE_URL` على Google بلا تحويل لـ Storage (`ArumaStorageRedirect=false` يجعل الإضافة إلزامية).
-- **الإشعار:** المهمة تكتب `META-INF/aruma/firebase-storage-MODIFIED.txt` (Apache-2.0 §4(b)) في موارد التطبيق، فيصل إلى الـ APK
-  وإلى الـ APK المشتق من AAB. والـ APK والـ AAB لا يُبنيان بدون المهمة.
-- **الحدود:** مثبّتة على اسم الصنف والنص من المصدر المنشور (firebase-storage 23.0.0). أي إصدار يغيّرهما يُفشل البناء
-  صراحةً. ويُعاد e2e عند كل ترقية.

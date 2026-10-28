@@ -141,33 +141,3 @@ run-time fallback (ArumaRedirect) alone, with download URLs on Google.
 
 firebase-ios-sdk is Copyright Google LLC, under the Apache License 2.0; the patched files keep that
 license, and the patch and these scripts are Apache-2.0 too. See `NOTICE` at the repository root.
-
----
-
-## العربية
-
-مكتبة FirebaseStorage الرسمية لـ iOS تحمل نطاق Google في كودها، فيعيد `downloadURL()` رابطًا على Google بـ `:443`، ولا
-يحوّله التحويل وقت التشغيل. فمسار الإنتاج على iOS (ADR-022 §16.3، قرار المالك: تبديل النطاق وقت البناء في كل منصة) هو
-FirebaseStorage مبنية من المصدر برقعة صغيرة، تُسلَّم عبر **مرآة** SwiftPM.
-
-- **الرقعة** (`storage-host.patch`): `Storage.swift` يقرأ المخطط والمضيف والمنفذ من `ArumaURL` في Info.plist (الملف الجديد
-  `Internal/ArumaStorageOrigin.swift`)، و`var port: Int` يصير `Int?` فلا يُكتب منفذ حين لا منفذ في `ArumaURL`، في المواضع
-  الأربعة (`Storage.swift:225` و`:287`، و`StorageGetDownloadURLTask.swift:64`، و`StorageUtils.swift:31`). و`http` مسموح حين
-  يكون `ArumaURL` على loopback. وبلا `ArumaURL` يبقى سلوك المكتبة الرسمي مع سطر سجل، وتمر اختباراتها الرسمية. و`ArumaURL`
-  المرفوض يذهب إلى `arumaurl.invalid` فيفشل ولا يصل إلى Google.
-- **المرآة** (`make-mirror.sh <tag>`): commit واحد بلا أب، موسوم بالاسم الرسمي نفسه، بعد مرور `FirebaseStorageUnit`. ولا وسم
-  غير مرقّع فيها. وتاريخه تاريخ الـ commit الرسمي، فإعادة بنائها تعطي المراجعة نفسها.
-- **الاستعمال:** `swift package config set-mirror --original https://github.com/firebase/firebase-ios-sdk --mirror
-  https://github.com/arumadev/firebase-ios-sdk`، وفي مشروع Xcode ملف `mirrors.json` تحت
-  `xcshareddata/swiftpm/configuration/`، وتُضاف `ArumaURL` إلى Info.plist. ويحترم `xcodebuild` و`flutter build ios` المرآة (مقيس).
-- **التثبيت:** سجل SwiftPM لمراجعة الوسم ثقة عند أول استعمال لكل جهاز، فمشغّل CI جديد بلا سجل. لذلك يثبّت `mirror.lock` كل
-  وسم منشور بـ commit وtree، وهما واحد في كل مرآة أمينة لأن البناء قابل للتكرار (`12.19.3`: `f749478f…` وtree `c2f1efee…`).
-  ويرفض `make-mirror.sh` بناءً يخالف التثبيت، ويطبع سطر الوسم الجديد ليُلتزم قبل استعماله. ويُلتزم `Package.resolved` للتطبيق،
-  ويُحل في CI بـ `-onlyUsePackageVersionsFromResolvedFile` (أو `swift package resolve --force-resolved-versions`).
-- **بوابة CI:** `check-firebase-storage.sh` يُفشل البناء إن لم يكن في نسخة firebase-ios-sdk المحلولة `ARUMA-NOTICE.md`، أو لم يكن
-  commit الـ `HEAD` وtree فيها سطرًا من `mirror.lock`، في CI أو مرحلة "Run Script" أولى في هدف التطبيق. وفي التشغيل تبحث
-  `ArumaRedirect` عن صنف العلامة `FIRArumaStorageBuild`.
-- **لا يُكتب رابط المرآة مكان الرسمي:** إن طلبت حزمة أخرى (FlutterFire) الرابط الرسمي، لا يرفض SwiftPM ولا يحذّر، بل يأخذ
-  المستودع الرسمي غير المرقّع بصمت (مقيس بـ SwiftPM 6.1.2). فـ `set-mirror` وحده الطريق الآمن.
-- **CocoaPods** للإصدارات المجمّدة (آخرها 12.19.0) بـ `aruma_storage.rb`، و**Firebase.zip** يأخذ الاحتياط وحده.
-- **الرخصة:** Apache-2.0، وكل ملف معدَّل يذكر التعديل في رأسه، والإشعار في `NOTICE`.

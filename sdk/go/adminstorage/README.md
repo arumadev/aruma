@@ -7,8 +7,6 @@ Aruma server.
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
 
-[العربية](#العربية)
-
 ## The one line
 
 ```go
@@ -74,35 +72,3 @@ needed).
 ## License
 
 Apache-2.0.
-
----
-
-<div dir="rtl">
-
-## العربية
-
-حزمة `adminstorage` توصل خادم Go إلى Cloud Storage في Aruma بالعميل الرسمي
-`cloud.google.com/go/storage`. و`Bucket` و`DefaultBucket` تعيدان `*storage.BucketHandle` الرسمي كما
-يفعل عميل `app.Storage(ctx)` في firebase-admin-go، و`DownloadURL` يعيد رابطًا على خادم Aruma.
-
-Aruma غير تابع لـ Google ولا معتمد منها. Firebase علامة تجارية لـ Google LLC.
-
-### الإعداد
-
-- **عنوان الخادم:** `WithURL`، ثم `ARUMA_URL`، ثم `token_uri` في ملف المفتاح. وهو `public_url` الخادم:
-  أصل بلا مسار، `https` (و`http` على الجهاز المحلي فقط)، ولا يكون عنوان Google أبدًا.
-- **العميل منفصل عن `firebase.App`:** `option.WithEndpoint` على `firebase.NewApp` يكسر FCM وFirestore.
-- **الاعتماد:** تبادل المفتاح عند نقطة رموز Aruma، والرمز على كل طلب إلى أصل Aruma ومنه قطع الرفع
-  المتقطع، ورفض أي أصل آخر. لا يقرأ `cloud.google.com/go/auth` ملف المفتاح، فلا يغيّر `universe_domain`
-  شيئًا، ولا بحث عن اعتمادات افتراضية.
-- **الروابط الموقّعة غير مدعومة** في v0.3: `Client.SignedURL` يعيد `ErrSignedURLsUnsupported`، ولا
-  تُستدعَ `BucketHandle.SignedURL`، فهي تسأل خادم metadata في GCE عن الموقّع.
-- **حارس المحاكي:** يفشل `NewClient` إن وُجد `STORAGE_EMULATOR_HOST` أو `FIREBASE_STORAGE_EMULATOR_HOST`.
-- **`DownloadURL`** يقرأ الـ metadata من Aruma ويعيد الرابط الموحّد
-  `<server>/v0/b/<bucket>/o/<الاسم مرمَّزًا>?alt=media&token=<الرمز>`.
-
-### الترخيص
-
-Apache-2.0.
-
-</div>

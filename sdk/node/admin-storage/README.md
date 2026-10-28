@@ -7,8 +7,6 @@ client, as `firebase-admin/storage` does with Google. Buckets and files are
 
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
 
-[العربية](#العربية)
-
 ## The one line
 
 ```diff
@@ -86,45 +84,3 @@ local Postgres are needed).
 ## License
 
 Apache-2.0.
-
----
-
-<div dir="rtl">
-
-## العربية
-
-مكتبة `@aruma/admin-storage` توصل خادم Node.js إلى Cloud Storage في Aruma بالعميل الرسمي
-`@google-cloud/storage`، كما يفعل `firebase-admin/storage` مع Google. الـ buckets والملفات هي
-أنواع `@google-cloud/storage` نفسها، و`getDownloadURL` يعيد رابطًا على خادم Aruma.
-
-Aruma غير تابع لـ Google ولا معتمد منها. Firebase علامة تجارية لـ Google LLC.
-
-### السطر الواحد
-
-غيّر سطر الاستيراد فقط: `getStorage` و`getDownloadURL` من `@aruma/admin-storage` بدل
-`firebase-admin/storage`. يبقى `initializeApp` و`cert` بملف المفتاح الذي أصدره Aruma كما هما، و`bucket()`
-بلا اسم هو `storageBucket` التطبيق.
-
-### الإعداد
-
-- **عنوان الخادم:** الخيار `url`، ثم `ARUMA_URL`، ثم `token_uri` في ملف المفتاح. وهو `public_url`
-  الخادم: أصل بلا مسار، `https` (و`http` على الجهاز المحلي فقط)، ولا يكون عنوان Google أبدًا.
-- **مفتاح حساب الخدمة:** الخيار `credential`، ثم مفتاح `cert()` في التطبيق، ثم
-  `GOOGLE_APPLICATION_CREDENTIALS`.
-- **كيف تصل إلى Aruma:** `apiEndpoint` أصل Aruma مع `useAuthWithCustomEndpoint`، و`universeDomain`
-  مضيف Aruma. بدونه يبدأ `save()` جلسة الرفع المتقطع ويرسل قطعها بلا اعتماد. والرمز من نقطة رموز
-  Aruma لا من Google، و`universe_domain` في ملف المفتاح لا يغيّر شيئًا. والرمز لا يُرسل إلا إلى ذلك الأصل:
-  أي طلب إلى أصل أو منفذ أو بروتوكول آخر يفشل قبل إرساله، ومنه جلسة رفع رابطها في مكان آخر، ولا
-  تُتبع إعادة توجيه.
-- **الروابط الموقّعة غير مدعومة** في v0.3: `getSignedUrl()` وسياسات الرفع الموقّعة ترمي خطأ.
-- **حارس المحاكي:** ترفض `getStorage()` البدء إن وُجد `STORAGE_EMULATOR_HOST` أو
-  `FIREBASE_STORAGE_EMULATOR_HOST`، بلا استثناء.
-- **`getDownloadURL`** من هذه الحزمة وحدها: نسخة `firebase-admin/storage` ترسل رمز Aruma إلى
-  `firebasestorage.googleapis.com`. هذه تقرأ الـ metadata من Aruma وتعيد الرابط الموحّد
-  `<server>/v0/b/<bucket>/o/<الاسم مرمَّزًا>?alt=media&token=<الرمز>`.
-
-### الترخيص
-
-Apache-2.0.
-
-</div>

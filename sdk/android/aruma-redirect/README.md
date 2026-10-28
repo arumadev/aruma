@@ -9,8 +9,6 @@ server. Add one dependency and one manifest line; no app code.
 </application>
 ```
 
-## English
-
 ### How it works
 
 The Firebase Auth SDK for Android opens its requests from the app process with `java.net.URL.openConnection()`
@@ -124,49 +122,3 @@ debuggable flag without a `Context`.
   the public class and the configuration error). No physical device yet.
 
 Run the unit tests: `./gradlew :aruma-redirect:testDebugUnitTest`.
-
-## العربية
-
-### الفكرة
-
-مكتبة Firebase Auth لـ Android ترسل طلباتها من عملية التطبيق نفسها عبر `java.net.URL.openConnection()`. وAruma يخدم مسارات Google نفسها
-تحت نطاقه (ADR-014)، فالتحويل مجرد تبديل نطاق. هذه المكتبة تثبّت `URLStreamHandlerFactory` لـ https يحوّل ثلاثة نطاقات
-(`www.googleapis.com/identitytoolkit/v3/relyingparty/*` و`securetoken.googleapis.com/*` و`identitytoolkit.googleapis.com/*`)
-إلى `<ArumaURL>/<النطاق الأصلي>/<المسار>`، ويترك كل شيء آخر لمعالج المنصة. SDK يبقى في وضع الإنتاج، دون `useAuthEmulator`.
-
-### التثبيت
-
-1. انشر المكتبة محليًا: `./gradlew :aruma-redirect:publishToMavenLocal` (من `sdk/android/aruma-redirect`).
-2. في التطبيق: أضف `mavenLocal()` إلى المستودعات، و`implementation("dev.aruma:aruma-redirect:0.1.0")` إلى `app/build.gradle`.
-   **تطبيق Flutter:** السطران نفساهما في مشروع `android/` (الاعتمادية في `android/app/build.gradle`، والمستودع في `android/build.gradle`).
-3. في `AndroidManifest.xml` داخل `<application>`:
-   `<meta-data android:name="ArumaURL" android:value="https://aruma.example.com" />`
-4. استخدم `google-services.json` الذي يولّده Aruma لتطبيق Android. لا كود إضافي، ولا `useAuthEmulator`.
-
-التثبيت تلقائي: `ContentProvider` في المكتبة (`initOrder` أعلى من FirebaseInitProvider) يقرأ `ArumaURL` قبل `Application.onCreate`.
-وبديله في الكود: `ArumaRedirect.install("https://...")` قبل أول طلب.
-
-### الإعداد والأمان
-
-- `ArumaURL` غائب أو فارغ: لا تفعل المكتبة شيئًا.
-- http مقبول دون إعداد إضافي لعناوين loopback فقط: `localhost` و`127.0.0.0/8` و`::1`، كما في مكتبتي الويب وiOS.
-  ويُقبل كذلك `10.0.2.2` (المحاكي) و`10.0.3.2` (Genymotion) في تطبيق قابل للتنقيح (`debuggable`، أي كل بناء debug)
-  فقط، لأنهما على جهاز حقيقي عنوانان خاصان عاديان. أسماء `.localhost` غير مقبولة: يحجزها RFC 6761 لـ loopback لكن
-  محلّل أندرويد لا يضمن ذلك. وغير ذلك يحتاج `ArumaAllowInsecureURL=true` للتطوير فقط (ومن الكود:
-  `install(url, BuildConfig.DEBUG, false)`). ويلزم أيضًا `networkSecurityConfig` يسمح بـ cleartext في بناء debug وحده.
-- `ArumaRedirectLog=true` يسجّل النطاق والمسار فقط، لا الاستعلام ولا الترويسات ولا الأجسام.
-- **الفشل مغلق:** `ArumaURL` غير صالح، أو `setURLStreamHandlerFactory` مستدعى من مكتبة أخرى: يتوقف التطبيق عند الإقلاع
-  برسالة واضحة بدل أن تذهب كلمة المرور إلى Google. وطلب Auth لا يمكن تحويله بأمان (منفذ غير 443، أو بيانات اعتماد في العنوان،
-  أو `..` في المسار) يُرفض بـ `IOException`.
-
-### الحدود
-
-- factory واحد لكل عملية: إن ثبّتت مكتبة أخرى factory فالمكتبة تفشل مغلقةً.
-- **Cloud Storage:** المسار الأساسي إضافة Gradle [`dev.aruma.storage`](../aruma-storage-gradle) وقت البناء، فيصير رابط التنزيل
-  على Aruma. وهذه المكتبة تحوّل `firebasestorage.googleapis.com` احتياطًا، فإن كان `ArumaStorageRedirect=false` رفضت طلباته على https وhttp (كما في iOS)، فلا يصل رابط تنزيل قديم على Google إليها: يُجاب الطلب على الجهاز بـ 403 ولا يُرسل شيء، فتفشل firebase-storage في الحال بـ `ERROR_NOT_AUTHORIZED` (و`IOException` كانت تُعاد دقائق)، وتفحص عند
-  الإقلاع `NetworkRequest.PROD_BASE_URL`: إن بقي على Google ولا تحويل، يتوقف التطبيق. و`ArumaUrls.fromArumaUrl` يحوّل أي رابط
-  تنزيل إلى `gs://` الذي يقبله `getReferenceFromUrl` في كل وضع، و`ArumaUrls.toArumaUrl` ينقل رابط Google إلى الشكل الموحّد.
-- مرتبطة بالنقل الحالي (`URL.openConnection`): لو انتقلت Firebase Auth لاحقًا إلى OkHttp أو Cronet أو gRPC فلن تُرى طلباتها
-  **وستذهب إلى Google**. ثبّت إصدار Firebase وأعد اختبار التوافق بحارس شبكة عند كل ترقية.
-- Auth فقط: Firestore (gRPC) وRealtime Database (WebSocket) لا يمرّان بهذه الطبقة. وغير مغطّى: الهاتف ودخول Google وApp Check وreCAPTCHA.
-- جُرّبت على محاكي API 33، في debug وفي release مصغّر بـ R8 (قواعد المستهلك تبقي المزوّد والصنف العام وخطأ الإعداد). لم تُجرَّب على جهاز حقيقي بعد.
