@@ -24,7 +24,7 @@ Three settings are required. Everything else has a default.
 | `ARUMA_PUBLIC_URL` | The address your SDKs reach, for example `https://aruma.example.com` |
 | `ARUMA_MASTER_KEY` | 32 random bytes in base64 (`openssl rand -base64 32`). All other keys are derived from it |
 
-Configuration is an optional YAML file (`--config` or `ARUMA_CONFIG`) with `ARUMA_*` environment variables taking precedence. The full reference is in [Configuration](/aruma/en/docs/reference/configuration/), and [`aruma.example.yaml`](https://github.com/arumadev/aruma/blob/main/aruma.example.yaml) shows every key.
+Configuration is an optional YAML file (`--config` or `ARUMA_CONFIG`) with `ARUMA_*` environment variables taking precedence. The full reference is in [Configuration](/aruma/docs/reference/configuration/), and [`aruma.example.yaml`](https://github.com/arumadev/aruma/blob/main/aruma.example.yaml) shows every key.
 
 ## Operate it
 
@@ -50,8 +50,8 @@ arumactl sa create --project chat-app backend
 arumactl sa keys create --project chat-app backend@chat-app.sa.aruma.example.com --out key.json
 ```
 
-The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`. Details are in [docs/research/experiments.md](https://github.com/arumadev/aruma/blob/main/docs/research/experiments.md).
+The official `firebase` tool works too, through `FIREBASE_API_URL`, `FIREBASE_TOKEN_URL` and `FIREBASE_TOKEN`.
 
 ## Connect your app
 
-Download the app's configuration file from the console and put it in your app in place of the Firebase one. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk). For the Realtime Database see the [guide](/aruma/docs/guides/rtdb/) (in Arabic).
+Download the app's configuration file from the console and put it in your app in place of the Firebase one. Where a platform needs it, add the one build line described in [`sdk/`](https://github.com/arumadev/aruma/tree/main/sdk). For the Realtime Database see the [guide](/aruma/docs/guides/rtdb/).

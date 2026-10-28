@@ -7,7 +7,7 @@ hero:
   tagline: A self-hosted backend that speaks the official Firebase SDKs. One Go binary and PostgreSQL, and your application code does not change.
   actions:
     - text: Get started
-      link: /aruma/en/docs/getting-started/
+      link: /aruma/docs/getting-started/
       icon: right-arrow
     - text: GitHub
       link: https://github.com/arumadev/aruma
@@ -46,7 +46,7 @@ Firebase gives you excellent client SDKs and a managed backend you can't leave. 
 
 </Steps>
 
-Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in [ADR-008](/aruma/docs/adr/adr-008-single-entry/), [ADR-015](/aruma/docs/adr/adr-015-services-layout/) and [ADR-017](/aruma/docs/adr/adr-017-postgres-rls/) (written in Arabic).
+Projects are isolated from each other, enforced by PostgreSQL row-level security and tested in CI. The design is in ADR-008, ADR-015 and ADR-017.
 
 ## Status
 
@@ -61,16 +61,16 @@ Aruma is pre-1.0 and under active development. Services land one at a time, each
 | **Firestore** | Planned | |
 | **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
 
-Every difference from Firebase is documented, with its source and classification, in the [compatibility reports](/aruma/docs/compat/auth-v01/) and the [architecture decisions](/aruma/docs/adr/). Most of these documents are written in Arabic.
+Every difference from Firebase is documented, with its source and classification, in the [compatibility reports](/aruma/docs/compat/auth-v01/).
 
 ## The console
 
 Every Aruma server ships with a console, embedded in the same binary. Create projects and apps, manage users, edit rules, browse data and files, and download the configuration files your apps need. The console is in English and Arabic (right to left).
 
 import { Image } from 'astro:assets';
-import auth from '../../../assets/console-auth.png';
-import rtdb from '../../../assets/console-rtdb.png';
-import storage from '../../../assets/console-storage.png';
+import auth from '../../assets/console-auth.png';
+import rtdb from '../../assets/console-rtdb.png';
+import storage from '../../assets/console-storage.png';
 
 <div class="shot">
   <Image src={auth} alt="Aruma console: Authentication, listing a project's users" />
@@ -91,7 +91,7 @@ make dashboard   # build the console and embed it in the binary (once)
 make dev         # create .env with a random key, then the database, migrations and the server
 ```
 
-Then open `http://localhost:8080`. The full steps are in the [quick start](/aruma/en/docs/getting-started/).
+Then open `http://localhost:8080`. The full steps are in the [quick start](/aruma/docs/getting-started/).
 
 :::note
 Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
