@@ -432,7 +432,7 @@ func TestAuthTamper(t *testing.T) {
 		code := mailboxCode(t, p, "cont@example.com")
 		// The action page never offers a way to an unauthorised address, even when the link
 		// is edited by hand (AC-A19): only the continueUrl stored with the code counts.
-		pg := e.page("GET", "/__/auth/action?mode=resetPassword&oobCode="+url.QueryEscape(code)+"&apiKey="+p.key+"&continueUrl="+url.QueryEscape("https://evil.example/x")+"&lang=ar", nil, nil)
+		pg := e.page("GET", "/__/auth/action?mode=resetPassword&oobCode="+url.QueryEscape(code)+"&apiKey="+p.key+"&continueUrl="+url.QueryEscape("https://evil.example/x")+"&lang=en", nil, nil)
 		if strings.Contains(string(pg.Body), "evil.example") {
 			t.Fatal("the action page links to an unauthorised continueUrl")
 		}

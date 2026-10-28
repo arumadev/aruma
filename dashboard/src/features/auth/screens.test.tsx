@@ -113,8 +113,18 @@ describe('UserScreen', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
     const dialog = screen.getByRole('alertdialog');
     await userEvent.click(within(dialog).getByRole('button', { name: /لغة الرسالة/ }));
-    await userEvent.click(screen.getByRole('option', { name: 'English' }));
+    await userEvent.click(screen.getByRole('option', { name: 'العربية' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
+    expect(await screen.findByText(link)).toBeInTheDocument();
+    expect(body(fetchMock, 'POST', `${BASE}/users/u-amal:sendPasswordReset`)).toEqual({ language: 'ar' });
+  });
+
+  it('sends a password reset in English unless another language is chosen', async () => {
+    const link = 'https://console.example.com/__/auth/action?mode=resetPassword&oobCode=abc&lang=en';
+    const fetchMock = routes({ [`POST ${BASE}/users/u-amal:sendPasswordReset`]: () => json(200, { link }) });
+    renderInProject(<UserScreen />, { search: 'id=chat-app&uid=u-amal' });
+    await userEvent.click(await screen.findByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
+    await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'إرسال إعادة تعيين كلمة المرور' }));
     expect(await screen.findByText(link)).toBeInTheDocument();
     expect(body(fetchMock, 'POST', `${BASE}/users/u-amal:sendPasswordReset`)).toEqual({ language: 'en' });
   });

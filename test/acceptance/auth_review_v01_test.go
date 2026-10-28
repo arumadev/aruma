@@ -185,7 +185,7 @@ func TestAuthMailCarriesNoNameToUnprovenAddresses(t *testing.T) {
 
 	// A custom template may greet by name; the name goes only to an address the account proved.
 	for _, kind := range []string{"VERIFY_EMAIL", "PASSWORD_RESET"} {
-		p.owner.mustOK(p.owner.do("PUT", "/console/v1/projects/chat-app/auth/templates/"+kind+"/ar", map[string]any{
+		p.owner.mustOK(p.owner.do("PUT", "/console/v1/projects/chat-app/auth/templates/"+kind+"/en", map[string]any{
 			"subject": "Hi %DISPLAY_NAME%", "body": `<p>Hello %DISPLAY_NAME%</p><p><a href="%LINK%">open</a></p>`,
 		}))
 	}

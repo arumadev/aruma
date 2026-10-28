@@ -272,7 +272,7 @@ export class MockAuth {
       return ok(s.templates[i]);
     }
     if (kind === 'smtp:test') {
-      if (s.smtp.devMailbox) this.deliver(s, { to: String(body.to), type: 'TEST', language: 'ar', subject: 'رسالة تجريبية من أروما', link: '' });
+      if (s.smtp.devMailbox) this.deliver(s, { to: String(body.to), type: 'TEST', language: 'en', subject: 'Test message from Aruma', link: '' });
       return ok({ devMailbox: s.smtp.devMailbox });
     }
     if (kind === 'smtp') {

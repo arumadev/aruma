@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// The four email kinds and the languages every end-user email exists in (Arabic first).
+// The four email kinds and the languages every end-user email exists in (English is the default).
 const (
 	MailVerifyEmail    = "VERIFY_EMAIL"
 	MailPasswordReset  = "PASSWORD_RESET"
 	MailChangeEmail    = "VERIFY_AND_CHANGE_EMAIL"
 	MailRecoverEmail   = "RECOVER_EMAIL"
-	defaultMailLang    = "ar"
+	defaultMailLang    = "en"
 	maxTemplateSubject = 200
 	maxTemplateBody    = 64 << 10
 )
@@ -21,7 +21,7 @@ var (
 	// MailKinds lists the template kinds in the order the console shows them.
 	MailKinds = []string{MailVerifyEmail, MailPasswordReset, MailChangeEmail, MailRecoverEmail}
 	// MailLanguages lists the template languages.
-	MailLanguages = []string{"ar", "en"}
+	MailLanguages = []string{"en", "ar"}
 )
 
 // MailTemplate is an email template. Body is HTML; the variables %LINK%, %APP_NAME%, %EMAIL%,
@@ -179,15 +179,15 @@ var defaultTemplates = map[string]map[string][2]string{
 	},
 }
 
-// mailLanguage picks ar or en from an X-Firebase-Locale value such as "en-US"; anything else
-// is the project default, Arabic.
+// mailLanguage picks ar or en from an X-Firebase-Locale value such as "ar-SA"; anything else
+// (including no locale) is English, the default.
 func mailLanguage(locale string) string {
 	tag := strings.ToLower(strings.TrimSpace(locale))
 	if i := strings.IndexAny(tag, "-_,;"); i >= 0 {
 		tag = tag[:i]
 	}
-	if tag == "en" {
-		return "en"
+	if tag == "ar" {
+		return "ar"
 	}
 	return defaultMailLang
 }
