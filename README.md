@@ -45,8 +45,8 @@ Aruma is pre-1.0 and under active development. Services land one at a time, each
 | **Platform**: projects, apps, API keys, service accounts, console, Management API | Available | Acceptance tests, project-isolation tests in CI, the `firebase` CLI works against it |
 | **Authentication** | Released in [v0.1.0](docs/compat/auth-v0.1.md) | 27/27 P0 scenarios, 180 passing official Firebase JS Auth tests, Web, iOS, Android and Node verified |
 | **Realtime Database** | Released in [v0.2.0](docs/compat/rtdb-v0.2.md), opt-in with `ARUMA_RTDB_ENABLED` | 332/332 official Firebase RTDB tests against a production-style `databaseURL` |
-| **Security Rules** and **Cloud Storage** | In development for v0.3 ([storage](docs/compat/storage-v0.3.md), [rules](docs/compat/rules-v0.3.md)) | Official Storage suites and iOS, Android and Web production paths in progress |
-| **Firestore** | Planned | |
+| **Security Rules** and **Cloud Storage** | Released in [v0.3.0](docs/releases/v0.3.0.md) ([storage](docs/compat/storage-v0.3.md), [rules](docs/compat/rules-v0.3.md)) | 145 of 153 official Storage tests, each one left a documented difference; the rules engine agrees with production and the emulator on every counted case of its oracle; production paths on Web, Android, iOS and Flutter |
+| **Document Database (Firestore-compatible)** | Release candidate [v0.4.0-rc.1](docs/releases/v0.4.0-rc.1.md), opt-in with `ARUMA_DOCUMENTS_ENABLED` ([compat](docs/compat/documents-v0.4.md)) | Replays of recordings made on production in every test, web e2e on Chromium, Firefox and WebKit, firebase-tools and the Admin SDKs; the official Android and iOS suites are not run yet |
 | **Cloud Messaging, App Check, Remote Config, Functions** | Planned, after the core services | |
 
 Every difference from Firebase is documented, with its source and classification, in the compatibility reports under [`docs/compat`](docs/compat) and the [architecture decisions](docs/adr).
