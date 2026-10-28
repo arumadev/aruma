@@ -89,7 +89,7 @@ export function UsageScreen() {
                   {section.counters.map((c) => (
                     <div key={c} className={styles.stat}>
                       <dt>{t(`counter.${c}`)}</dt>
-                      <dd data-counter={c}>{format.number(report.totals[c])}</dd>
+                      <dd data-counter={c} data-value={report.totals[c]}>{format.number(report.totals[c])}</dd>
                     </div>
                   ))}
                 </dl>

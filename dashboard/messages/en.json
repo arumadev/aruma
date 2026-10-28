@@ -1181,8 +1181,9 @@
           "object": "Enter a JSON object, not a list or a single value"
         },
         "run": "Run",
-        "allowed": "Simulated {method, select, read {read} create {create} update {update} other {delete}} allowed",
-        "denied": "Simulated {method, select, read {read} create {create} update {update} other {delete}} denied",
+        "noun": { "read": "read", "create": "create", "update": "update", "delete": "delete" },
+        "allowed": "Simulated {method} allowed",
+        "denied": "Simulated {method} denied",
         "outdated": "(viewing outdated simulation)",
         "dismiss": "Dismiss",
         "failed": "The simulation could not run",

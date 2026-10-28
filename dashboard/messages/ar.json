@@ -1181,8 +1181,9 @@
           "object": "أدخل كائن JSON، لا قائمة ولا قيمة مفردة"
         },
         "run": "تشغيل",
-        "allowed": "محاكاة {method, select, read {القراءة} create {الإنشاء} update {التحديث} other {الحذف}}: مسموح",
-        "denied": "محاكاة {method, select, read {القراءة} create {الإنشاء} update {التحديث} other {الحذف}}: مرفوض",
+        "noun": { "read": "القراءة", "create": "الإنشاء", "update": "التحديث", "delete": "الحذف" },
+        "allowed": "محاكاة {method}: مسموح",
+        "denied": "محاكاة {method}: مرفوض",
         "outdated": "(تعرض محاكاة قديمة)",
         "dismiss": "إغلاق",
         "failed": "تعذّر تشغيل المحاكاة",
@@ -1190,9 +1191,9 @@
         "noStatements": "لم تطابق أي عبارة allow هذا المسار، فالطلب مرفوض.",
         "statement": "السطر {line}، العمود {column}:",
         "outcome": {
-          "true": "صحيح",
-          "false": "خطأ",
-          "error": "عطل"
+          "true": "تحقق الشرط",
+          "false": "لم يتحقق الشرط",
+          "error": "تعذّر تقييم الشرط"
         }
       }
     },

@@ -92,7 +92,7 @@ export function SimulationBanner({ pg }: { pg: PlaygroundState }) {
     );
   }
   const result = run.result!;
-  const noun = methodNoun(pg.method);
+  const noun = t(`noun.${methodNoun(pg.method)}`);
   return (
     <div className={styles.result} data-allowed={result.allowed} data-testid="simulation">
       <p className={styles.verdict} role="status">
