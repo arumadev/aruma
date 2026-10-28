@@ -1,0 +1,282 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pathBar {
+  display: flex;
+  flex: 1 1 280px;
+  gap: var(--space-1);
+  align-items: center;
+  min-inline-size: 0;
+}
+
+.pathForm {
+  display: flex;
+  flex: 1 1 280px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.pathForm > button {
+  margin-block-start: var(--space-2);
+}
+
+.pathInput {
+  flex: 1 1 240px;
+}
+
+.crumbs {
+  min-inline-size: 0;
+}
+
+/* Document paths read left to right in both languages, like the ids in them. */
+.crumbList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  direction: ltr;
+  font: var(--md-sys-typescale-title-small);
+}
+
+.crumbList > li {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.crumb[data-hovered] {
+  text-decoration: underline;
+}
+
+.crumb[data-focus-visible],
+.item[data-focus-visible] {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.current {
+  display: inline-flex;
+  align-items: center;
+  color: var(--md-sys-color-on-surface);
+}
+
+.separator {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface);
+}
+
+.panel {
+  min-inline-size: 0;
+  min-block-size: 360px;
+  padding: var(--space-3);
+  border-inline-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.panel:first-child {
+  border-inline-start: none;
+}
+
+@media (width < 900px) {
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel {
+    min-block-size: 0;
+    border-block-start: 1px solid var(--md-sys-color-outline-variant);
+    border-inline-start: none;
+  }
+
+  .panel:first-child {
+    border-block-start: none;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.column > button {
+  align-self: flex-start;
+}
+
+.header {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-block-size: 40px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-title-small);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-radius: var(--md-sys-shape-corner-small);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-medium);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  outline: none;
+  cursor: pointer;
+}
+
+.item[data-hovered] {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.item[aria-current='page'] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 500;
+}
+
+.missing {
+  font-style: italic;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.rule {
+  inline-size: 100%;
+  margin: var(--space-1) 0;
+  border: none;
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nested {
+  margin-inline-start: 19px;
+  padding-inline-start: var(--space-2);
+  border-inline-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.fieldRow {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-block-size: 40px;
+}
+
+.spacer {
+  flex: none;
+  inline-size: 40px;
+}
+
+.open svg {
+  rotate: 90deg;
+}
+
+/* The chevron is mirrored right to left first, so it turns the other way to point down. */
+.open svg:dir(rtl) {
+  rotate: -90deg;
+}
+
+.fieldText {
+  flex: 1;
+  min-inline-size: 0;
+  font: var(--md-sys-typescale-body-medium);
+  overflow-wrap: anywhere;
+}
+
+.fieldName {
+  color: var(--md-sys-color-on-surface);
+}
+
+.fieldValue {
+  color: var(--md-sys-color-primary);
+}
+
+.fieldType {
+  color: var(--md-sys-color-on-surface-variant);
+  unicode-bidi: isolate;
+}
+
+/* The field's buttons show on hover and keyboard focus, as the Firebase console's do. */
+.fieldActions {
+  display: inline-flex;
+  flex: none;
+  opacity: 0;
+}
+
+.fieldRow:hover .fieldActions,
+.fieldRow:focus-within .fieldActions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .fieldActions {
+    opacity: 1;
+  }
+}

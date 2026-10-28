@@ -6,7 +6,7 @@ export interface NavItem {
   href: string;
   icon: IconName;
   /** Key in the "nav" message namespace. */
-  label: 'projects' | 'overview' | 'auth' | 'database' | 'storage' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
+  label: 'projects' | 'overview' | 'auth' | 'documents' | 'database' | 'storage' | 'keys' | 'serviceAccounts' | 'audit' | 'settings' | 'account' | 'limits';
   /** Pathnames that highlight this item. */
   paths: string[];
   /** Key in the "nav" message namespace of the heading this item is listed under. */
@@ -51,6 +51,14 @@ export function navItems(projectId: string | null): NavItem[] {
       icon: 'shield',
       label: 'auth',
       paths: AUTH_PATHS,
+      group: 'groupBuild',
+    },
+    {
+      id: 'documents',
+      href: routes.documents(projectId),
+      icon: 'description',
+      label: 'documents',
+      paths: ['/project/documents/', '/project/documents/rules/', '/project/documents/indexes/', '/project/documents/usage/'],
       group: 'groupBuild',
     },
     {
