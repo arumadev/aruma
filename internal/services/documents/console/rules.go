@@ -21,6 +21,7 @@ func (h *handlers) rulesRoutes() {
 	h.handle("GET", path, h.getRules)
 	h.handle("PUT", path, h.putRules)
 	h.handle("POST", path+":validate", h.validateRules)
+	h.handle("POST", path+":simulate", h.simulateRules)
 	h.handle("GET", base+"/rulesets", h.listRulesets)
 	h.handle("GET", base+"/rulesets/{ruleset}", h.getRuleset)
 }

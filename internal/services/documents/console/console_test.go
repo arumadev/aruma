@@ -270,6 +270,7 @@ var routes = []struct {
 	{"GET", "/rules", nil},
 	{"PUT", "/rules", map[string]any{"source": ""}},
 	{"POST", "/rules:validate", map[string]any{"source": ""}},
+	{"POST", "/rules:simulate", map[string]any{"method": "get", "path": "users/u1"}},
 	{"GET", "/rulesets", nil},
 	{"GET", "/rulesets/00000000-0000-0000-0000-000000000000", nil},
 	{"GET", "/indexes", nil},
