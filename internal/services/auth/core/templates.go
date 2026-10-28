@@ -113,7 +113,7 @@ func validTemplate(subject, body string) error {
 	return nil
 }
 
-// defaultTemplate returns Aruma's built-in template. The texts are Aruma's own (research §7):
+// defaultTemplate returns Aruma's built-in template. The texts are Aruma's own:
 // a greeting, the action in one sentence, the link, what to do if the mail was unexpected,
 // and a sign-off from the app. The greeting has no display name: the name is whatever the
 // account holder typed, and these mails reach addresses nobody has proven yet.

@@ -47,7 +47,7 @@ func (a *API) sendOobCode(w http.ResponseWriter, r *http.Request, p core.Project
 		return
 	}
 	if req.ReturnOobLink {
-		// Only the Admin API may receive the link instead of the user (research §3.7).
+		// Only the Admin API may receive the link instead of the user.
 		a.writeError(w, r, errInsufficientPermission)
 		return
 	}

@@ -18,7 +18,7 @@ const (
 )
 
 // clientRoutes registers the client calls under their v1 names and their v3 aliases: one
-// implementation behind both, as the emulator does (research §4).
+// implementation behind both, as the emulator does.
 func (a *API) clientRoutes(r *httpx.Router) {
 	calls := []struct {
 		v1, v3 string
@@ -355,7 +355,7 @@ func (a *API) recaptchaConfig(w http.ResponseWriter, r *http.Request, p core.Pro
 }
 
 // token is the Secure Token grant. access_token is the ID token, as iOS needs it non-empty;
-// project_id is the project number (research §3.14).
+// project_id is the project number.
 func (a *API) token(w http.ResponseWriter, r *http.Request, p core.Project) {
 	var req struct {
 		GrantType    string `json:"grantType"`

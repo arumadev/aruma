@@ -148,7 +148,7 @@ var errTables = map[string][]errRow{
 		{name: "unknown email", path: itk + "accounts:signInWithPassword", body: obj(map[string]any{"email": "nobody@example.com", "password": "secret1"}), on: "INVALID_LOGIN_CREDENTIALS", off: "EMAIL_NOT_FOUND"},
 		{name: "wrong password", path: itk + "accounts:signInWithPassword", body: obj(map[string]any{"email": "taken@example.com", "password": "wrong!!"}), on: "INVALID_LOGIN_CREDENTIALS", off: "INVALID_PASSWORD"},
 		// The emulator says USER_DISABLED before the password check; Aruma does not reveal the
-		// account's state to someone without the password (research §3.2).
+		// account's state to someone without the password.
 		{name: "disabled account, wrong password: the password wins", path: itk + "accounts:signInWithPassword", body: obj(map[string]any{"email": "off@example.com", "password": "wrong!!"}), on: "INVALID_LOGIN_CREDENTIALS", off: "INVALID_PASSWORD"},
 		{name: "disabled account, right password", path: itk + "accounts:signInWithPassword", body: obj(map[string]any{"email": "off@example.com", "password": "secret1"}), on: "USER_DISABLED", off: "USER_DISABLED"},
 	},

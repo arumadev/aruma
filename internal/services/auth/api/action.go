@@ -13,7 +13,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
-// The action page, /__/auth/action, is where the links in Auth emails land (research §6). It
+// The action page, /__/auth/action, is where the links in Auth emails land. It
 // is rendered on the server with no script at all, in English, with Aruma's name. Opening a link never changes anything by
 // itself: the page asks for a click (or the new password), so mail scanners that prefetch
 // links cannot use the code. The form posts back here with a token bound to the code, behind

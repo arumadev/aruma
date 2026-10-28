@@ -20,13 +20,13 @@ import (
 	tcore "github.com/arumadev/aruma/internal/tenancy/core"
 )
 
-// Email action codes (research §3.5, §3.7, §3.8, §6). A code is 256 random bits that exists
+// Email action codes. A code is 256 random bits that exists
 // only in its link; the database keeps its HMAC. It is used once and expires.
 
-// ActionPath is the action page every link opens (research §6).
+// ActionPath is the action page every link opens.
 const ActionPath = "/__/auth/action"
 
-// oobLifetimes: Firebase documents none (research §6). The reset link grants a credential, so
+// oobLifetimes: Firebase documents none. The reset link grants a credential, so
 // it lives an hour; links that prove or restore an address live three days, the figure
 // commonly reported for verification. Recovery shares it: long enough for the previous owner
 // to notice the change, short enough to close the window for whoever holds the old mailbox.
@@ -40,7 +40,7 @@ var oobLifetimes = map[string]time.Duration{
 // EmailCodeLifetimes returns how long the code of each email kind stays valid, for display.
 func EmailCodeLifetimes() map[string]time.Duration { return maps.Clone(oobLifetimes) }
 
-// oobModes maps a request type to the link's mode (research §6).
+// oobModes maps a request type to the link's mode.
 var oobModes = map[string]string{
 	MailPasswordReset: "resetPassword",
 	MailVerifyEmail:   "verifyEmail",
@@ -430,8 +430,8 @@ func (s *Service) CheckActionCode(ctx context.Context, p Project, code string) (
 }
 
 // ResetPassword uses a PASSWORD_RESET code to set a new password. Opening the link proves the
-// mailbox, so the email becomes verified (as the emulator does; research §9.9); every session
-// of the user is revoked (research §3.8).
+// mailbox, so the email becomes verified (as the emulator does); every session
+// of the user is revoked.
 func (s *Service) ResetPassword(ctx context.Context, p Project, code, newPassword string) (ActionCodeInfo, error) {
 	row, err := s.lookupCode(ctx, p, code)
 	if err != nil {

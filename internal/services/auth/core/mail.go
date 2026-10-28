@@ -26,7 +26,7 @@ import (
 // the code its link carries, sealed, and a worker delivers it over the project's SMTP server
 // with retries. In dev mailbox mode it is kept for the console instead and never sent.
 
-// Flood limits on Auth email (research §3.7 and Firebase's sending quotas, docs/auth/limits).
+// Flood limits on Auth email (Firebase's sending quotas, docs/auth/limits).
 // Firebase publishes daily quotas per project only; Aruma adds a per-recipient bucket so one
 // address cannot be flooded, and a per-address bucket in the API layer.
 const (
