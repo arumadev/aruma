@@ -14,8 +14,7 @@ import (
 )
 
 // The action page, /__/auth/action, is where the links in Auth emails land (research §6). It
-// is rendered on the server with no script at all: Arabic and right-to-left unless lang=en,
-// Aruma's name and a line saying it is not Google's. Opening a link never changes anything by
+// is rendered on the server with no script at all, in English, with Aruma's name. Opening a link never changes anything by
 // itself: the page asks for a click (or the new password), so mail scanners that prefetch
 // links cannot use the code. The form posts back here with a token bound to the code, behind
 // a cross-origin check. "Continue" only ever leads to the URL stored with the code, re-checked
@@ -64,76 +63,40 @@ var actionTemplate = template.Must(template.New("action").Parse(`<!doctype html>
 </form>{{end}}
 {{if .Continue}}<a class="continue" href="{{.Continue}}" rel="noopener noreferrer">{{.T.continue}}</a>{{end}}
 </main>
-<footer>{{.T.disclaimer}}</footer>
 </body>
 </html>
 `))
 
-var actionText = map[string]map[string]string{
-	"ar": {
-		"brand":           "أروما",
-		"disclaimer":      "أروما غير تابع لشركة Google ولا لـ Firebase، ولا معتمد منهما.",
-		"title":           "إجراء على الحساب",
-		"resetTitle":      "اختر كلمة مرور جديدة",
-		"resetPrompt":     "كلمة مرور جديدة للحساب %s.",
-		"newPassword":     "كلمة المرور الجديدة",
-		"confirmPassword": "أعد كتابة كلمة المرور",
-		"resetButton":     "حفظ كلمة المرور",
-		"resetDone":       "تغيّرت كلمة المرور، فسجّل الدخول بها الآن.",
-		"verifyTitle":     "تأكيد البريد الإلكتروني",
-		"verifyPrompt":    "أكّد أن العنوان %s يخصّك.",
-		"verifyButton":    "تأكيد",
-		"verifyDone":      "تأكّد بريدك الإلكتروني.",
-		"changeTitle":     "تغيير بريد الحساب",
-		"changePrompt":    "سيصبح بريد حسابك %s.",
-		"changeButton":    "تأكيد التغيير",
-		"changeDone":      "أصبح بريد حسابك %s. سجّل الدخول من جديد.",
-		"recoverTitle":    "استعادة بريد الحساب",
-		"recoverPrompt":   "سيعود بريد حسابك إلى %s.",
-		"recoverButton":   "استعادة البريد",
-		"recoverDone":     "عاد بريد حسابك إلى %s. ننصحك بتغيير كلمة المرور الآن.",
-		"invalid":         "هذا الرابط غير صالح أو استُخدم من قبل. اطلب رابطًا جديدًا.",
-		"expired":         "انتهت صلاحية هذا الرابط. اطلب رابطًا جديدًا.",
-		"disabled":        "هذا الحساب معطّل.",
-		"emailExists":     "هذا العنوان مستخدم في حساب آخر.",
-		"mismatch":        "كلمتا المرور غير متطابقتين.",
-		"weak":            "كلمة المرور قصيرة أو لا تحقق شروط المشروع.",
-		"tooMany":         "محاولات كثيرة. أعد المحاولة بعد قليل.",
-		"failed":          "تعذّر إتمام الطلب. أعد المحاولة.",
-		"continue":        "متابعة",
-	},
-	"en": {
-		"brand":           "Aruma",
-		"disclaimer":      "Aruma is not affiliated with or endorsed by Google or Firebase.",
-		"title":           "Account action",
-		"resetTitle":      "Choose a new password",
-		"resetPrompt":     "A new password for %s.",
-		"newPassword":     "New password",
-		"confirmPassword": "Type the password again",
-		"resetButton":     "Save password",
-		"resetDone":       "Your password has changed. Sign in with it now.",
-		"verifyTitle":     "Confirm your email",
-		"verifyPrompt":    "Confirm that %s is yours.",
-		"verifyButton":    "Confirm",
-		"verifyDone":      "Your email is confirmed.",
-		"changeTitle":     "Change your account email",
-		"changePrompt":    "Your account email will become %s.",
-		"changeButton":    "Confirm the change",
-		"changeDone":      "Your account email is now %s. Sign in again.",
-		"recoverTitle":    "Restore your account email",
-		"recoverPrompt":   "Your account email will go back to %s.",
-		"recoverButton":   "Restore email",
-		"recoverDone":     "Your account email is %s again. We recommend changing your password now.",
-		"invalid":         "This link is invalid or has already been used. Ask for a new one.",
-		"expired":         "This link has expired. Ask for a new one.",
-		"disabled":        "This account is disabled.",
-		"emailExists":     "This address is used by another account.",
-		"mismatch":        "The passwords do not match.",
-		"weak":            "The password is too short or does not meet the project's requirements.",
-		"tooMany":         "Too many attempts. Try again shortly.",
-		"failed":          "The request could not be completed. Try again.",
-		"continue":        "Continue",
-	},
+var actionText = map[string]string{
+	"brand":           "Aruma",
+	"title":           "Account action",
+	"resetTitle":      "Choose a new password",
+	"resetPrompt":     "A new password for %s.",
+	"newPassword":     "New password",
+	"confirmPassword": "Type the password again",
+	"resetButton":     "Save password",
+	"resetDone":       "Your password has changed. Sign in with it now.",
+	"verifyTitle":     "Confirm your email",
+	"verifyPrompt":    "Confirm that %s is yours.",
+	"verifyButton":    "Confirm",
+	"verifyDone":      "Your email is confirmed.",
+	"changeTitle":     "Change your account email",
+	"changePrompt":    "Your account email will become %s.",
+	"changeButton":    "Confirm the change",
+	"changeDone":      "Your account email is now %s. Sign in again.",
+	"recoverTitle":    "Restore your account email",
+	"recoverPrompt":   "Your account email will go back to %s.",
+	"recoverButton":   "Restore email",
+	"recoverDone":     "Your account email is %s again. We recommend changing your password now.",
+	"invalid":         "This link is invalid or has already been used. Ask for a new one.",
+	"expired":         "This link has expired. Ask for a new one.",
+	"disabled":        "This account is disabled.",
+	"emailExists":     "This address is used by another account.",
+	"mismatch":        "The passwords do not match.",
+	"weak":            "The password is too short or does not meet the project's requirements.",
+	"tooMany":         "Too many attempts. Try again shortly.",
+	"failed":          "The request could not be completed. Try again.",
+	"continue":        "Continue",
 }
 
 // actionModes maps a link's mode to the request type its code must have, and the text keys.
@@ -165,14 +128,8 @@ type actionRequest struct {
 	mode, code, key, lang string
 }
 
-func newActionView(lang string) *actionView {
-	v := &actionView{Lang: "ar", Dir: "rtl"}
-	if strings.HasPrefix(strings.ToLower(lang), "en") {
-		v.Lang, v.Dir = "en", "ltr"
-	}
-	v.T = actionText[v.Lang]
-	v.Title = v.T["title"]
-	return v
+func newActionView() *actionView {
+	return &actionView{Lang: "en", Dir: "ltr", T: actionText, Title: actionText["title"]}
 }
 
 func (v *actionView) text(key, arg string) string {
@@ -198,7 +155,7 @@ func writeActionPage(w http.ResponseWriter, status int, v *actionView) {
 func actionFormProtection(h http.Handler) http.Handler {
 	cop := http.NewCrossOriginProtection()
 	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := newActionView(r.FormValue("lang"))
+		v := newActionView()
 		v.Error = v.T["failed"]
 		writeActionPage(w, http.StatusForbidden, v)
 	}))
@@ -208,7 +165,7 @@ func actionFormProtection(h http.Handler) http.Handler {
 // begin resolves the project of the link's API key and checks the code against the mode. The
 // code must belong to that project: a key of another project makes it unknown.
 func (a *API) begin(w http.ResponseWriter, r *http.Request, req actionRequest) (*actionView, core.Project, core.ActionCodeInfo, bool) {
-	v := newActionView(req.lang)
+	v := newActionView()
 	if ok, _ := a.ipLimit.Allow(ratelimit.AddrKey(httpx.ClientAddr(r.Context()))); !ok {
 		v.Error = v.T["tooMany"]
 		writeActionPage(w, http.StatusTooManyRequests, v)
@@ -298,7 +255,7 @@ func (a *API) actionPage(w http.ResponseWriter, r *http.Request) {
 func (a *API) actionSubmit(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		v := newActionView("")
+		v := newActionView()
 		v.Error = v.T["failed"]
 		writeActionPage(w, http.StatusBadRequest, v)
 		return
@@ -306,7 +263,7 @@ func (a *API) actionSubmit(w http.ResponseWriter, r *http.Request) {
 	f := r.PostForm
 	req := actionRequest{mode: f.Get("mode"), code: f.Get("oobCode"), key: f.Get("apiKey"), lang: f.Get("lang")}
 	if !a.svc.CheckActionFormToken(req.code, f.Get("token")) {
-		v := newActionView(req.lang)
+		v := newActionView()
 		v.Error = v.T["failed"]
 		writeActionPage(w, http.StatusForbidden, v)
 		return
@@ -332,7 +289,7 @@ func (a *API) actionSubmit(w http.ResponseWriter, r *http.Request) {
 		var e *core.Error
 		if errors.As(err, &e) && (e.Code == "WEAK_PASSWORD" || e.Code == core.ErrPasswordRequirements.Code) {
 			v.Message, v.Error, v.Form = v.text(key+"Prompt", subject(info)), v.T["weak"], a.form(req, v, info)
-			if v.Lang == "en" && e.Detail != "" {
+			if e.Detail != "" {
 				v.Error += " " + e.Detail + "."
 			}
 			writeActionPage(w, http.StatusBadRequest, v)
@@ -340,7 +297,7 @@ func (a *API) actionSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		var done core.ActionCodeInfo
-		if done, _, err = a.svc.ApplyActionCode(r.Context(), p, req.code, v.Lang, req.key); err == nil {
+		if done, _, err = a.svc.ApplyActionCode(r.Context(), p, req.code, req.lang, req.key); err == nil {
 			info = done
 		}
 	}
