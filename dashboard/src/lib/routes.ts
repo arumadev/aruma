@@ -32,4 +32,9 @@ export const routes = {
   storageRules: (id: string) => withQuery('/project/storage/rules/', { id }),
   storageUsage: (id: string) => withQuery('/project/storage/usage/', { id }),
   storageCors: (id: string) => withQuery('/project/storage/cors/', { id }),
+  /** The data browser at a path below the documents root: "" (the root), a collection or a document. */
+  documents: (id: string, path = '') => withQuery('/project/documents/', path ? { id, path } : { id }),
+  documentsRules: (id: string) => withQuery('/project/documents/rules/', { id }),
+  documentsIndexes: (id: string) => withQuery('/project/documents/indexes/', { id }),
+  documentsUsage: (id: string) => withQuery('/project/documents/usage/', { id }),
 } as const;

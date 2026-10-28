@@ -86,10 +86,16 @@ export function OverviewScreen() {
       <Card title={t('services')} description={t('servicesHint')}>
         <ul className={styles.services}>
           {SERVICES.map((service) =>
-            service.id === 'auth' || service.id === 'database' ? (
+            service.id === 'auth' || service.id === 'firestore' || service.id === 'database' ? (
               <li key={service.id}>
                 <Link
-                  href={service.id === 'auth' ? routes.authUsers(project.projectId) : routes.database(project.projectId)}
+                  href={
+                    service.id === 'auth'
+                      ? routes.authUsers(project.projectId)
+                      : service.id === 'firestore'
+                        ? routes.documents(project.projectId)
+                        : routes.database(project.projectId)
+                  }
                   className={`${styles.service} ${styles.available}`}
                 >
                   <Icon name={service.icon} />
