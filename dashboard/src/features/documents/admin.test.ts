@@ -172,6 +172,9 @@ describe('index helpers', () => {
     expect(isExemption(field)).toBe(true);
     expect(isExemption({ ...field, name: 'projects/p/databases/(default)/collectionGroups/__default__/fields/__default__' })).toBe(false);
     expect(isExemption({ name: field.name, indexConfig: { usesAncestorConfig: true } })).toBe(false);
+    // The server omits a false usesAncestorConfig.
+    expect(isExemption({ name: field.name, indexConfig: { indexes: field.indexConfig!.indexes } })).toBe(true);
+    expect(isExemption({ name: field.name, ttlConfig: { state: 'ACTIVE' } })).toBe(false);
   });
 
   it('takes the automatic settings from the default override, or a new database’s', () => {

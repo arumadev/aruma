@@ -159,8 +159,12 @@ export function exemptionForm(field: Field): ExemptionForm {
 
 export const newExemptionForm = (): ExemptionForm => ({ collection: '', field: '', scopes: { COLLECTION: true, COLLECTION_GROUP: false }, kinds: { ...ALL_KINDS } });
 
-/** Whether a field is a single-field exemption to list: its own indexes, and not the database default. */
-export const isExemption = (f: Field) => f.indexConfig?.usesAncestorConfig === false && !isDefaultField(f);
+/**
+ * Whether a field is a single-field exemption to list: its own indexes, and not the database
+ * default. The server leaves out usesAncestorConfig when it is false (as protobuf JSON does), so
+ * only an explicit true means the field follows its ancestor.
+ */
+export const isExemption = (f: Field) => f.indexConfig !== undefined && f.indexConfig.usesAncestorConfig !== true && !isDefaultField(f);
 
 /** The TTL policies: fields with a ttlConfig. */
 export const hasTtl = (f: Field) => Boolean(f.ttlConfig);

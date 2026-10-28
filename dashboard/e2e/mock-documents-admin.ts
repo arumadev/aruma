@@ -168,7 +168,7 @@ export class MockDocumentsAdmin {
       const field = q.get('field')!;
       const name = `${DB}/collectionGroups/${group}/fields/${field}`;
       this.fields = this.fields.filter((f) => f.name !== name);
-      if (method === 'PUT') this.fields.push({ name, indexConfig: { usesAncestorConfig: false, indexes: body.indexConfig!.indexes } });
+      if (method === 'PUT') this.fields.push({ name, indexConfig: { indexes: body.indexConfig!.indexes } });
       return ok({ name: `${DB}/operations/op${++this.counter}`, done: true });
     }
     if (route === 'GET /ttl') return ok({ fields: this.ttl });
