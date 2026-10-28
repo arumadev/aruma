@@ -1107,7 +1107,7 @@
         "reference": "Must be a document path, such as users/alice"
       },
       "deleteFieldTitle": "Delete Data",
-      "deleteFieldBanner": "This will delete the data at '{field}' from the document",
+      "deleteFieldBanner": "This will delete the data at ''{field}'' from the document",
       "documentLocation": "Document Location",
       "fieldPath": "Field Path",
       "shiftHint": "To delete fields without confirmation, shift-click when selecting delete for a document",

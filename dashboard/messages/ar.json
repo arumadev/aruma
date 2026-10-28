@@ -1107,7 +1107,7 @@
         "reference": "مسار مستند، مثل users/alice"
       },
       "deleteFieldTitle": "حذف البيانات",
-      "deleteFieldBanner": "سيحذف هذا البيانات في '{field}' من المستند",
+      "deleteFieldBanner": "سيحذف هذا البيانات في ''{field}'' من المستند",
       "documentLocation": "موقع المستند",
       "fieldPath": "مسار الحقل",
       "shiftHint": "لحذف الحقول دون تأكيد، اضغط Shift مع النقر على الحذف",
