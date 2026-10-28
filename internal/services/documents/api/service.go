@@ -100,6 +100,10 @@ type Call struct {
 	// RequestParams is x-goog-request-params, as sent: a Listen stream's database must be the
 	// one it names, when google-cloud-resource-prefix does not.
 	RequestParams string
+	// Caller is a caller its transport has authenticated already, in place of Authorization:
+	// the dashboard's account, an admin of the projects it owns (ADR-030). It is still admitted
+	// to the request's project, as an aruma_pat_ caller is.
+	Caller *authn.Caller
 }
 
 // ListenHub is what the Listen streams subscribe to: a *listen.Hub, or what stands for the hub
@@ -151,9 +155,12 @@ func (s *Service) admit(ctx context.Context, c Call, req proto.Message, primary 
 // (wire.ErrAdminUnauthenticated without a credential, wire.ErrAdminPermissionDenied for an end
 // user).
 func (s *Service) admitAs(ctx context.Context, c Call, req proto.Message, primary func() (wire.Database, error), adminOnly bool) (admitted, error) {
-	caller, err := s.o.Auth.Resolve(ctx, c.Authorization, c.Transport)
-	if err != nil {
-		return admitted{}, s.fail(ctx, err)
+	caller := c.Caller
+	if caller == nil {
+		var err error
+		if caller, err = s.o.Auth.Resolve(ctx, c.Authorization, c.Transport); err != nil {
+			return admitted{}, s.fail(ctx, err)
+		}
 	}
 	if adminOnly && caller.Role != authn.RoleAdmin {
 		if caller.Role == authn.RoleAnonymous {
