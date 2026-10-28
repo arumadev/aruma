@@ -37,6 +37,17 @@ const ORDER = {
   'reference/console-api.md': 4,
 };
 
+// Short sidebar labels; the page keeps its full title.
+const LABEL = {
+  'guides/auth-web.md': 'Auth on the web', 'guides/auth-admin.md': 'Auth on your server',
+  'guides/realtime-database.md': 'Realtime Database', 'guides/storage.md': 'Cloud Storage',
+  'guides/security-rules.md': 'Security rules', 'guides/firestore.md': 'Firestore',
+  'guides/firestore-migration.md': 'Moving from Firestore', 'guides/mobile-apps.md': 'Mobile apps',
+  'guides/operations.md': 'Operations', 'reference/console-api.md': 'Console API',
+  'reference/known-differences.md': 'Known differences', 'getting-started.md': 'Getting started',
+  'sdks.md': 'SDK packages',
+};
+
 const posix = (p) => p.split(path.sep).join('/');
 
 // 1. Collect the files.
@@ -105,16 +116,17 @@ const plain = (s) => s
   .replace(/`([^`]*)`/g, '$1').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
   .replace(/[*_>#]/g, '').replace(/\s+/g, ' ').trim();
 
-function describe(body) {
-  for (const block of body.split(/\n\s*\n/)) {
-    const t = block.trim();
-    if (!t || /^(#|\||```|-|\d+\.|>|<)/.test(t)) continue;
-    const text = plain(t);
-    if (text.length < 20) continue;
-    return text.length > 180 ? text.slice(0, 177).replace(/\s+\S*$/, '') + '...' : text;
-  }
-  return undefined;
+// The page's first block, when it is a plain paragraph: its text and where it ends.
+function leadParagraph(body) {
+  const m = body.match(/^\s*([^\n][\s\S]*?)(\n\s*\n|$)/);
+  if (!m) return undefined;
+  const t = m[1].trim();
+  if (/^(#|\||```|-|\*|\d+\.|>|<|:::|import )/.test(t)) return undefined;
+  const text = plain(t);
+  if (text.length < 20) return undefined;
+  return { text, end: m[0].length };
 }
+
 
 // 3. Write the generated files (start clean so renamed or removed docs do not linger).
 for (const d of ['docs/compat', 'docs/guides', 'docs/security', 'docs/reference']) {
@@ -134,10 +146,19 @@ for (const e of entries.values()) {
     '---',
     `title: ${JSON.stringify(title)}`,
   ];
-  const desc = describe(body);
-  if (desc) fm.push(`description: ${JSON.stringify(desc)}`);
+  // The theme shows the description as the page's lead under the title. When the page opens with
+  // a paragraph, that paragraph becomes the lead and leaves the body, so it is not shown twice.
+  const lead = leadParagraph(body);
+  if (lead) {
+    body = body.slice(lead.end).replace(/^\s+/, '');
+    fm.push(`description: ${JSON.stringify(lead.text)}`);
+  }
   fm.push(`editUrl: ${GH}/edit/main/docs/${e.rel}`);
-  if (ORDER[e.rel]) fm.push('sidebar:', `  order: ${ORDER[e.rel]}`);
+  if (ORDER[e.rel] || LABEL[e.rel]) {
+    fm.push('sidebar:');
+    if (LABEL[e.rel]) fm.push(`  label: ${JSON.stringify(LABEL[e.rel])}`);
+    if (ORDER[e.rel]) fm.push(`  order: ${ORDER[e.rel]}`);
+  }
   fm.push('---', '');
   const dest = path.join(outDir, e.slug + '.md');
   await fs.mkdir(path.dirname(dest), { recursive: true });

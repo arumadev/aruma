@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import lucode from 'lucode-starlight';
 
 // Served from GitHub Pages at https://arumadev.github.io/aruma/ until a custom domain exists.
 // With a domain: set SITE_URL to it and SITE_BASE to an empty string (and add public/CNAME).
@@ -18,6 +19,17 @@ export default defineConfig({
       logo: { src: './src/assets/logo.svg', alt: 'Aruma' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/arumadev/aruma' }],
+      plugins: [
+        lucode({
+          navLinks: [
+            { label: 'Docs', link: `${base}/docs/getting-started/` },
+            { label: 'Guides', link: `${base}/docs/guides/auth-web/` },
+            { label: 'Reference', link: `${base}/docs/reference/compatibility/` },
+            { label: 'Changelog', link: `${base}/docs/changelog/` },
+          ],
+          footerText: 'Aruma is open source under Apache 2.0. Firebase is a trademark of Google LLC.',
+        }),
+      ],
       customCss: ['./src/styles/brand.css'],
       lastUpdated: false,
       head: [

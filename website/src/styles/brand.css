@@ -1,43 +1,25 @@
-/* Aruma brand: blue #1446D8 and teal #0FD8C6 (the two halves of the leaf mark). */
-:root {
-  --sl-color-accent-low: #0a1f66;
-  --sl-color-accent: #4d7bf3;
-  --sl-color-accent-high: #b4c8fb;
-}
+/* Aruma on the Lucode theme: the theme's neutral surfaces, with Aruma blue for actions, links
+   and focus, as in the dashboard (light #1446D8, dark #86A6FF). */
 :root[data-theme='light'] {
-  --sl-color-accent-low: #d3defb;
-  --sl-color-accent: #1446d8;
-  --sl-color-accent-high: #0c2f95;
+  --primary: #1446d8;
+  --primary-foreground: #fff;
+  --ring: #1446d8;
+  --sl-color-text-accent: #1446d8;
+}
+:root[data-theme='dark'] {
+  --primary: #86a6ff;
+  --primary-foreground: #0a1433;
+  --ring: #86a6ff;
+  --sl-color-text-accent: #86a6ff;
 }
 
-/* Hero title: blue to teal. */
-.hero h1 {
-  background: linear-gradient(90deg, #1446d8, #0fd8c6);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  line-height: 1.25;
-}
-:root:not([data-theme='light']) .hero h1 {
-  background-image: linear-gradient(90deg, #6f95ff, #0fd8c6);
+.sl-markdown-content a:not(.not-content a) {
+  color: var(--sl-color-text-accent);
 }
 
-/* Screenshots on the landing pages. */
+/* Screenshots on the landing page. */
 .shot img {
-  border-radius: 0.75rem;
-  border: 1px solid var(--sl-color-gray-5);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 0.12);
-}
-
-/* Code and tables stay left to right inside right-to-left pages. */
-[dir='rtl'] pre,
-[dir='rtl'] code {
-  direction: ltr;
-  unicode-bidi: plaintext;
-  text-align: left;
-}
-
-/* Keep the sidebar readable with long Arabic titles. */
-.sidebar-content a {
-  line-height: 1.5;
+  border-radius: var(--radius, 0.625rem);
+  border: 1px solid var(--border, var(--sl-color-gray-5));
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.08);
 }

@@ -16,6 +16,9 @@ hero:
 ---
 
 import { Card, CardGrid, Steps } from '@astrojs/starlight/components';
+import { ContainerSection } from 'lucode-starlight/components';
+
+<ContainerSection width="lg">
 
 ## Why Aruma
 
@@ -78,7 +81,7 @@ import storage from '../../assets/console-storage.png';
 </div>
 <br />
 <div class="shot">
-  <Image src={rtdb} alt="Aruma console: Realtime Database rules and databaseURL" />
+  <Image src={rtdb} alt="Aruma console: Realtime Database data and databaseURL" />
 </div>
 <br />
 <div class="shot">
@@ -94,6 +97,4 @@ make dev         # create .env with a random key, then the database, migrations 
 
 Then open `http://localhost:8080`. The full steps are in the [quick start](docs/getting-started/).
 
-:::note
-Aruma is not affiliated with or endorsed by Google. Firebase is a trademark of Google LLC.
-:::
+</ContainerSection>
