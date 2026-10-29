@@ -1,0 +1,60 @@
+# Aruma and PostgreSQL 18 on one machine: for trying Aruma, or a small server behind a TLS proxy.
+#
+# 1. Create .env next to this file with two secrets (docs/getting-started.md shows a one-liner):
+#      ARUMA_MASTER_KEY=<openssl rand -base64 32>   every other key is derived from it; back it up
+#      POSTGRES_PASSWORD=<openssl rand -hex 24>
+# 2. docker compose up -d
+# 3. docker compose logs aruma   prints the one-time setup code; open http://localhost:8080
+#
+# The port (8080, or ARUMA_PORT in .env) is bound to this machine only. To serve other machines,
+# put a TLS proxy in front and set ARUMA_PUBLIC_URL in .env to its https address. The Realtime
+# Database's production-style URLs also need ARUMA_RTDB_DOMAIN, see docs/guides/operations.md.
+
+name: aruma
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aruma
+      POSTGRES_DB: aruma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aruma -d aruma"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  aruma:
+    build:
+      context: .
+      args:
+        VERSION: ${ARUMA_VERSION:-dev}
+    image: aruma:local
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    environment:
+      ARUMA_DATABASE_URL: postgres://aruma:${POSTGRES_PASSWORD}@db:5432/aruma?sslmode=disable
+      ARUMA_MASTER_KEY: ${ARUMA_MASTER_KEY:?set ARUMA_MASTER_KEY in .env (openssl rand -base64 32)}
+      ARUMA_PUBLIC_URL: ${ARUMA_PUBLIC_URL:-http://localhost:${ARUMA_PORT:-8080}}
+      ARUMA_RTDB_ENABLED: "true"
+      ARUMA_STORAGE_ENABLED: "true"
+      ARUMA_STORAGE_DATA_DIR: /var/lib/aruma/storage
+      ARUMA_DOCUMENTS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${ARUMA_PORT:-8080}:8080"
+    volumes:
+      - storage:/var/lib/aruma/storage
+    ulimits:
+      nofile: 65536
+
+volumes:
+  pgdata:
+  storage:

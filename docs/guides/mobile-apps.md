@@ -235,4 +235,4 @@ Use the build-time package on each platform so download links point at Aruma: th
 
 ### Firestore
 
-Firestore is a **release candidate**, and the official Android and iOS Firestore suites have not run yet. Neither the config files nor `aruma-redirect` / `ArumaRedirect` carry the Firestore host, because Firestore uses gRPC and not `URLSession` or `HttpURLConnection`. Set the host in code before first use. See [Using Firestore with Aruma](firestore.md#android-ios-and-flutter) for the snippets, and [compatibility](../reference/compatibility.md#firestore) for the exact status.
+The official Android and iOS Firestore suites have not run against Aruma yet. Neither the config files nor `aruma-redirect` / `ArumaRedirect` carry the Firestore host, because Firestore uses gRPC and not `URLSession` or `HttpURLConnection`. Set the host in code before first use. See [Using Firestore with Aruma](firestore.md#android-ios-and-flutter) for the snippets, and [compatibility](../reference/compatibility.md#firestore) for the exact status.

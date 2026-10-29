@@ -175,7 +175,7 @@ go run ./tools/bench -serve                          # start a server and run th
 
 ## Document Database and Storage
 
-There are no benchmark numbers yet. The Document Database is a release candidate, and fault injection and load testing are listed as not done in the [changelog](CHANGELOG.md#v040-rc1). `tools/bench` has no Document Database or Storage scenarios. Do not assume these services perform like the Realtime Database figures above.
+There are no benchmark numbers yet. Fault injection and load testing of the Document Database are listed as not done in the [changelog](CHANGELOG.md#v040). `tools/bench` has no Document Database or Storage scenarios. Do not assume these services perform like the Realtime Database figures above.
 
 ## Limits of these numbers
 
