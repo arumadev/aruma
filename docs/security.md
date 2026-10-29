@@ -131,7 +131,7 @@ v0.1 was reviewed in three passes: the platform and console, the Auth service as
   - Apple refresh tokens are not revoked at Apple, except when the account is deleted;
   - key rotation can race with the signer cache;
   - a direct email change with protection off sends no alert to the old address.
-  - Fixed after v0.4.0-rc.1: token signatures were decoded with non-strict base64 (the server and both Admin libraries now accept only the canonical form); the Admin libraries' check for Google domains did not normalize every hostname form.
+  - Fixed in v0.4.0: token signatures were decoded with non-strict base64 (the server and both Admin libraries now accept only the canonical form); the Admin libraries' check for Google domains did not normalize every hostname form.
 - Informational, all accepted: `localhost` is authorized by default; `needConfirmation` reveals that an email has an account when a provider token is held; and similar low-impact items that match Firebase.
 - A set of 22 tamper scenarios (forged tokens, replayed and swapped OAuth state, cross-project tokens, admin-field injection, secret dumps, rate limits) all pass against the server and both Admin libraries.
 - Dependencies: no reachable vulnerabilities in Go or npm dependencies. One advisory in an unused package (`x/crypto/openpgp`) has no published fix and is not called.
@@ -205,4 +205,4 @@ Scope: the Storage byte-serving and upload paths, the rules engine, the new mana
 
 ### v0.4
 
-v0.4.0-rc.1 has no release-wide review yet. Its parts were reviewed as they were built, and a release-wide review is planned before v0.4.0. Findings will be fixed in `v0.4.0-rc.2`.
+v0.4.0 has no release-wide review yet: it was released before one. Its parts were reviewed as they were built. The release-wide review is still planned, and its findings will be fixed in a v0.4.x release.

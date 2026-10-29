@@ -55,6 +55,11 @@ jobs:
         run: make test
       - name: Build
         run: make build
+      - name: Cross-compile the release targets (Linux, macOS and Windows on amd64 and arm64)
+        run: |
+          for t in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            CGO_ENABLED=0 GOOS=${t%/*} GOARCH=${t#*/} go build -o /dev/null ./cmd/aruma ./cmd/arumactl
+          done
 
   smoke:
     name: SDK smoke (web, Admin Node, Admin Go, Aruma admin-auth, tamper on the libraries, Android, Admin RTDB, Admin Storage)
@@ -660,6 +665,34 @@ jobs:
           path: |
             test/e2e/web-storage/test-results
             test/e2e/web-storage/.generated/*.log
+
+  docker:
+    name: Docker image and compose (build, migrate, healthy, setup code, backup)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Secrets for this run
+        run: |
+          umask 077
+          printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\nARUMA_VERSION=ci-%s\n' \
+            "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" "${GITHUB_SHA::7}" > .env
+      - name: Build and start, waiting for both services to be healthy
+        run: docker compose up -d --build --wait --wait-timeout 180
+      - name: The server answers, reports the build, and asks for setup
+        run: |
+          test "$(docker compose exec -T aruma aruma version)" = "ci-${GITHUB_SHA::7}"
+          curl -fsS http://127.0.0.1:8080/console/v1/status | grep -q '"setupRequired":true'
+          curl -fsS -o /dev/null http://127.0.0.1:8080/
+          docker compose logs aruma | grep -q 'one-time code'
+      - name: Backup with the image's pg_dump
+        run: docker compose exec -T aruma aruma backup --out /tmp/ci.dump
+      - name: A restart comes back healthy with nothing left to migrate
+        run: |
+          docker compose restart aruma
+          docker compose up -d --wait --wait-timeout 120
+          docker compose exec -T aruma aruma migrate status | grep -q 'up to date'
+      - if: failure()
+        run: docker compose logs
 
   dashboard:
     name: Dashboard (lint, unit, build, e2e in both directions)

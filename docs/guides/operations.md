@@ -1,6 +1,51 @@
 # Operations
 
-Operator guide for running Aruma services behind your own domain, certificates and proxy. Today it covers Realtime Database. Other services will get their own sections.
+Operator guide for installing and running Aruma: the Docker setup, the prebuilt binaries, and the Realtime Database behind your own domain, certificates and proxy.
+
+## Docker
+
+`compose.yaml` at the root of the repository runs two containers: `db` (the official `postgres:18` image) and `aruma` (built from the `Dockerfile`). [Getting started](../getting-started.md#with-docker) shows the first start.
+
+| What | Where |
+|---|---|
+| Database files | the `pgdata` volume |
+| Storage objects | the `storage` volume, mounted at `/var/lib/aruma/storage` |
+| Secrets | `.env` next to `compose.yaml`: `ARUMA_MASTER_KEY` and `POSTGRES_PASSWORD` |
+| Optional settings in `.env` | `ARUMA_PORT` (default 8080), `ARUMA_PUBLIC_URL`, `ARUMA_VERSION` (the version the image reports) |
+
+The image runs as user `aruma` (uid 10001), applies pending migrations before `serve`, and reports its health from `/console/v1/status`. It holds the PostgreSQL 18 client tools, so backups use a `pg_dump` that is not older than the server. Any `ARUMA_*` setting from [configuration](../reference/configuration.md) can be added under `environment:` in `compose.yaml`.
+
+The port is bound to `127.0.0.1`. To serve other machines, run a TLS proxy (Caddy, nginx) in front, set `ARUMA_PUBLIC_URL` to its `https://` address, and list the proxy in `ARUMA_TRUSTED_PROXIES`. Firestore clients on iOS and Android need the proxy to speak HTTP/2 to Aruma (h2c), as the [Firestore migration guide](firestore-migration.md) describes. The Realtime Database's production-style URLs need the setup in [Realtime Database](#realtime-database) below.
+
+**Back up** (the database and the Storage volume belong together, take both):
+
+```bash
+docker compose exec aruma aruma backup --out /tmp/aruma.dump
+docker compose cp aruma:/tmp/aruma.dump ./aruma-$(date +%F).dump
+docker run --rm -v aruma_storage:/data -v "$PWD":/out alpine tar -czf /out/aruma-storage-$(date +%F).tar.gz -C /data .
+```
+
+**Upgrade:** back up, then check out the new tag and rebuild. Migrations run when the server starts.
+
+```bash
+git fetch --tags && git checkout v0.4.1      # the version you are moving to
+docker compose up -d --build
+```
+
+## Prebuilt binaries
+
+Each [release](https://github.com/arumadev/aruma/releases) has one archive per system, `aruma_<version>_<os>_<arch>`, for Linux and macOS (`.tar.gz`) and Windows (`.zip`) on amd64 and arm64. The binaries are static: they need no other library, only a PostgreSQL 18 to connect to, and the PostgreSQL 18 client tools on `PATH` (or in `ARUMA_PG_BIN`) for `aruma backup` and `aruma restore`.
+
+**Check what you downloaded.** `checksums.txt` lists the SHA-256 of every archive, and each archive has a build attestation that proves it was built by this repository's release workflow:
+
+```bash
+grep aruma_0.4.0_linux_amd64 checksums.txt | sha256sum --check     # macOS: shasum -a 256 --check
+gh attestation verify aruma_0.4.0_linux_amd64.tar.gz --repo arumadev/aruma
+```
+
+**Not signed by Apple or Microsoft.** macOS blocks a binary downloaded with a browser until you allow it: `xattr -d com.apple.quarantine aruma arumactl`, or System Settings, Privacy & Security, Open Anyway. Windows SmartScreen may show "Windows protected your PC"; choose More info, then Run anyway. Files fetched with `curl` are not marked on macOS. Docker avoids both.
+
+**Windows.** The server, Auth, the Realtime Database and the Document Database run. Cloud Storage does not start on Windows, because it needs the file locks and disk calls Aruma implements for Linux and macOS. Use Docker or WSL for Storage.
 
 ## Realtime Database
 

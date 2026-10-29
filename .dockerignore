@@ -1,0 +1,20 @@
+# The image is built from the Go module and the dashboard sources only.
+.git
+.github
+.cache
+.data
+.env
+.env.*
+bin
+dist
+docs
+website
+test
+sdk
+tools
+**/node_modules
+dashboard/.next
+dashboard/out
+dashboard/test-results
+dashboard/playwright-report
+*.pem

@@ -4,9 +4,9 @@ Your app keeps the official Firebase SDKs for Cloud Firestore. Only the host cha
 
 In Aruma the service is called the **Document Database**, described as "Firestore-compatible". The protocol names stay Google's: `google.firestore.v1` and `firestore.googleapis.com` in the SDKs, and `service cloud.firestore` in rules.
 
-## Release candidate status
+## Status
 
-Firestore support is a **release candidate** (v0.4.0-rc.1). It is off by default. The code is the code planned for v0.4.0, but part of the checking that a final release needs has not run yet.
+Firestore support is released in v0.4.0. It is off by default. v0.4.0 was released before part of its checking ran, and that checking has still not run.
 
 Verified:
 

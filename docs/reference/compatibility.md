@@ -6,7 +6,7 @@ What works with the official Firebase SDKs and tools when they talk to Aruma, an
 
 Some products need a small Aruma helper that points the SDK at your server instead of Google (build-time on the web, a redirect library on Android and iOS). The helper does not change the SDK's API. The per-platform tables below say where one is used.
 
-Versions covered: Auth 0.1, Realtime Database 0.2, Cloud Storage and Security Rules 0.3, Firestore 0.4.0-rc.1 (release candidate).
+Versions covered: Auth 0.1, Realtime Database 0.2, Cloud Storage and Security Rules 0.3, Firestore 0.4.0.
 
 | Service | Status |
 |---|---|
@@ -14,7 +14,7 @@ Versions covered: Auth 0.1, Realtime Database 0.2, Cloud Storage and Security Ru
 | [Realtime Database](#realtime-database) | Supported, with the gaps listed |
 | [Cloud Storage](#cloud-storage) | Supported, with the gaps listed |
 | [Security Rules](#security-rules) | Supported |
-| [Firestore](#firestore) | Release candidate; official mobile suites not yet run |
+| [Firestore](#firestore) | Released in 0.4.0; official mobile suites not yet run |
 
 ---
 
@@ -216,7 +216,7 @@ Aruma's rules engine is compared with three sources: rules published on real Sto
 
 ## Firestore
 
-Firestore support is a **release candidate** (v0.4.0-rc.1). It ships in the Aruma server as the Document Database, off by default. The code is the code planned for v0.4.0, but part of the verification a final release needs has not run yet. The gaps are listed under [Verification pending](#verification-pending).
+Firestore support is released in v0.4.0. It ships in the Aruma server as the Document Database, off by default. v0.4.0 was released before part of its verification ran, and that verification has still not run. The gaps are listed under [Verification pending](#verification-pending).
 
 ### Features
 

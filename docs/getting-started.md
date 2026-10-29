@@ -2,43 +2,52 @@
 
 This page takes you from nothing to a web app that signs a user in against your own Aruma server. It uses a local server and the Auth service. Other services and platforms are in the [guides](README.md#guides).
 
-You need Go 1.27.3 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
+There are three ways to run it. Docker is the quickest; the other two need a PostgreSQL 18 you run yourself.
 
 ## 1. Run Aruma
 
-Get the source:
+### With Docker
+
+You need Docker with Compose and `openssl`. `compose.yaml` runs Aruma and PostgreSQL 18, with the Realtime Database, Storage and the Document Database turned on. The image is built on your machine the first time, which takes a few minutes.
+
+```bash
+git clone --branch v0.4.0 https://github.com/arumadev/aruma.git
+cd aruma
+printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env
+docker compose up -d
+docker compose logs aruma | grep code
+```
+
+Keep `.env` safe and back it up: every key Aruma uses is derived from `ARUMA_MASTER_KEY`, and without it the data in the volumes cannot be used. The server listens on `127.0.0.1:8080` only. Set `ARUMA_PORT` in `.env` to use another port. To serve other machines, put a TLS proxy in front and set `ARUMA_PUBLIC_URL` in `.env` to its address; see [operations](guides/operations.md#docker).
+
+### With a release archive
+
+Download the archive for your system from [Releases](https://github.com/arumadev/aruma/releases): Linux and macOS (`.tar.gz`) or Windows (`.zip`), on amd64 or arm64. It holds `aruma` and `arumactl`, with the dashboard inside `aruma`. Check it against `checksums.txt` before you run it; [operations](guides/operations.md#prebuilt-binaries) shows how, and what macOS and Windows say about binaries that are not signed. On Windows, Cloud Storage does not start; use Docker or WSL for it.
+
+Create a database on your PostgreSQL 18, then:
+
+```bash
+export ARUMA_DATABASE_URL='postgres://aruma:secret@127.0.0.1:5432/aruma?sslmode=disable'
+export ARUMA_PUBLIC_URL='http://localhost:8080'
+export ARUMA_MASTER_KEY="$(openssl rand -base64 32)"   # keep it: every other key is derived from it
+./aruma migrate up                           # the server never changes the schema itself
+./aruma serve
+```
+
+### From source
+
+You need Go 1.27.3 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
 
 ```bash
 git clone https://github.com/arumadev/aruma.git
 cd aruma
-```
-
-Build the dashboard once. It is embedded in the binary.
-
-```bash
-make dashboard
-```
-
-Then start the server for development:
-
-```bash
+make dashboard     # build the dashboard once; it is embedded in the binary
 make dev
 ```
 
-`make dev` creates a `.env` file with a random master key on the first run, creates the database, runs the migrations and starts the server on <http://localhost:8080>. If the PostgreSQL tools are not on your `PATH`, set `ARUMA_PG_BIN` to their directory first, for example `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin make dev`.
+`make dev` creates a `.env` file with a random master key on the first run, creates the database, runs the migrations and starts the server on <http://localhost:8080>. If the PostgreSQL tools are not on your `PATH`, set `ARUMA_PG_BIN` to their directory first, for example `ARUMA_PG_BIN=/Users/Shared/DBngin/postgresql/18.1/bin make dev`. `make build` writes `bin/aruma` and `bin/arumactl` to run elsewhere, as with an archive.
 
-To run the binary yourself, for example on a server:
-
-```bash
-make build                                   # writes bin/aruma and bin/arumactl
-export ARUMA_DATABASE_URL='postgres://aruma:secret@127.0.0.1:5432/aruma?sslmode=disable'
-export ARUMA_PUBLIC_URL='https://aruma.example.com'
-export ARUMA_MASTER_KEY="$(openssl rand -base64 32)"   # keep it: every other key is derived from it
-bin/aruma migrate up                         # the server never changes the schema itself
-bin/aruma serve
-```
-
-These three settings are the only required ones. See [configuration](reference/configuration.md) for the rest and [`aruma.example.yaml`](../aruma.example.yaml) for every key. Check a configuration without starting the server with `aruma config check`.
+`ARUMA_DATABASE_URL`, `ARUMA_PUBLIC_URL` and `ARUMA_MASTER_KEY` are the only required settings. See [configuration](reference/configuration.md) for the rest and [`aruma.example.yaml`](../aruma.example.yaml) for every key. Check a configuration without starting the server with `aruma config check`.
 
 Open the address in a browser. The first start prints a one-time setup `code` in the log. Enter it on the setup page to create your first account. Sign-up is closed after that.
 

@@ -38,6 +38,31 @@ build: ## Build the binaries into bin/
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o bin/aruma ./cmd/aruma
 	$(GO) build -trimpath -ldflags '$(LDFLAGS)' -o bin/arumactl ./cmd/arumactl
 
+# Release archives: one per platform, named aruma_<version>_<os>_<arch> (.zip on Windows,
+# .tar.gz elsewhere), plus checksums.txt. The binaries are static (no cgo), so every target
+# builds on one machine. The release workflow runs this after `make dashboard`.
+DIST_TARGETS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
+DIST_VERSION  = $(patsubst v%,%,$(VERSION))
+
+.PHONY: dist
+dist: ## Build the release archives and checksums into dist/ (run 'make dashboard' first)
+	@test -f internal/admin/web/dist/index.html || { echo "dist: the dashboard is not built; run 'make dashboard' first"; exit 1; }
+	rm -rf dist && mkdir -p dist
+	@set -e; for t in $(DIST_TARGETS); do \
+		os=$${t%/*}; arch=$${t#*/}; ext=; [ "$$os" = windows ] && ext=.exe; \
+		name=aruma_$(DIST_VERSION)_$${os}_$${arch}; dir=dist/$$name; \
+		echo "dist: $$name"; mkdir -p "$$dir"; \
+		for b in aruma arumactl; do \
+			CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build -trimpath -ldflags '$(LDFLAGS)' -o "$$dir/$$b$$ext" ./cmd/$$b; \
+		done; \
+		cp LICENSE NOTICE README.md aruma.example.yaml "$$dir/"; \
+		if [ "$$os" = windows ]; then (cd dist && zip -qr "$$name.zip" "$$name"); \
+		else tar -C dist -czf "dist/$$name.tar.gz" "$$name"; fi; \
+		rm -rf "$$dir"; \
+	done
+	cd dist && { command -v sha256sum >/dev/null && sha256sum aruma_* || shasum -a 256 aruma_*; } > checksums.txt
+	@cat dist/checksums.txt
+
 .PHONY: test
 test: ## Run all Go tests (needs local Postgres)
 	$(GO) test -race -count=1 ./...

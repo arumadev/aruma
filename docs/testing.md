@@ -137,7 +137,7 @@ The first run of a compat or end-to-end suite downloads packages and the upstrea
 
 ## What is not verified yet
 
-- **The Document Database is a release candidate.** The official Android and iOS Firestore suites, the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, the conformance suite against a live server in CI, and fault injection and load have not been run. See the [changelog](CHANGELOG.md#v040-rc1).
+- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android and iOS Firestore suites, the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, the conformance suite against a live server in CI, and fault injection and load have not been run. See the [changelog](CHANGELOG.md#v040).
 - **Android and iOS Storage suites** run by hand, not on a schedule.
 - **Rules are not part of the load tests.** The performance figures in [benchmarks](benchmarks.md) used open rules for the Realtime Database.
-- **Test counts per job** are not published here. Where a job's result is a count, the release notes for that version give it. The last Document Database release candidate recorded 21 of 21 web tests passing on each of Chromium, Firefox and WebKit, and 1,665 dashboard unit tests and 226 end-to-end tests passing.
+- **Test counts per job** are not published here. Where a job's result is a count, the release notes for that version give it. The Document Database release candidate v0.4.0-rc.1 recorded 21 of 21 web tests passing on each of Chromium, Firefox and WebKit, and 1,665 dashboard unit tests and 226 end-to-end tests passing.

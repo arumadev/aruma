@@ -1,0 +1,58 @@
+name: release
+
+# A pushed tag v* builds the release archives (Linux, macOS and Windows on amd64 and arm64, with the
+# dashboard embedded), attests where they were built, and publishes a GitHub Release whose notes are
+# the tag's section of docs/CHANGELOG.md. Tags with a hyphen (v0.5.0-rc.1) become pre-releases.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write      # create the release
+  id-token: write      # sign the attestation
+  attestations: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Release notes from the changelog (fails when the tag has no section)
+        run: |
+          awk -v h="## $TAG" '$0 == h {on=1; next} on && /^## / {exit} on' docs/CHANGELOG.md > section.md
+          test -s section.md || { echo "docs/CHANGELOG.md has no '## $TAG' section"; exit 1; }
+          # Links in the changelog are relative to docs/; on the release page they point at the tag.
+          docs="https://github.com/$GITHUB_REPOSITORY/blob/$TAG/docs"
+          sed -E -e "s#\]\(([a-z][a-z0-9/._-]*\.md)#](${docs}/\1#g" \
+                 -e "s#\]\(\##](${docs}/CHANGELOG.md\##g" section.md > notes.md
+      - name: Dashboard
+        run: make dashboard
+      - name: Archives and checksums
+        run: make dist VERSION="$TAG"
+      - name: The binary reports the tag
+        run: |
+          tar -xzf "dist/aruma_${TAG#v}_linux_amd64.tar.gz" -C "$RUNNER_TEMP"
+          test "$("$RUNNER_TEMP/aruma_${TAG#v}_linux_amd64/aruma" version)" = "$TAG"
+      - uses: actions/attest@v4
+        with:
+          subject-path: 'dist/aruma_*'
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=
+          case "$TAG" in *-*) pre=--prerelease ;; esac
+          gh release create "$TAG" dist/* --verify-tag --title "Aruma $TAG" --notes-file notes.md $pre

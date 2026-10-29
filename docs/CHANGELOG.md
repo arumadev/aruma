@@ -1,8 +1,36 @@
 # Changelog
 
-One section per release, newest first. Each release has an upgrade section when its steps are not obvious. Releases: [v0.4.0-rc.1](#v040-rc1), [v0.3.0](#v030), [v0.2.0](#v020), [v0.1.0](#v010).
+One section per release, newest first. Each release has an upgrade section when its steps are not obvious. Releases: [v0.4.0](#v040), [v0.4.0-rc.1](#v040-rc1), [v0.3.0](#v030), [v0.2.0](#v020), [v0.1.0](#v010).
 
-## Unreleased
+## v0.4.0
+
+Released 2026-10-29.
+
+The Document Database (Firestore-compatible) from [v0.4.0-rc.1](#v040-rc1), released as v0.4.0,
+and the first release you can install without building from source: archives for Linux, macOS and
+Windows, and a Docker setup with PostgreSQL 18.
+
+v0.4.0 is released before the checks the release candidate listed under
+[Before v0.4.0](#before-v040) have run: the official Android and iOS suites, the remaining Firebase
+JS variants, the black-box conformance cases and the conformance suite against a live server in CI,
+fault injection and load, and the release-wide security review. They continue on this code, and
+whatever they find is fixed in a v0.4.x release. Until then, the list under
+[Not verified yet in this candidate](#not-verified-yet-in-this-candidate) still applies.
+
+### Install
+
+- **Docker:** `compose.yaml` runs Aruma and PostgreSQL 18, with the Realtime Database, Storage and
+  the Document Database on. The image is built on your machine from the `Dockerfile`; no image is
+  published to a registry yet. It runs as a non-root user, applies migrations before the server
+  starts, and has the PostgreSQL 18 client tools for `aruma backup` and `aruma restore`. See
+  [getting started](getting-started.md).
+- **Archives:** `aruma_0.4.0_<os>_<arch>` for Linux and macOS (`.tar.gz`) and Windows (`.zip`), on
+  amd64 and arm64, with `aruma`, `arumactl` and the dashboard inside the binary. `checksums.txt` has
+  their SHA-256 sums, and each archive has a GitHub build attestation (`gh attestation verify`). The
+  binaries are not signed by Apple or Microsoft. See [operations](guides/operations.md#prebuilt-binaries).
+- **Windows:** the server runs, but Cloud Storage does not start on Windows: it needs file locks and
+  disk calls that Aruma implements on Linux and macOS only. Use Docker or WSL for Storage.
+- `make dist` builds the same archives locally, and a pushed `v*` tag builds and publishes them.
 
 ### Security
 

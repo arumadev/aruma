@@ -33,7 +33,7 @@ Behavior is checked against real Firebase and the official emulators, and the of
 
 ## Status
 
-Aruma is pre-1.0. The latest release is [v0.3.0](docs/CHANGELOG.md#v030). The Document Database is in the release candidate [v0.4.0-rc.1](docs/CHANGELOG.md#v040-rc1); some of its verification is still pending.
+Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). Part of the Document Database's verification has not run yet; the [changelog](docs/CHANGELOG.md#v040) lists it.
 
 | Service | Status | Details |
 |---|---|---|
@@ -42,22 +42,25 @@ Aruma is pre-1.0. The latest release is [v0.3.0](docs/CHANGELOG.md#v030). The Do
 | Realtime Database | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](docs/reference/compatibility.md#realtime-database), [guide](docs/guides/realtime-database.md) |
 | Security Rules | Released in v0.3.0 | [Compatibility](docs/reference/compatibility.md#security-rules), [guide](docs/guides/security-rules.md) |
 | Cloud Storage | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](docs/reference/compatibility.md#cloud-storage), [guide](docs/guides/storage.md) |
-| Document Database (Firestore-compatible) | Release candidate v0.4.0-rc.1, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](docs/reference/compatibility.md#firestore), [guide](docs/guides/firestore.md), [migration guide](docs/guides/firestore-migration.md) |
+| Document Database (Firestore-compatible) | Released in v0.4.0, off by default (`ARUMA_DOCUMENTS_ENABLED`); official mobile suites not run yet | [Compatibility](docs/reference/compatibility.md#firestore), [guide](docs/guides/firestore.md), [migration guide](docs/guides/firestore-migration.md) |
 | Cloud Messaging, App Check, Remote Config, Functions | Planned | |
 
 ## Quick start
 
-You need Go 1.27.3, PostgreSQL 18 and Node 24 (to build the dashboard). If you have an older `go`, it downloads Go 1.27.3 by itself unless `GOTOOLCHAIN=local` is set.
+With Docker (Aruma and PostgreSQL 18, nothing else to install):
 
 ```bash
-git clone https://github.com/arumadev/aruma.git && cd aruma
-make dashboard   # 1. build the dashboard and embed it in the binary (once)
-make dev         # 2. create .env with a random key, the database, migrations, and start the server
+git clone --branch v0.4.0 https://github.com/arumadev/aruma.git && cd aruma
+printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env
+docker compose up -d
+docker compose logs aruma | grep code    # the one-time setup code
 ```
 
-3. Open <http://localhost:8080>. The first start prints a one-time setup `code` in the log. Enter it to create your first account, then create a project and an app and copy the config file.
+Open <http://localhost:8080>, enter the setup code to create your first account, then create a project and an app and copy the config file. Keep `.env`: every key Aruma uses is derived from `ARUMA_MASTER_KEY`.
 
-[Getting started](docs/getting-started.md) goes on from here: running the binary on a server, creating a project and an app, and signing a user in from a web app. Settings are in [configuration](docs/reference/configuration.md).
+Without Docker, download the archive for your system from [Releases](https://github.com/arumadev/aruma/releases) (Linux, macOS and Windows, amd64 and arm64) and point it at your PostgreSQL 18, or build from source with Go 1.27.3 and Node 24 (`make dashboard && make dev`).
+
+[Getting started](docs/getting-started.md) goes on from here: the three ways to install, running on a server, creating a project and an app, and signing a user in from a web app. Settings are in [configuration](docs/reference/configuration.md).
 
 ## How apps connect
 

@@ -18,7 +18,7 @@ const services = [
   { name: 'Realtime Database', state: 'Released', version: 'v0.2.0', text: 'A live JSON tree with listeners, transactions and onDisconnect, over the same wire protocol.', link: docs('guides/realtime-database/') },
   { name: 'Security Rules', state: 'Released', version: 'v0.3.0', text: 'Your rules, evaluated on your server, checked case by case against Google’s own engine.', link: docs('guides/security-rules/') },
   { name: 'Cloud Storage', state: 'Released', version: 'v0.3.0', text: 'Uploads, downloads and metadata, stored on your disk and served by your binary.', link: docs('guides/storage/') },
-  { name: 'Firestore', state: 'Release candidate', version: 'v0.4.0-rc.1', text: 'Documents, collections, queries and listeners through the Firestore SDKs.', link: docs('guides/firestore/') },
+  { name: 'Firestore', state: 'Released', version: 'v0.4.0', text: 'Documents, collections, queries and listeners through the Firestore SDKs.', link: docs('guides/firestore/') },
 ];
 const planned = ['Cloud Messaging', 'App Check', 'Remote Config', 'Functions'];
 const sdks = ['Web', 'iOS', 'Android', 'Flutter', 'Admin Node', 'Admin Go', 'firebase-tools'];
@@ -106,8 +106,8 @@ const shots = [
               <a class="btn btn-ghost" href={repo}>Star on GitHub</a>
             </div>
             <div class="copy-line reveal">
-              <code><span class="dim">$</span> git clone {repo}.git &amp;&amp; make dev</code>
-              <button class="copy" type="button" data-copy={`git clone ${repo}.git && cd aruma && make dashboard && make dev`} aria-label="Copy the install commands">Copy</button>
+              <code><span class="dim">$</span> git clone {repo}.git &amp;&amp; docker compose up -d</code>
+              <button class="copy" type="button" data-copy={`git clone --branch v0.4.0 ${repo}.git && cd aruma\nprintf 'ARUMA_MASTER_KEY=%s\\nPOSTGRES_PASSWORD=%s\\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env\ndocker compose up -d`} aria-label="Copy the install commands">Copy</button>
             </div>
           </div>
 
