@@ -174,6 +174,17 @@ func (ch Change) store(ctx context.Context, tx StoreTx) error {
 	return nil
 }
 
+// applyTo writes a stored change into the cached nodes it touches, as store wrote it in tx.
+func (ch Change) applyTo(c *nodeCache, state *batchState) {
+	if ch.Merge == nil {
+		c.apply(ch.Path, ch.Value, state)
+		return
+	}
+	for _, m := range ch.Merge {
+		c.apply(ch.Path.Join(m.Path), m.Value, state)
+	}
+}
+
 // resolveAt fills in the server values of v, written at p, reading only the locations its
 // increments need.
 func resolveAt(ctx context.Context, tx StoreTx, p Path, v *Node, now int64) (*Node, error) {

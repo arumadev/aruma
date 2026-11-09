@@ -49,6 +49,8 @@ rtdb:
     outbox_bytes: 67108864         # unsent data per connection before it is dropped
     read_rows: 1000000             # stored rows one read may load (a get, a listen's first
                                    # data); more is refused with too_big before loading
+    cache_rows: 500000             # stored rows all databases keep in memory for query
+                                   # listens (~180 bytes a row); 0 keeps none
 rules:                             # Firestore and Storage security rules
   limits:
     # Firebase's limits: a value may lower one; a value above Firebase's is refused at startup.

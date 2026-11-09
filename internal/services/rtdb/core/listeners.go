@@ -176,3 +176,19 @@ func (ls *listeners) around(p Path, fn func(*listen)) {
 	}
 	below(t)
 }
+
+// taggedAt reports whether a tagged listen, one whose window the writer keeps, is at p.
+func (ls *listeners) taggedAt(p Path) bool {
+	t := &ls.root
+	for _, k := range p {
+		if t = t.children[k]; t == nil {
+			return false
+		}
+	}
+	for _, l := range t.listens {
+		if l.tag != 0 {
+			return true
+		}
+	}
+	return false
+}

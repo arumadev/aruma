@@ -136,6 +136,11 @@ type RTDBLimits struct {
 	// themselves, and gives a reply of some 20 MB with short values, inside the default
 	// outbox_bytes.
 	ReadRows int64 `yaml:"read_rows"`
+	// CacheRows caps the stored rows all databases keep in memory, together, for the nodes
+	// query listens read again on every write below them; a write then updates them in
+	// place instead of reading the node from Postgres. A cached row takes about 180 bytes
+	// (a node of 100,000 children of two fields, 200,000 rows, about 36 MB). 0 keeps none.
+	CacheRows int64 `yaml:"cache_rows"`
 }
 
 // Defaults returns a configuration with every optional field set.
@@ -159,6 +164,7 @@ func Defaults() Config {
 			ConnectionsPerIP:            500,
 			OutboxBytes:                 64 << 20,
 			ReadRows:                    1_000_000,
+			CacheRows:                   500_000,
 		}},
 		Rules: Rules{Limits: RulesLimits(rules.DefaultLimits())},
 		Documents: Documents{IndexEnforcement: "enforce", Limits: DocumentsLimits{
@@ -521,6 +527,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	integer("ARUMA_RTDB_WRITE_BYTES_PER_MINUTE", &lim.WriteBytesPerMinute)
 	integer("ARUMA_RTDB_OUTBOX_BYTES", &lim.OutboxBytes)
 	integer("ARUMA_RTDB_READ_ROWS", &lim.ReadRows)
+	integer("ARUMA_RTDB_CACHE_ROWS", &lim.CacheRows)
 	conns := int64(lim.ConnectionsPerProject)
 	integer("ARUMA_RTDB_CONNECTIONS_PER_PROJECT", &conns)
 	lim.ConnectionsPerProject = int(conns)
@@ -747,6 +754,9 @@ func (c *Config) validateRTDB() []error {
 	}
 	if l.ReadRows < 1000 {
 		errs = append(errs, errors.New("rtdb.limits.read_rows must be at least 1000"))
+	}
+	if l.CacheRows < 0 {
+		errs = append(errs, errors.New("rtdb.limits.cache_rows must not be negative"))
 	}
 	if l.StringBytes > l.MessageBytes {
 		errs = append(errs, errors.New("rtdb.limits.string_bytes must not exceed message_bytes"))

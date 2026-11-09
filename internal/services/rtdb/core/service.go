@@ -233,7 +233,11 @@ func (s *Service) SetRules(ctx context.Context, t Target, doc string) error {
 // PurgeProject deletes every database of a project, for the control plane's purge of a
 // project whose deletion has expired.
 func (s *Service) PurgeProject(ctx context.Context, project int64) error {
-	return s.store.DeleteProject(ctx, project)
+	if err := s.store.DeleteProject(ctx, project); err != nil {
+		return err
+	}
+	s.registry.purged(project)
+	return nil
 }
 
 // Close stops the writers once their sessions have closed, waiting for queued writes until

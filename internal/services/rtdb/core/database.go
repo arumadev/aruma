@@ -39,6 +39,8 @@ type Database struct {
 	rules    *rules.Ruleset // nil when the stored rules do not parse, which denies all
 
 	listeners *listeners
+	// cache holds the nodes query listens read on every write below them (cache.go).
+	cache *nodeCache
 
 	// Guarded by the registry's lock.
 	refs int
@@ -86,6 +88,8 @@ type command struct {
 	drop *Session
 	// rules replaces the database's rules, and re-checks every listen against them.
 	rules *rules.Ruleset
+	// purged says the database's data were deleted outside the writer (PurgeProject).
+	purged bool
 	// barrier does nothing: its done runs once every command queued before it has run.
 	barrier bool
 	done    func(Result)
@@ -111,13 +115,14 @@ const (
 	batchTimeout = 30 * time.Second
 )
 
-func newDatabase(project int64, name string, store Store, now func() time.Time, log *slog.Logger, limits Limits, onCommit func(Commit)) *Database {
+func newDatabase(project int64, name string, store Store, now func() time.Time, log *slog.Logger, limits Limits, budget *cacheBudget, onCommit func(Commit)) *Database {
 	return &Database{
 		project: project, name: name, store: store, now: now, log: log, onCommit: onCommit,
 		inbox:     make(chan *command, inboxSize),
 		rate:      rateWindow{limit: limits.WriteBytesPerMinute, start: now()},
 		readRows:  limits.ReadRows,
 		listeners: newListeners(),
+		cache:     newNodeCache(budget),
 		done:      make(chan struct{}),
 	}
 }
@@ -135,6 +140,7 @@ func (d *Database) submit(c *command) { d.inbox <- c }
 // run is the writer loop. It ends when the registry closes the inbox.
 func (d *Database) run() {
 	defer close(d.done)
+	defer d.cache.clear() // gives its rows back to the budget
 	for c := range d.inbox {
 		batch := []*command{c}
 	more:
@@ -160,6 +166,7 @@ func (d *Database) open(ctx context.Context) error {
 		return err
 	}
 	d.info, d.opened = info, true
+	d.cache.clear()
 	d.rules = nil
 	if rs, err := rules.Parse([]byte(info.Rules)); err == nil {
 		d.rules = rs
@@ -177,6 +184,17 @@ func (d *Database) open(ctx context.Context) error {
 func (d *Database) execute(batch []*command) {
 	ctx, cancel := context.WithTimeout(context.Background(), batchTimeout)
 	defer cancel()
+	// A purge needs no transaction: its database is gone.
+	batch = slices.DeleteFunc(batch, func(c *command) bool {
+		if c.purged {
+			d.cache.clear()
+			c.done(Result{})
+		}
+		return c.purged
+	})
+	if len(batch) == 0 {
+		return
+	}
 	if !d.opened {
 		if err := d.open(ctx); err != nil {
 			d.log.Error("rtdb: open database", "database", d.name, "error", err)
@@ -211,9 +229,11 @@ func (d *Database) execute(batch []*command) {
 	}
 	if err := tx.Commit(ctx); err != nil && !d.committed(commit) {
 		// The commit may or may not have happened. Running the commands again could apply
-		// them twice, so they fail; the clients resend what they still want.
+		// them twice, so they fail; the clients resend what they still want. The cache may
+		// miss what did commit, so it starts again.
 		d.rate = rate
 		state.rollback()
+		d.cache.clear()
 		d.log.Error("rtdb: commit", "database", d.name, "error", err)
 		for _, c := range batch {
 			c.done(Result{Err: ErrUnavailable})
@@ -223,6 +243,7 @@ func (d *Database) execute(batch []*command) {
 	if len(commit.Changes) > 0 {
 		d.info.Seq = commit.Seq
 	}
+	d.cache.prune(d.listeners.taggedAt)
 	// Pushes go first, then the hook, then the replies: a writer's own listens get the data
 	// before its ack, and a listen's data comes before its ok.
 	for _, dl := range state.deliveries {
@@ -392,6 +413,7 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 		if err := ch.store(ctx, tx); err != nil {
 			return nil, Commit{}, nil, err
 		}
+		ch.applyTo(d.cache, state)
 		results[i].Node, results[i].Merge = ch.Value, ch.Merge
 		changes = append(changes, ch)
 		if err := d.fanout(ctx, tx, ch, state); err != nil {
@@ -469,6 +491,9 @@ func (d *Database) read(ctx context.Context, tx StoreTx, c *command, now time.Ti
 // filters it, so the count is the node's. A query listen reads its node again on every write
 // below it (taggedPushes), which this does not bound (docs/reference/compatibility.md).
 func (d *Database) load(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
+	if n, ok, err := d.cache.get(ctx, tx, p); ok || err != nil {
+		return n, err
+	}
 	if d.readRows > 0 {
 		n, err := tx.CountRows(ctx, p, d.readRows)
 		if err != nil {
@@ -512,6 +537,7 @@ func (d *Database) startListen(ctx context.Context, tx StoreTx, a *access, c *li
 	default:
 		view = l.query.Filter(n)
 		l.window = view
+		d.cache.put(l.path, n, state)
 	}
 	if Hash(view) != c.hash {
 		state.deliver(l.sess, Push{Action: PushData, Path: l.path, Data: view.ExportJSON(), Tag: l.tag})
