@@ -41,6 +41,9 @@ type Database struct {
 	listeners *listeners
 	// cache holds the nodes query listens read on every write below them (cache.go).
 	cache *nodeCache
+	// missed counts the times the writer may have missed a change to the data: what it kept
+	// from the changes it saw before (the cache, the listens' windows) is not to be trusted.
+	missed uint64
 
 	// Guarded by the registry's lock.
 	refs int
@@ -159,6 +162,12 @@ func (d *Database) run() {
 	}
 }
 
+// forget drops what the writer kept from the changes it saw, when it may have missed one.
+func (d *Database) forget() {
+	d.cache.clear()
+	d.missed++
+}
+
 // open loads the database's row and its rules on the first batch.
 func (d *Database) open(ctx context.Context) error {
 	info, err := d.store.OpenDatabase(ctx, d.project, d.name)
@@ -166,7 +175,7 @@ func (d *Database) open(ctx context.Context) error {
 		return err
 	}
 	d.info, d.opened = info, true
-	d.cache.clear()
+	d.forget()
 	d.rules = nil
 	if rs, err := rules.Parse([]byte(info.Rules)); err == nil {
 		d.rules = rs
@@ -187,7 +196,7 @@ func (d *Database) execute(batch []*command) {
 	// A purge needs no transaction: its database is gone.
 	batch = slices.DeleteFunc(batch, func(c *command) bool {
 		if c.purged {
-			d.cache.clear()
+			d.forget()
 			c.done(Result{})
 		}
 		return c.purged
@@ -233,7 +242,7 @@ func (d *Database) execute(batch []*command) {
 		// miss what did commit, so it starts again.
 		d.rate = rate
 		state.rollback()
-		d.cache.clear()
+		d.forget()
 		d.log.Error("rtdb: commit", "database", d.name, "error", err)
 		for _, c := range batch {
 			c.done(Result{Err: ErrUnavailable})
@@ -536,7 +545,7 @@ func (d *Database) startListen(ctx context.Context, tx StoreTx, a *access, c *li
 		res.Warnings = []string{"no_index"}
 	default:
 		view = l.query.Filter(n)
-		l.window = view
+		l.window, l.windowAt = view, d.missed
 		d.cache.put(l.path, n, state)
 	}
 	if Hash(view) != c.hash {

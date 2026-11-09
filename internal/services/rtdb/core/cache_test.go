@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// TestMain checks the node cache against the store on every node it serves, in every test of
-// the package (cache.go): a cache that misses a change panics on the writer.
+// TestMain checks the node cache against the store on every node it serves, and each window
+// updated from a change against a full filter, in every test of the package (cache.go): a cache
+// or a window that misses a change panics on the writer.
 func TestMain(m *testing.M) {
 	if os.Getenv("ARUMA_RTDB_CHECK_CACHE") == "" {
 		os.Setenv("ARUMA_RTDB_CHECK_CACHE", "1")
@@ -144,7 +145,8 @@ func TestCacheMatchesNoCache(t *testing.T) {
 
 // A batch that does not commit leaves nothing of itself in the cache: a commit that fails, one
 // whose outcome is lost, a value the store refuses. The check of every node served (TestMain)
-// fails the test should the cache keep a write the store did not.
+// fails the test should the cache keep a write the store did not. A commit whose outcome stays
+// unknown may have taken effect: the listens' windows are filtered again in full.
 func TestCacheAfterFailedCommits(t *testing.T) {
 	svc, store := cacheService(t, DefaultLimits.CacheRows)
 	w := open(t, svc, cacheNS, admin)
@@ -165,6 +167,13 @@ func TestCacheAfterFailedCommits(t *testing.T) {
 	set(w, "/q/b/s", `4`, nil)
 	want(t, "after a lost ack", rec.take(), `d q/d t1 {"s":8}`)
 
+	store.set(func() { store.lostAcks, store.seqErrs = 1, 1 })
+	if _, err := set(w, "/q/g", `{"s":20}`, nil); err == nil {
+		t.Fatal("a commit of unknown outcome succeeded")
+	}
+	set(w, "/q/a/s", `5`, nil)
+	want(t, "after a commit of unknown outcome", rec.take(), `d q/g t1 {"s":20}`)
+
 	// An update whose second child the store refuses: its first child, applied to the cache
 	// already, comes out of it again.
 	store.set(func() { store.refuse = "bad" })
@@ -175,8 +184,8 @@ func TestCacheAfterFailedCommits(t *testing.T) {
 	if v, _ := get(w, "/q"); strings.Contains(v, `"e"`) {
 		t.Errorf("the refused update left its first child: %s", v)
 	}
-	set(w, "/q/e", `{"s":10}`, nil)
-	want(t, "after a refused value", rec.take(), `d q/e t1 {"s":10}`)
+	set(w, "/q/e", `{"s":30}`, nil)
+	want(t, "after a refused value", rec.take(), `d q/e t1 {"s":30}`)
 }
 
 // The cache keeps no more rows than its budget, across databases, and gives them back when the

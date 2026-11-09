@@ -55,8 +55,11 @@ type listen struct {
 	// in key or priority order, or one whose index the rules declare (ADR-020 §1). An
 	// untagged listen gets everything at its path, as written.
 	tag int64
-	// window is a tagged listen's current result: the children its query selects.
-	window *Node
+	// window is a tagged listen's current result: the children its query selects. windowAt
+	// is the database's missed count when it was computed: a window from before a missed
+	// change is computed again in full.
+	window   *Node
+	windowAt uint64
 }
 
 // key identifies a listen among its session's: the path, the query and the client's tag.

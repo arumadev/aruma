@@ -198,6 +198,62 @@ func (q Query) Filter(n *Node) *Node {
 	return Object(children)
 }
 
+// Update returns the query's window over n from old, its window over n before a change to
+// only the children keys, without visiting n's other children. old must be Filter's result
+// on n as it was before the change. It reports false when it cannot tell: a child the limit
+// left out of old may now belong in the window, which only Filter can find.
+func (q Query) Update(old, n *Node, keys []string) (*Node, bool) {
+	if q.LoadsAll() {
+		return n, true
+	}
+	// first orders the window's children: those a limit keeps come first.
+	first := q.Index.compareEntries
+	if q.FromRight {
+		first = func(a, b sortEntry) int { return q.Index.compareEntries(b, a) }
+	}
+	// A full window may have left in-range children out, unchanged since: all of them come
+	// after its last entry, its edge. A child that now comes before the edge is sure to be
+	// ahead of them; one after it may not be.
+	full := q.Limit > 0 && old.Len() >= q.Limit
+	var edge sortEntry
+	changed := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		changed[k] = true
+	}
+	es := make([]sortEntry, 0, old.Len()+len(keys))
+	if old != nil {
+		for k, c := range old.children {
+			e := newSortEntry(q.Index, k, c)
+			if full && (edge.child == nil || first(e, edge) > 0) {
+				edge = e
+			}
+			if !changed[k] {
+				es = append(es, e)
+			}
+		}
+	}
+	for k := range changed {
+		c := n.Child(k)
+		if c == nil || !q.inRange(k, c) {
+			continue
+		}
+		if e := newSortEntry(q.Index, k, c); !full || first(e, edge) <= 0 {
+			es = append(es, e)
+		}
+	}
+	if full && len(es) < q.Limit {
+		return nil, false
+	}
+	if q.Limit > 0 {
+		es = smallest(es, q.Limit, first)
+	}
+	children := make(map[string]*Node, len(es))
+	for _, e := range es {
+		children[e.key] = e.child
+	}
+	return Object(children), true
+}
+
 // inRange reports whether the child key with value c lies within the query's bounds.
 func (q Query) inRange(key string, c *Node) bool {
 	if b := q.start; b != nil {
