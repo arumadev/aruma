@@ -301,13 +301,15 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 }
 
 // PrivateHandler serves the private metrics_listen address: /metrics, and the TLS proxy's
-// ask when the Realtime Database is on. Nothing here is reachable from the public entry point.
+// ask when the Realtime Database is on, and Go's profiler in a build with the pprof tag. Nothing
+// here is reachable from the public entry point.
 func (s *Server) PrivateHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", s.metrics.Handler())
 	if s.handlers.TLSAsk != nil {
 		mux.Handle("GET /rtdb/tls-ask", s.handlers.TLSAsk)
 	}
+	mountPprof(mux)
 	return mux
 }
 

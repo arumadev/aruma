@@ -62,15 +62,19 @@ func RandomHex(n int) string {
 	return hex.EncodeToString(b)
 }
 
-// Build compiles cmd/aruma from the module that contains the working directory into dir and
-// returns the binary's path.
-func Build(ctx context.Context, dir string) (string, error) {
+// Build compiles cmd/aruma from the module that contains the working directory into dir, with
+// the given build tags, and returns the binary's path.
+func Build(ctx context.Context, dir string, tags ...string) (string, error) {
 	root, err := ModuleRoot()
 	if err != nil {
 		return "", err
 	}
 	bin := filepath.Join(dir, "aruma")
-	cmd := exec.CommandContext(ctx, "go", "build", "-o", bin, "./cmd/aruma")
+	args := []string{"build", "-o", bin}
+	if len(tags) > 0 {
+		args = append(args, "-tags", strings.Join(tags, ","))
+	}
+	cmd := exec.CommandContext(ctx, "go", append(args, "./cmd/aruma")...)
 	cmd.Dir = root
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -359,6 +363,44 @@ func (s *Server) Metrics(ctx context.Context) (map[string]float64, error) {
 		}
 	}
 	return out, sc.Err()
+}
+
+// StartCPUProfile starts a CPU profile of the server, which must be built with the pprof tag
+// (Build) and have a metrics port. The returned function stops it and writes it to path.
+func (s *Server) StartCPUProfile(ctx context.Context) (stop func(path string) error, err error) {
+	if s.opts.MetricsPort == 0 {
+		return nil, errors.New("no metrics port")
+	}
+	post := func(action string) ([]byte, error) {
+		u := fmt.Sprintf("http://127.0.0.1:%d/debug/pprof/cpu/%s", s.opts.MetricsPort, action)
+		req, _ := http.NewRequestWithContext(ctx, "POST", u, nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		switch {
+		case resp.StatusCode == http.StatusNotFound:
+			return nil, errors.New("the server has no profiler: build it with the pprof tag")
+		case resp.StatusCode >= 300:
+			return nil, fmt.Errorf("cpu profile %s: %s %s", action, resp.Status, bytes.TrimSpace(body))
+		}
+		return body, nil
+	}
+	if _, err := post("start"); err != nil {
+		return nil, err
+	}
+	return func(path string) error {
+		prof, err := post("stop")
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(path, prof, 0o644)
+	}, nil
 }
 
 // signIn creates a console account with the operator command, once, and signs it in.
