@@ -13,6 +13,7 @@ import (
 )
 
 func TestCORS(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	created := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
@@ -86,6 +87,7 @@ func TestCORS(t *testing.T) {
 }
 
 func TestMatchCORS(t *testing.T) {
+	t.Parallel()
 	s := &Service{}
 	app := CORSRule{Origins: []string{"https://app.example.com", "http://localhost:5173"}, Methods: []string{"GET", "HEAD"}, MaxAgeSeconds: 60}
 	star := CORSRule{Origins: []string{"*"}, Methods: []string{"GET"}}

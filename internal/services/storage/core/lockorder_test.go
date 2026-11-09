@@ -56,6 +56,7 @@ func (e *env) deleteObject(name string) error {
 // every create over /v0 mints a token of its own, a GCS write carries only the admin's, and the
 // token of a deleted object is not one of the object created again under its name.
 func TestTokensDoNotCarryOver(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	firebase := func(name string) string {
@@ -98,6 +99,7 @@ func TestTokensDoNotCarryOver(t *testing.T) {
 // and the session's row, one object row at a time, so none deadlocks, and the accounts end
 // matching the rows.
 func TestCommitRacesUpdateAndDelete(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "hot", "seed")

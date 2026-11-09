@@ -15,6 +15,7 @@ import (
 // Bad metadata is 400 on every path, never a database error, and the tokens count in
 // metadata_bytes as S2-C counts them.
 func TestUploadMetadataIsInvalidNotUnavailable(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	bad := string([]byte{0xff, 'x'})
@@ -49,6 +50,7 @@ func TestUploadMetadataIsInvalidNotUnavailable(t *testing.T) {
 // On GCS a precondition that fails at finalize is terminal: kept, replayed, and the staged bytes
 // and their reservation go at once.
 func TestGCSPreconditionAtFinalizeIsFinal(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a", "exists")
@@ -81,6 +83,7 @@ func TestGCSPreconditionAtFinalizeIsFinal(t *testing.T) {
 // and the uid, and a session's first byte is checked again under the project's lock, so starting
 // many empty sessions and then sending a byte to each makes no more live sessions than allowed.
 func TestSessionCapsAtTheFirstByte(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, func(o *Options) {
 		o.Limits.UploadSessionsPerIP = 2
 		o.Limits.UploadSessionsPerProject = 3
@@ -136,6 +139,7 @@ func TestSessionCapsAtTheFirstByte(t *testing.T) {
 // Close refuses new writes, waits for those in flight, and only then releases the lock; past
 // its wait it keeps the lock and says so.
 func TestCloseWaitsForWriters(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))

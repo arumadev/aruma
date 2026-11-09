@@ -10,6 +10,7 @@ import (
 // blob_key, which Promote reports as moved earlier (S2-A): its bytes are hashed again and must be
 // the session's before anything commits.
 func TestResumeVerifiesThePlacedFile(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, c := range []struct {
 		name    string
@@ -65,6 +66,7 @@ func TestResumeVerifiesThePlacedFile(t *testing.T) {
 // A Promote that renamed and then failed to sync is called again by the next finalize, which
 // must not take the file at the key for durable because it is there (the review's case).
 func TestResumeCallsPromoteAgain(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a.txt", id, 0, "hello", false); err != nil {

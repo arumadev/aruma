@@ -34,6 +34,7 @@ func (e *env) chunk(b Bucket, name, id string, offset int64, data string, finali
 }
 
 func TestUploadOffsets(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
 	steps := []struct {
@@ -76,6 +77,7 @@ func TestUploadOffsets(t *testing.T) {
 // A finalize repeated, a query, and a chunk after the end answer with the object the first
 // reply showed, even once it was overwritten.
 func TestUploadFinalReplays(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a.txt", SurfaceFirebase))
@@ -107,6 +109,7 @@ func TestUploadFinalReplays(t *testing.T) {
 // Every terminal refusal makes the session final, is replayed on a repeat and on a query, and
 // gives the session's files and reservation back.
 func TestUploadTerminalRefusals(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	md5Of := func(s string) *[16]byte { v := md5.Sum([]byte(s)); return &v }
 	wrong := uint32(7)
@@ -176,6 +179,7 @@ func TestUploadTerminalRefusals(t *testing.T) {
 // 503 is never final: an overloaded rules engine and an unreachable Auth leave the session
 // active, and the next finalize succeeds.
 func TestUploadTransientRefusals(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
@@ -201,6 +205,7 @@ func TestUploadTransientRefusals(t *testing.T) {
 // The identity is the start's: a chunk's credential counts for nothing, and the rules see the
 // principal the session bound, at finalize.
 func TestUploadIdentityIsTheStarts(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	var seen []Principal
 	var op ruleOp
@@ -240,6 +245,7 @@ func TestUploadIdentityIsTheStarts(t *testing.T) {
 // A dashboard session (ADR-022 §15): an hour's life, a declared size, its account checked again
 // at finalize, and the upload audited.
 func TestUploadConsoleSession(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	console := Principal{Kind: PrincipalAdmin, ConsoleAccount: ownerA}
@@ -274,6 +280,7 @@ func TestUploadConsoleSession(t *testing.T) {
 // The upload id is 128 random bits, only its HMAC is stored, and it answers only on the project
 // and the name it was started for.
 func TestUploadIDIsACapability(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, Principal{Kind: PrincipalAnonymous}, uploadSpec("a.txt", SurfaceFirebase))
@@ -309,6 +316,7 @@ func TestUploadIDIsACapability(t *testing.T) {
 }
 
 func TestUploadCancel(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
@@ -338,6 +346,7 @@ func TestUploadCancel(t *testing.T) {
 // Two chunks at once on one session: the lock serialises them, the second finds the bytes the
 // first wrote and ignores them, and nothing is written twice.
 func TestUploadConcurrentChunks(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	data := strings.Repeat("0123456789abcdef", 64<<10) // 1 MiB
@@ -374,6 +383,7 @@ func TestUploadConcurrentChunks(t *testing.T) {
 // A body of unknown length reserves 8 MiB at a time and gives back what it did not use; a request
 // cut in the middle keeps, and announces, what reached the disk.
 func TestUploadUnknownLength(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceGCS))
@@ -408,6 +418,7 @@ func (r errReader) Read([]byte) (int, error) { return 0, r.err }
 
 // A store that writes other than it read announces nothing: the next request cuts the file back.
 func TestUploadStoreMismatch(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
 	if _, err := e.chunk(e.a, "a", id, 0, "abc", false); err != nil {
@@ -427,6 +438,7 @@ func TestUploadStoreMismatch(t *testing.T) {
 // An empty session expires at start + empty_session_ttl; its first durable byte moves expires_at
 // to start + upload_session_ttl.
 func TestUploadExpiresAt(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
@@ -458,6 +470,7 @@ func TestUploadExpiresAt(t *testing.T) {
 }
 
 func TestStartUploadChecks(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	long := strings.Repeat("x", 2<<10)
@@ -499,6 +512,7 @@ func TestStartUploadChecks(t *testing.T) {
 }
 
 func TestLimitAddr(t *testing.T) {
+	t.Parallel()
 	for in, want := range map[string]string{
 		"192.0.2.7": "192.0.2.7", "::ffff:192.0.2.7": "192.0.2.7", "2001:db8:1:2:3:4:5:6": "2001:db8:1:2::",
 	} {

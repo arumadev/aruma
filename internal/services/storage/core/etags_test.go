@@ -10,6 +10,7 @@ import (
 // for the same generation and metageneration. core may not import wire (ADR-022 §1), so the
 // two functions stay apart and wire's table holds both to one value (wire/etags_test.go).
 func TestObjectETagMatchesWire(t *testing.T) {
+	t.Parallel()
 	raw, err := os.ReadFile("../wire/testdata/etags.json")
 	if err != nil {
 		t.Fatal(err)

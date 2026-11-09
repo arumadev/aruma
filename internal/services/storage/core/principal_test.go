@@ -9,6 +9,7 @@ import (
 // 2^53 is still that int in the rules when the upload resumes (deployed rules read
 // 9007199254740993 exactly: S7-R, test/oracle/rules/production/deployed-firestore.json).
 func TestSessionPrincipalKeepsClaimNumbers(t *testing.T) {
+	t.Parallel()
 	in := Principal{Kind: PrincipalUser, UID: "u1", Token: map[string]any{
 		"n": json.Number("9007199254740993"), "f": json.Number("2.5"),
 		"m": map[string]any{"n": json.Number("-9007199254740993")},

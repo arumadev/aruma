@@ -9,6 +9,7 @@ import (
 // The stored default disposition is platform/disposition's escaping, the one media's download
 // default uses too: PY-RR storedObjects (TestDefaultDisposition), and every byte alone.
 func TestDefaultDispositionIsThePackages(t *testing.T) {
+	t.Parallel()
 	const pyrr = "inline; filename*=utf-8''na%C3%AFve%20%27q%27%201+1%25%3Bx.txt" // PY-RR
 	if got := defaultDisposition("dir/naïve 'q' 1+1%;x.txt"); got != pyrr {
 		t.Errorf("%q, want %q", got, pyrr)

@@ -9,6 +9,7 @@ import (
 )
 
 func TestApplyPatch(t *testing.T) {
+	t.Parallel()
 	base := Object{Name: "a", ContentType: "text/plain", CacheControl: "no-cache", ContentLanguage: "en",
 		Metadata: map[string]string{"a": "1", "b": "2"}, DownloadTokens: []string{"t"}}
 	for _, c := range []struct {
@@ -45,6 +46,7 @@ func TestApplyPatch(t *testing.T) {
 
 // The token key never reaches the rules or a row from /v0, and is how GCS sets the tokens.
 func TestSurfacePatch(t *testing.T) {
+	t.Parallel()
 	v := "planted"
 	in := Patch{Metadata: map[string]*string{TokensKey: &v, "k": &v}}
 	for _, sf := range []Surface{SurfaceFirebase, SurfaceConsole} {
@@ -82,6 +84,7 @@ func TestSurfacePatch(t *testing.T) {
 }
 
 func TestSplitTokens(t *testing.T) {
+	t.Parallel()
 	for in, want := range map[string][]string{
 		"a":          {"a"},
 		"a,b":        {"a", "b"},
@@ -99,6 +102,7 @@ func TestSplitTokens(t *testing.T) {
 }
 
 func TestCheckPatch(t *testing.T) {
+	t.Parallel()
 	s := &Service{limits: DefaultLimits()}
 	ok := []Patch{
 		{},
@@ -133,6 +137,7 @@ func TestCheckPatch(t *testing.T) {
 }
 
 func TestMetadataSize(t *testing.T) {
+	t.Parallel()
 	s := &Service{limits: DefaultLimits()}
 	o := Object{Metadata: map[string]string{"ab": "cde"}}
 	if n := metadataSize(o); n != 5 {

@@ -189,6 +189,7 @@ func (f *objectsFixture) row(t *testing.T, name string) queries.StorageObject {
 func ptr[T any](v T) *T { return &v }
 
 func TestStat(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	put := f.put(t, "photos/a.png", seed{body: "png", metadata: map[string]string{"k": "v"}, fields: map[string]string{FieldContentType: "image/png"}})
@@ -253,6 +254,7 @@ func TestStat(t *testing.T) {
 
 // Readers racing on an object without a token mint exactly one, however many they are.
 func TestStatMintsOneTokenUnderConcurrency(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.png", seed{body: "x"})
@@ -287,6 +289,7 @@ func TestStatMintsOneTokenUnderConcurrency(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	tok := newDownloadToken()
@@ -369,6 +372,7 @@ func TestOpen(t *testing.T) {
 // A row whose sealed tokens were copied from another object opens with no token, and its reads
 // fail loudly rather than show tokens of another object.
 func TestOpenCopiedSeal(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	tok := newDownloadToken()
@@ -387,6 +391,7 @@ func TestOpenCopiedSeal(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	tok := newDownloadToken()
@@ -466,6 +471,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateLimits(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.txt", seed{body: "a", metadata: map[string]string{"big": strings.Repeat("x", 8<<10-3-1)}})
@@ -501,6 +507,7 @@ func TestUpdateLimits(t *testing.T) {
 // On GCS the tokens are custom metadata (B §7): setting the key replaces them, which revokes the
 // old link, deleting it removes them, and "metadata": null clears them with the rest.
 func TestUpdateTokensOnGCS(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	old := newDownloadToken()
@@ -548,6 +555,7 @@ func TestUpdateTokensOnGCS(t *testing.T) {
 }
 
 func TestUpdatePreconditions(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	put := f.put(t, "a.txt", seed{body: "a"})
@@ -576,6 +584,7 @@ func TestUpdatePreconditions(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.txt", seed{body: "12345"})
@@ -629,6 +638,7 @@ func TestDelete(t *testing.T) {
 // A delete and a metadata change racing on one object: the delete either wins, and the change
 // is 404, or reads the changed row again; the file is queued once and the quota released once.
 func TestDeleteRacesUpdate(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	for i := range 20 {
@@ -656,6 +666,7 @@ func TestDeleteRacesUpdate(t *testing.T) {
 
 // The tokens are sealed in the database: no token in the clear in any column, nor in a dump.
 func TestTokensSealedInTheDatabase(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.txt", seed{body: "a"})
@@ -717,6 +728,7 @@ func pgDump(t *testing.T, pool *pgxpool.Pool) []byte {
 }
 
 func TestObjectFromRow(t *testing.T) {
+	t.Parallel()
 	s := &Service{keys: testKeys(t)}
 	sealed, _ := s.sealTokens(testProject, "a", []string{"t1"})
 	now := time.Now()
@@ -734,6 +746,7 @@ func TestObjectFromRow(t *testing.T) {
 // Updates of one object at once wait on its row's lock, and none is lost or refused: 32
 // writers of 32 keys leave the 32 keys and metageneration 33.
 func TestUpdateConcurrentWriters(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.txt", seed{body: "a"})
@@ -773,6 +786,7 @@ func TestUpdateConcurrentWriters(t *testing.T) {
 // The rules decide a change on the row it locks: a refusal there writes nothing, and the mint
 // asks them again under the lock.
 func TestChangesDecideOnTheLockedRow(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	f.put(t, "a.txt", seed{body: "a"})

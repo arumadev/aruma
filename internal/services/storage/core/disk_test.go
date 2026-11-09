@@ -63,6 +63,7 @@ func pendingOn(f func()) (msg string) {
 }
 
 func TestOnDisk(t *testing.T) {
+	t.Parallel()
 	e, dir := onDisk(t)
 	ctx := context.Background()
 	if b, err := os.ReadFile(filepath.Join(dir, "INSTANCE")); err != nil || !strings.Contains(string(b), e.s.instance) {

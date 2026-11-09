@@ -8,6 +8,7 @@ import (
 // Rewrite checks both names before anything reads: a source with NUL is 400 (ADR-023 §3-4), not
 // the database's refusal of it as 503.
 func TestRewriteValidatesBothNames(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	e.insert(e.a, "ok.txt", "abc")
 	for _, c := range []struct{ src, dst string }{

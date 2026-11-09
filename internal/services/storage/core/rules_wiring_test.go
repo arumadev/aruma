@@ -54,6 +54,7 @@ var (
 )
 
 func TestEveryOperationAsksTheRules(t *testing.T) {
+	t.Parallel()
 	e, wp := newWiredEnv(t)
 	deny, allow := compileStorage(t, denyAll), compileStorage(t, allowAll)
 	for _, name := range []string{"w/stat", "w/open", "w/list/a", "w/update", "w/delete", "w/rewrite"} {
@@ -140,6 +141,7 @@ func TestEveryOperationAsksTheRules(t *testing.T) {
 // create_token, delete_token and the bucket's CORS are the admins' alone, as in Firebase: no
 // rules let a user through, and none stop an admin.
 func TestAdminOperationsIgnoreTheRules(t *testing.T) {
+	t.Parallel()
 	e, wp := newWiredEnv(t)
 	o := e.insert(e.a, "w/tokens", "abc")
 	if _, err := e.s.CreateToken(t.Context(), e.a, o.Name, asAdmin()); err != nil {

@@ -28,6 +28,7 @@ func (b *breakingBody) Read(p []byte) (int, error) {
 // session caps, and on a later chunk. The session announces the bytes, the account holds them,
 // and the client resumes from there.
 func TestUploadKeepsBytesOfABrokenRequest(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asUser("u1"), uploadSpec("a.bin", SurfaceFirebase))
 	for _, c := range []struct {
@@ -60,6 +61,7 @@ func TestUploadKeepsBytesOfABrokenRequest(t *testing.T) {
 // A one-request upload whose body breaks gives back its reservation, though the request's
 // context is cancelled by then.
 func TestInsertReleasesABrokenRequest(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	_, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("b.bin", SurfaceGCS), &breakingBody{data: []byte("abc"), cancel: cancel}, -1)

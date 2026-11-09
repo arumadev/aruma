@@ -23,6 +23,7 @@ import (
 // cold caches of twenty projects, every one finishes. Unprepared, a writer under the lock fails
 // at once instead of waiting for a third connection.
 func TestDecidingUnderALockNeedsNoConnection(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, storetest.NewDB(t)+"&pool_max_conns=2")
 	if err != nil {

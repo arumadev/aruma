@@ -40,6 +40,7 @@ func (e *env) unreferencedFiles() []string {
 }
 
 func TestCrashDuringInsert(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, c := range []struct {
 		point     string
@@ -83,6 +84,7 @@ func TestCrashDuringInsert(t *testing.T) {
 // A resumable upload crashed at each of its steps finishes with its next requests: a query for
 // the durable offset, the rest from there, and the finalize.
 func TestCrashDuringUpload(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, point := range []string{
 		"start.staging",     // the staging file made, the row not written
@@ -165,6 +167,7 @@ func TestCrashDuringUpload(t *testing.T) {
 // A purge cut in the middle, at each of its steps, finishes on its next run; running it twice is
 // nothing; the other project is untouched.
 func TestPurgeProject(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, point := range []string{"", "purge.staging", "purge.files", "cut"} {
 		t.Run("crash at "+point, func(t *testing.T) {

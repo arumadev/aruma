@@ -11,6 +11,7 @@ import (
 // create_token and delete_token, as the emulator answers them (tokens.json) and CT checks them:
 // admins only, each a new metageneration, and deleting the last token makes another (E §5).
 func TestCreateAndDeleteToken(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	first := newDownloadToken()
@@ -80,6 +81,7 @@ func TestCreateAndDeleteToken(t *testing.T) {
 }
 
 func TestMatchToken(t *testing.T) {
+	t.Parallel()
 	a, b := newDownloadToken(), newDownloadToken()
 	for _, c := range []struct {
 		tokens []string
@@ -103,6 +105,7 @@ func TestMatchToken(t *testing.T) {
 
 // GCS shows the tokens under the custom metadata key, /v0 in downloadTokens alone.
 func TestTokensOnEachSurface(t *testing.T) {
+	t.Parallel()
 	o := Object{Metadata: map[string]string{"note": "n"}, DownloadTokens: []string{"t1", "t2"}}
 	if got := GCSMetadata(o); !maps.Equal(got, map[string]string{"note": "n", TokensKey: "t1,t2"}) {
 		t.Errorf("GCSMetadata = %v", got)
