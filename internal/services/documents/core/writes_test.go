@@ -18,6 +18,7 @@ import (
 var testDB = DB{Project: 482915736204, ProjectID: "chatapp-8ae21", ID: DefaultDatabase}
 
 func TestDocumentEncodingRoundTrip(t *testing.T) {
+	t.Parallel()
 	fields := value.Map(
 		value.Field{Name: "n", Value: value.Null()},
 		value.Field{Name: "b", Value: value.Bool(true)},
@@ -84,6 +85,7 @@ func mustPath(t *testing.T, s string) value.FieldPath {
 // The preconditions and their messages, production's (f1-create.json, f1-update.json,
 // f1-delete.json), checked against the documents as locked.
 func TestPlanPreconditions(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("aruma-ref-f1-write/u1")
 	name := testDB.DocumentName(p)
 	stored := time.UnixMicro(1793038697978566)
@@ -120,6 +122,7 @@ func TestPlanPreconditions(t *testing.T) {
 }
 
 func TestPlanMasksAndResults(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("c/d")
 	prev := time.UnixMicro(1_000_000)
 	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {seq: 3,
@@ -172,6 +175,7 @@ func TestPlanMasksAndResults(t *testing.T) {
 // both have it, an update then a delete neither (f2-commit.json same.delete_update,
 // same.update_delete).
 func TestPlanResultsOfOneDocument(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("aruma-ref-f2-commit/s4")
 	commit := time.UnixMicro(2_000_000)
 	delUpdate := newPlan([]Write{{Kind: WriteDelete, Path: p}, {Kind: WriteUpdate, Path: p, Fields: fieldsOf("a", value.Int(1))}})
@@ -193,6 +197,7 @@ func TestPlanResultsOfOneDocument(t *testing.T) {
 // Of two failed preconditions, production names the missing document's, in either order
 // (f2-commit.json pre.two_failures, pre.two_failures_reversed).
 func TestPlanTwoFailedPreconditions(t *testing.T) {
+	t.Parallel()
 	missing, n1 := ParsePath("aruma-ref-f2-commit/missing6"), ParsePath("aruma-ref-f2-commit/n1")
 	stored := time.UnixMicro(1793038697978566)
 	locked := map[string]*lockedDoc{string(storedKey(nameKey(n1))): {seq: 1, fields: fieldsOf("a", value.Int(1)), createTime: stored, updateTime: stored}}
@@ -208,6 +213,7 @@ func TestPlanTwoFailedPreconditions(t *testing.T) {
 }
 
 func TestPlanDocumentTooLarge(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("aruma-ref-f0/big")
 	// One byte over the limit, as production measures it.
 	base := value.DocumentSize(p.String(), fieldsOf("s", value.String("")))
@@ -220,6 +226,7 @@ func TestPlanDocumentTooLarge(t *testing.T) {
 }
 
 func TestDatabaseNotFoundTexts(t *testing.T) {
+	t.Parallel()
 	e := &DatabaseNotFoundError{ProjectID: "chatapp-8ae21", DatabaseID: "aruma-ref-nonexistent"}
 	if got := e.RESTMessage(); got != "The database aruma-ref-nonexistent does not exist for project chatapp-8ae21 Please visit https://console.cloud.google.com/datastore/setup?project=chatapp-8ae21 to add a Cloud Datastore or Cloud Firestore database. " {
 		t.Errorf("REST: %q", got)
@@ -235,6 +242,7 @@ func TestDatabaseNotFoundTexts(t *testing.T) {
 // A commit of many writes of one large field stops at MaxCommitWork (F2 review M1, re-review
 // N1): each write rebuilds the field, which the budget bounds.
 func TestCommitWorkBound(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("c/d")
 	els := make([]value.Value, 10_000)
 	for i := range els {
@@ -273,6 +281,7 @@ func TestCommitWorkBound(t *testing.T) {
 // and a REQUEST_TIME transform each, the best of three runs. A linear cost grows about 4 times;
 // one that checks the whole document per write grows 4 times from about 10 ms a write.
 func TestManyWritesOfOneDocument(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("short")
 	}
@@ -311,6 +320,7 @@ func TestManyWritesOfOneDocument(t *testing.T) {
 // writes of one document, masked, whole, transformed and deleting, some invalid, some too
 // large.
 func TestApplyMatchesWholeDocumentFold(t *testing.T) {
+	t.Parallel()
 	seed := uint64(time.Now().UnixNano())
 	t.Logf("seed %d", seed)
 	r := rand.New(rand.NewPCG(seed, 3))

@@ -81,6 +81,7 @@ func pending(t *testing.T, done <-chan error) {
 }
 
 func TestLockModes(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		a, b, join lockMode
 		compatible bool
@@ -106,6 +107,7 @@ func TestLockModes(t *testing.T) {
 // f0-contention s3a: the older writer wounds the younger reader, and does not wait; the younger
 // learns it on its next call.
 func TestOlderWoundsYoungerHolder(t *testing.T) {
+	t.Parallel()
 	tb, stats := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	older, younger := tb.begin(0, false), tb.begin(0, false)
@@ -133,6 +135,7 @@ func TestOlderWoundsYoungerHolder(t *testing.T) {
 // f0-contention s1: both read D; the younger's commit waits; the older's commit wounds it, at
 // once, and goes through.
 func TestOlderCommitWoundsWaitingYoungerCommit(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	older, younger := tb.begin(0, false), tb.begin(0, false)
@@ -154,6 +157,7 @@ func TestOlderCommitWoundsWaitingYoungerCommit(t *testing.T) {
 // f0-contention s2: the younger waits for the older, which it does not wound, until the older
 // ends.
 func TestYoungerWaitsForOlder(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	older, younger := tb.begin(0, false), tb.begin(0, false)
@@ -176,6 +180,7 @@ func TestYoungerWaitsForOlder(t *testing.T) {
 // f0-contention s3b: age is taken at the first lock request, not at begin. T1 began first but
 // read nothing; T2 read D; T1's blind write waits for T2 instead of wounding it.
 func TestAgeFromFirstLock(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	t1 := tb.begin(0, false)
@@ -204,6 +209,7 @@ func TestAgeFromFirstLock(t *testing.T) {
 // f0-contention s6: a waiter gives up at the wait timeout with "Too much contention", and its
 // transaction ends with its locks.
 func TestWaitTimeout(t *testing.T) {
+	t.Parallel()
 	tb, stats := newTable(t, TxnConfig{WaitTimeout: 50 * time.Millisecond})
 	ctx := t.Context()
 	reader, writer := tb.begin(0, false), tb.begin(0, true)
@@ -230,6 +236,7 @@ func TestWaitTimeout(t *testing.T) {
 
 // A cancelled wait withdraws its request and leaves the transaction open.
 func TestCancelledWait(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	older, younger := tb.begin(0, false), tb.begin(0, false)
 	if err := tb.acquire(t.Context(), older, "dD", lockExclusive); err != nil {
@@ -256,6 +263,7 @@ func TestCancelledWait(t *testing.T) {
 // the waits time out, the transaction ends with both of its requests withdrawn: no lock is
 // granted to it later, and none is left held (F2 review B1).
 func TestConcurrentWaitsTimeOut(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{WaitTimeout: 100 * time.Millisecond})
 	h, l := tb.begin(0, false), tb.begin(0, false)
 	for _, n := range []string{"da", "db"} {
@@ -287,6 +295,7 @@ func TestConcurrentWaitsTimeOut(t *testing.T) {
 // them, and a cancelled read withdraws only its own request: the other still waits and is
 // granted.
 func TestEndWithdrawsEveryWait(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	h, l := tb.begin(0, false), tb.begin(0, false)
 	for _, n := range []string{"da", "db", "dc"} {
@@ -351,6 +360,7 @@ func TestEndWithdrawsEveryWait(t *testing.T) {
 // Two retries of one attempt keep its age: begin's order breaks the tie, so a crosswise pair of
 // them does not wait for each other until the timeout (F2 review m1).
 func TestSameAgeOrdered(t *testing.T) {
+	t.Parallel()
 	tb, stats := newTable(t, TxnConfig{WaitTimeout: 5 * time.Second})
 	first, second := tb.begin(7, false), tb.begin(7, false)
 	if err := tb.acquire(t.Context(), first, "da", lockExclusive); err != nil {
@@ -374,6 +384,7 @@ func TestSameAgeOrdered(t *testing.T) {
 // An older request wounds a younger one queued ahead of it that it conflicts with: otherwise
 // the older would wait for the younger, and a cycle could last until the wait timeout.
 func TestOlderWoundsYoungerQueuedAhead(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	older := tb.begin(0, false)
@@ -407,6 +418,7 @@ func TestOlderWoundsYoungerQueuedAhead(t *testing.T) {
 // contention text, and the holder keeps its lock (f2-transactions.json lifetime
 // idle_70s_then_plain_write; f0-contention s5).
 func TestIdleHolderNotWounded(t *testing.T) {
+	t.Parallel()
 	clk := newClock()
 	tb, _ := newTable(t, TxnConfig{Now: clk.Now, WaitTimeout: 100 * time.Millisecond})
 	ctx := t.Context()
@@ -430,6 +442,7 @@ func TestIdleHolderNotWounded(t *testing.T) {
 
 // A committing transaction is never wounded: the older one waits for it.
 func TestCommittingNotWounded(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	older := tb.begin(0, false)
@@ -453,6 +466,7 @@ func TestCommittingNotWounded(t *testing.T) {
 
 // Requests are granted in arrival order: a shared request waits behind a queued exclusive one.
 func TestFIFO(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{})
 	ctx := t.Context()
 	a, b, c := tb.begin(0, false), tb.begin(0, false), tb.begin(0, false)
@@ -475,6 +489,7 @@ func TestFIFO(t *testing.T) {
 
 // Scopes: a listing's shared lock and a write's intent lock conflict; writes' intents do not.
 func TestScopeLocks(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{WaitTimeout: 30 * time.Millisecond})
 	ctx := t.Context()
 	w1, w2 := tb.begin(0, true), tb.begin(0, true)
@@ -501,6 +516,7 @@ func TestScopeLocks(t *testing.T) {
 }
 
 func TestMaxLocks(t *testing.T) {
+	t.Parallel()
 	tb, _ := newTable(t, TxnConfig{MaxLocks: 2})
 	ctx := t.Context()
 	lt := tb.begin(0, false)
@@ -553,6 +569,7 @@ func lockInvariant(tb *lockTable) error {
 // versions of the names it locks and bumps those it holds exclusive once committing: a version
 // that moved under a lock is a broken lock.
 func TestLockManagerRandomSchedules(t *testing.T) {
+	t.Parallel()
 	tb, stats := newTable(t, TxnConfig{WaitTimeout: 10 * time.Second})
 	const workers, each, names = 12, 150, 5
 	var versions [names]atomic.Int64

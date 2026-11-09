@@ -13,6 +13,7 @@ import (
 // Transforms apply under the document's lock: concurrent increments lose none. REQUEST_TIME is
 // the commit's own commit_time at whole milliseconds, in the stored document and the result.
 func TestTransformsCommit(t *testing.T) {
+	t.Parallel()
 	notes := &recordingNotifier{}
 	s, pool := newStore(t, Options{Notifier: notes})
 	ctx := t.Context()
@@ -70,6 +71,7 @@ func TestTransformsCommit(t *testing.T) {
 // A commit that changes nothing takes no seq, but its commit_time is the clock's, as
 // production's advances: later than the last commit, and a read at it answers.
 func TestUnchangedCommitTimeAdvances(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	p := ParsePath("c/same")
@@ -100,7 +102,8 @@ func TestUnchangedCommitTimeAdvances(t *testing.T) {
 // A REQUEST_TIME commit whose session the server ends between its stamp and its second batch
 // (idle_in_transaction_session_timeout) committed nothing: it is ABORTED with the contention
 // text, not an unknown outcome, the hub hears of nothing, and the next commit takes its seq
-// (F2 review m3).
+// (F2 review m3). It changes the package's commitSettings, so it runs alone, before the
+// parallel tests.
 func TestStampFirstIdleTimeout(t *testing.T) {
 	notes := &recordingNotifier{}
 	s, _ := newStore(t, Options{Notifier: notes})

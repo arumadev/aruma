@@ -27,6 +27,7 @@ func changedSince(rd *IndexRead, seq int64, scope ChangeScope) ([]Document, erro
 // each, as they were at that snapshot (Path alone for one created since), and fails when the
 // changelog no longer holds those commits.
 func TestChangedSince(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	mustCommit(t, s, set("c/a", doc("v", value.Int(1))), set("c/b", doc("v", value.Int(2))), set("d/x", doc()),
@@ -105,6 +106,7 @@ func TestChangedSince(t *testing.T) {
 // parent, or of a collection whose id merely starts or ends like the scope's, with text and
 // numeric ids alike.
 func TestChangedSinceScope(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	mustCommit(t, s, set("x/seed", doc()))
@@ -165,6 +167,7 @@ func TestChangedSinceScope(t *testing.T) {
 // other collections' images out, and the rows stream, so 24 MiB of large documents changed in
 // another collection, and in a nested collection of the same id, cost little.
 func TestChangedSinceMemory(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	big := value.String(strings.Repeat("x", 1<<20-1000))
@@ -217,6 +220,7 @@ func TestChangedSinceMemory(t *testing.T) {
 // row is younger than the configured retention, not only than the least retention: a database
 // idle longer than the retention, then a commit, then a client that stalls minutes, still reads.
 func TestChangedSinceRetention(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		retention time.Duration
 		aborted   bool

@@ -30,6 +30,7 @@ func waitFor(t *testing.T, d time.Duration, what string, cond func() bool) {
 // One process holds the Document Database; a second is refused, takes over when the first's
 // session is lost, and the first recovers when the second stops (ADR-024 §7).
 func TestInstanceLock(t *testing.T) {
+	t.Parallel()
 	url := storetest.NewDB(t)
 	cfg, err := pgx.ParseConfig(url)
 	if err != nil {
@@ -97,6 +98,7 @@ func TestInstanceLock(t *testing.T) {
 // session keeps the lock, the instance keeps serving, and no other process can take it
 // (review M6).
 func TestInstanceSlowCheckKeepsTheLock(t *testing.T) {
+	t.Parallel()
 	url := storetest.NewDB(t)
 	cfg, err := pgx.ParseConfig(url)
 	if err != nil {
@@ -131,6 +133,7 @@ func TestInstanceSlowCheckKeepsTheLock(t *testing.T) {
 // A check that finds its session alive without the lock reports the loss, and one that finds
 // the connection closed does too.
 func TestInstanceCheckSeesTheLockGone(t *testing.T) {
+	t.Parallel()
 	url := storetest.NewDB(t)
 	cfg, err := pgx.ParseConfig(url)
 	if err != nil {
@@ -164,6 +167,7 @@ func TestInstanceCheckSeesTheLockGone(t *testing.T) {
 // this process's commit fails UNAVAILABLE before the guard's next check, and makes the guard see
 // the loss at once (review lock-loss-commit-window).
 func TestInstanceFenceStopsCommits(t *testing.T) {
+	t.Parallel()
 	url := storetest.NewDB(t)
 	cfg, err := pgx.ParseConfig(url)
 	if err != nil {
@@ -214,6 +218,7 @@ func TestInstanceFenceStopsCommits(t *testing.T) {
 // A process that takes the lock waits for the transactions that hold a sequencer row, so that no
 // commit of the previous holder that passed its fence lands after it serves (ADR-024 §7).
 func TestInstanceTakeWaitsForStampedCommits(t *testing.T) {
+	t.Parallel()
 	url := storetest.NewDB(t)
 	cfg, err := pgx.ParseConfig(url)
 	if err != nil {

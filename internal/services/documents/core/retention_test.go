@@ -24,6 +24,7 @@ func countRows(t *testing.T, pool *pgxpool.Pool, table string, project int64) in
 // Retention deletes the versions that ended before the read_time window and the changelog rows
 // older than its retention, in bounded batches, and keeps the rest (ADR-024 §8, review M4).
 func TestRetention(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	for i := range 10 {
@@ -76,6 +77,7 @@ func TestRetention(t *testing.T) {
 
 // Retention runs only on the process that holds the single-instance lock.
 func TestRetentionNeedsTheLock(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	other := StartInstance(t.Context(), pool.Config().ConnConfig, InstanceOptions{BootWait: 2 * time.Second, Log: slog.New(slog.DiscardHandler)})
 	t.Cleanup(other.Close)
@@ -97,6 +99,7 @@ func TestRetentionNeedsTheLock(t *testing.T) {
 
 // PurgeProject removes every row of the project, and none of another's (review M5).
 func TestPurgeProject(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	other := DB{Project: 1, ProjectID: "other-1", ID: DefaultDatabase}

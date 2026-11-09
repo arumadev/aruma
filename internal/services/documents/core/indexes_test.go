@@ -81,6 +81,7 @@ func scanPaths(t *testing.T, s *PGStore, r IndexRange) []string {
 // Commits keep the automatic single-field entries exact through creates, updates, masked
 // updates and deletes, and a scan reads an index in order.
 func TestCommitIndexEntries(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	mustCommit(t, s,
 		set("c/a", doc("n", value.Int(3), "t", value.Array(value.String("x"), value.String("y")))),
@@ -127,6 +128,7 @@ func cloneKey(b []byte) []byte { return append([]byte(nil), b...) }
 
 // The limits refuse the commit with production's error, before anything is written.
 func TestCommitIndexLimits(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	long := ParsePath("c/" + strings.Repeat("n", 6144-16-2-1))
 	_, err := s.Commit(t.Context(), testDB, []Write{set(long.String(), value.Map())})
@@ -151,6 +153,7 @@ func TestCommitIndexLimits(t *testing.T) {
 // then READY; its operation completes; the same index again is ALREADY_EXISTS; the catalog the
 // planner reads follows each step.
 func TestCompositeLifecycle(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	for i := range 10 {
@@ -239,6 +242,7 @@ func TestCompositeLifecycle(t *testing.T) {
 
 // What CreateIndex refuses, and how it normalizes.
 func TestCreateIndexValidation(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{IndexLimits: IndexLimits{Composites: 2}})
 	ctx := t.Context()
 	vector := &adminpb.Index_IndexField{FieldPath: "v", ValueMode: &adminpb.Index_IndexField_VectorConfig_{
@@ -284,6 +288,7 @@ func TestCreateIndexValidation(t *testing.T) {
 // before a vector field, in the direction of the last ordered field; and takes an exported
 // file's density back.
 func TestNormalizeComposite(t *testing.T) {
+	t.Parallel()
 	vector := &adminpb.Index_IndexField{FieldPath: "v", ValueMode: &adminpb.Index_IndexField_VectorConfig_{
 		VectorConfig: &adminpb.Index_IndexField_VectorConfig{Dimension: 3, Type: &adminpb.Index_IndexField_VectorConfig_Flat{Flat: &adminpb.Index_IndexField_VectorConfig_FlatIndex{}}}}}
 	show := func(ix *adminpb.Index) string {
@@ -334,6 +339,7 @@ func TestNormalizeComposite(t *testing.T) {
 // collection-group override adds them across collections of the group, and each change shows in
 // the Field resource with its inheritance.
 func TestFieldOverrides(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{IndexLimits: IndexLimits{FieldOverrides: 2}})
 	ctx := t.Context()
 	for i := range 7 {
@@ -432,6 +438,7 @@ func TestFieldOverrides(t *testing.T) {
 // The catalog cache follows every change at once, and a commit that computed its entries with
 // a catalog that changed under it is computed again.
 func TestCatalogInvalidation(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	mustCommit(t, s, set("c/a", doc("a", value.Int(1), "b", value.Int(2))))
@@ -461,6 +468,7 @@ func TestCatalogInvalidation(t *testing.T) {
 
 // A build stopped part way, as by a restart, resumes from its cursor in another store.
 func TestBuildResumesAfterRestart(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	var ws []Write
@@ -490,6 +498,7 @@ func TestBuildResumesAfterRestart(t *testing.T) {
 // group enabled, while writers create, update and delete documents of the group under two
 // parents; afterwards the entries are exactly the documents'.
 func TestBuildsUnderConcurrentCommits(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{CommitConcurrency: 4})
 	ctx := t.Context()
 	names := make([]string, 0, 40)
@@ -591,6 +600,7 @@ func TestBuildsUnderConcurrentCommits(t *testing.T) {
 
 // Purging a project removes its index entries, indexes, overrides and operations.
 func TestPurgeIndexes(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	mustCommit(t, s, set("c/a", doc("a", value.Int(1), "b", value.Int(1))))

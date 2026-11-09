@@ -42,6 +42,7 @@ func intField(t *testing.T, d Document, f string) int64 {
 // An admin's transaction reads, then commits; the id is spent after (f0-errors.json
 // txn_reused.commit_second; f0-contention s5).
 func TestPessimisticReadThenCommit(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	mustCommit(t, s, set("acct/a", doc("n", value.Int(1))))
@@ -82,6 +83,7 @@ func isCode(err error, c Code) bool {
 // A forged or foreign id is "Invalid transaction."; an authentic one this process no longer
 // knows is ABORTED (ADR-025 §7.5).
 func TestTransactionIDs(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	ref := begin(t, s, admin, TransactionOptions{})
@@ -122,6 +124,7 @@ func TestTransactionIDs(t *testing.T) {
 
 // A transaction ends 270 s after Begin, not when idle (f0-contention s5).
 func TestTransactionExpiry(t *testing.T) {
+	t.Parallel()
 	clk := newClock()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{Now: clk.Now}})
 	ctx := t.Context()
@@ -182,6 +185,7 @@ func TestTransactionExpiry(t *testing.T) {
 // f0-contention s1 on Postgres: both read D; the younger's commit waits; the older commits and
 // the younger is wounded. The older's write is the last.
 func TestConflictingPessimisticWriters(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	d := ParsePath("txn/D")
@@ -215,6 +219,7 @@ func TestConflictingPessimisticWriters(t *testing.T) {
 // with the wound text, and later calls with the contention one; its rollback succeeds
 // (f2-locks.json wounded_transaction).
 func TestWoundedReaderLearnsOnNextCall(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	t1 := begin(t, s, admin, TransactionOptions{})
@@ -245,6 +250,7 @@ func TestWoundedReaderLearnsOnNextCall(t *testing.T) {
 // f0-contention s6b: a commit without a transaction waits for a transaction's read lock, and
 // gives up at the wait timeout with "Too much contention"; the document is unchanged.
 func TestCommitWaitsForReadLock(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{WaitTimeout: 100 * time.Millisecond}})
 	ctx := t.Context()
 	mustCommit(t, s, set("txn/D", doc("v", value.Int(1))))
@@ -265,6 +271,7 @@ func TestCommitWaitsForReadLock(t *testing.T) {
 // A commit without a transaction that an older transaction wounds while it waits has done
 // nothing yet: it asks for its locks again, keeping its age, and the client never sees the wound.
 func TestPlainCommitRetriesItsWound(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	older := begin(t, s, admin, TransactionOptions{})
@@ -297,6 +304,7 @@ func TestPlainCommitRetriesItsWound(t *testing.T) {
 // A plain commit wounded while the rules judge it is judged again, and what the judging counted
 // in the usage (CountUsage) counts once: for the attempt that commits.
 func TestWoundRetryCountsUsageOnce(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	older := begin(t, s, admin, TransactionOptions{})
@@ -344,6 +352,7 @@ func TestWoundRetryCountsUsageOnce(t *testing.T) {
 // A listing in a pessimistic transaction locks its collection: a new document there waits,
 // another collection's does not (ADR-024 §6.1, coarse-query-locks).
 func TestPessimisticListLocksItsCollection(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{WaitTimeout: 100 * time.Millisecond}})
 	ctx := t.Context()
 	mustCommit(t, s, set("c/A/sub/1", doc()))
@@ -367,6 +376,7 @@ func TestPessimisticListLocksItsCollection(t *testing.T) {
 // in a read-only transaction sees one (f2-transactions.json read.run_query_read_only); one after
 // its first read is not.
 func TestReadOnlyTransaction(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	first := mustCommit(t, s, set("ro/a", doc("n", value.Int(1))))
@@ -427,6 +437,7 @@ func TestReadOnlyTransaction(t *testing.T) {
 
 // An end user's read-write transaction must ask for OPTIMISTIC; an admin's may.
 func TestModelByPrincipal(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	for _, c := range []Concurrency{ConcurrencyDefault, ConcurrencyPessimistic} {
@@ -459,6 +470,7 @@ func TestModelByPrincipal(t *testing.T) {
 // An optimistic transaction commits when nothing it read changed, and is ABORTED when a document
 // it read, or a listing it made, did.
 func TestOptimistic(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	opt := TransactionOptions{Concurrency: ConcurrencyOptimistic}
@@ -513,6 +525,7 @@ func TestOptimistic(t *testing.T) {
 
 // retry_transaction keeps the age of the attempt it retries and rolls it back (ADR-024 §6.2).
 func TestRetryKeepsAge(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	first := begin(t, s, admin, TransactionOptions{})
@@ -554,6 +567,7 @@ func TestRetryKeepsAge(t *testing.T) {
 
 // Over the bound of open pessimistic transactions, Begin is ABORTED; ending one makes room.
 func TestMaxOpenTransactions(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxOpen: 2, MaxOpenUnlocked: 1}})
 	ctx := t.Context()
 	a := begin(t, s, admin, TransactionOptions{})
@@ -578,6 +592,7 @@ func TestMaxOpenTransactions(t *testing.T) {
 // others still begin; an admin, and a caller without a uid, are bounded by the database's alone
 // (F2 review M2).
 func TestMaxOpenPerUser(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxOpenPerUser: 2, MaxOpenUnlocked: 6}})
 	ctx := t.Context()
 	ro := TransactionOptions{ReadOnly: true}
@@ -602,6 +617,7 @@ func TestMaxOpenPerUser(t *testing.T) {
 // Past MaxEnded, the oldest records of ended transactions go: their ids answer the expired text
 // and a retry of one takes a new age; the records kept still answer as before.
 func TestMaxEnded(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxEnded: 3}})
 	ctx := t.Context()
 	var refs []TransactionRef
@@ -636,6 +652,7 @@ func TestMaxEnded(t *testing.T) {
 // An optimistic transaction's listings count the documents they returned against MaxLocks, as
 // its reads do (F2 review M2).
 func TestOptimisticListingsBounded(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Transactions: TxnConfig{MaxLocks: 5}})
 	ctx := t.Context()
 	var ws []Write
@@ -658,6 +675,7 @@ func TestOptimisticListingsBounded(t *testing.T) {
 // transaction and optimistic transfers mixed in: the total never changes, and every lock is
 // freed. A small randomized stand-in for the contention suite (test/contention/documents).
 func TestTransfersKeepTheTotal(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{CommitConcurrency: 4, Transactions: TxnConfig{WaitTimeout: 5 * time.Second}})
 	ctx := t.Context()
 	const accounts, start = 6, 100

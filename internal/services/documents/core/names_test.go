@@ -29,6 +29,7 @@ func randomPath(r *rand.Rand) Path {
 // The name key orders documents as production orders __name__, which value.Compare decides on
 // references: the key must agree with it on every pair (ADR-024 §1.3).
 func TestNameKeyOrderIsReferenceOrder(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewPCG(1, 2))
 	db := DB{ProjectID: "chat-app", ID: DefaultDatabase}
 	for range 20000 {
@@ -48,6 +49,7 @@ func sign(n int) int { return min(max(n, -1), 1) }
 // A document's key comes before its descendants', and the keys below a document or a collection
 // lie between the prefix and the prefix followed by pastChildren.
 func TestNameKeyRanges(t *testing.T) {
+	t.Parallel()
 	doc := Path{"c", "d"}
 	below := []Path{{"c", "d", "e", "f"}, {"c", "d", "__id3__", "x"}, {"c", "d", "\xff", "x", "y", "z"}}
 	for _, b := range below {
@@ -70,6 +72,7 @@ func TestNameKeyRanges(t *testing.T) {
 // The stored key is the key up to 2,048 bytes, else 2,048 bytes and the SHA-256: at most 2,080
 // bytes, distinct for distinct keys, and in order wherever two keys differ within the cut.
 func TestStoredKeyCut(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("x", 1500)
 	a := Path{"c", long, "s", long + "a"}
 	b := Path{"c", long, "s", long + "b"}
@@ -102,6 +105,7 @@ func TestStoredKeyCut(t *testing.T) {
 }
 
 func TestSegmentAtNumeric(t *testing.T) {
+	t.Parallel()
 	for _, id := range []string{"__id0__", "__id-9223372036854775808__", "__id9223372036854775807__", "__id01__", "a\x00\xffb"} {
 		k := nameKey(Path{"c", id})
 		seg, _, err := segmentAt(k, len(collectionPrefix(nil, "c")))

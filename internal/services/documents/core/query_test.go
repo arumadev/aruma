@@ -29,6 +29,7 @@ func scanAll(t *testing.T, s *PGStore, r ScanRequest) []string {
 // collection directly under a document (kindless) or anywhere below it, paged, at a read_time,
 // and past names longer than the btree's bound.
 func TestScan(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	var writes []Write
 	for _, p := range []string{"tree/a", "tree/a/other/z", "tree/a/sub/x", "tree/a/sub/x/deep/y", "tree/b", "tree/m/kids/k1",

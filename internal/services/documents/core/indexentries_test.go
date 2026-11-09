@@ -35,6 +35,7 @@ func keysOfIndex(d *docEntries, id int64) []string {
 // The key layout, byte for byte (indexes.go): version, the collection with its 0x00, the value
 // (inverted for descending), the name (inverted with __name__ descending) and its length.
 func TestIndexEntryGoldenKeys(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("c/d")
 	d := entriesOf(emptyCatalog(), fieldConfigs{}, p, fieldsOf("a", value.Int(1), "t", value.Array(value.Bool(true), value.Bool(true))), false)
 	asc := keysOfIndex(d, SingleFieldIndexID("c", index.ScopeCollection, "a", index.Ascending))
@@ -73,6 +74,7 @@ func TestIndexEntryGoldenKeys(t *testing.T) {
 // descending), one more per distinct element of an array, and a map's subfields recursively;
 // nothing inside an array, a vector or a BSON shape.
 func TestIndexEntriesPerType(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		v    value.Value
@@ -111,6 +113,7 @@ func TestIndexEntriesPerType(t *testing.T) {
 // Within one index, entries order as their values do (value.Compare), descending ones in
 // reverse, and ties by name: for random pairs of values and documents.
 func TestIndexEntryOrder(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewPCG(1, 2))
 	vals := []value.Value{value.Null(), value.MinKey(), value.Bool(false), value.Bool(true), value.Double(math.NaN()),
 		value.Double(math.Inf(-1)), value.Int(-3), value.Double(-0.5), value.Int(0), value.Double(0.5), value.Int(7),
@@ -155,6 +158,7 @@ func TestIndexEntryOrder(t *testing.T) {
 // A collection's entries are one key range, apart from those of a deeper collection of the same
 // id: c/x/c/y's keys sort after every key of the top-level c.
 func TestIndexKeyCollectionRange(t *testing.T) {
+	t.Parallel()
 	top := IndexKeyPrefix(index.ScopeCollection, nil, "c")
 	end := IndexPrefixEnd(top)
 	in := func(name string, v value.Value) bool {
@@ -177,6 +181,7 @@ func TestIndexKeyCollectionRange(t *testing.T) {
 // collection-group override adds a COLLECTION_GROUP index with no collection in its keys, and
 // '*' and __default__ govern every field without its own.
 func TestIndexEntriesOverrides(t *testing.T) {
+	t.Parallel()
 	sub := value.Map(value.Field{Name: "x", Value: value.Int(1)})
 	doc := fieldsOf("a", value.Int(1), "m", sub)
 	count := func(c fieldConfigs) int {
@@ -214,6 +219,7 @@ func TestIndexEntriesOverrides(t *testing.T) {
 // Composite entries: one per element of the array-contains field, none when a field is missing;
 // a map path reaches into maps.
 func TestCompositeEntries(t *testing.T) {
+	t.Parallel()
 	ix := &composite{id: 9, group: "c", scope: index.ScopeCollection, fields: []compositeField{
 		{path: value.FieldPath{"t"}, mode: index.Contains},
 		{path: value.FieldPath{"m", "x"}, mode: index.Descending},
@@ -265,6 +271,7 @@ func recordedName(l int, tag string) Path {
 // string, a 1,500-byte field name), 40,000 entries with an array element counting two, and a
 // name of 6,144 bytes at any depth (f0-errors.json).
 func TestIndexEntryLimits(t *testing.T) {
+	t.Parallel()
 	check := func(p Path, fields value.Value) error {
 		return entriesOf(emptyCatalog(), fieldConfigs{}, p, fields, true).check()
 	}
@@ -333,6 +340,7 @@ func TestIndexEntryLimits(t *testing.T) {
 }
 
 func TestIndexIDs(t *testing.T) {
+	t.Parallel()
 	for _, id := range []int64{1, 127, 128, 1 << 40, 1<<62 - 1} {
 		s := FormatIndexID(id)
 		if got, ok := ParseIndexID(s); !ok || got != id {
@@ -361,6 +369,7 @@ func TestIndexIDs(t *testing.T) {
 // entries in statements of indexStatementEntries, each far within the commit's statement
 // timeout on any machine that runs the tests.
 func TestTransactionBoundPerDocument(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	// Fields of the four common kinds, as an ordinary document holds them.
 	fields := func(n, v int) value.Value {
@@ -418,6 +427,7 @@ func TestTransactionBoundPerDocument(t *testing.T) {
 // indexChunks cuts a commit's entries in statements by count and by size, in order, a single
 // entry past the size alone.
 func TestIndexChunks(t *testing.T) {
+	t.Parallel()
 	keys := func(sizes ...int) [][]byte {
 		out := make([][]byte, len(sizes))
 		for i, n := range sizes {
@@ -451,6 +461,7 @@ func TestIndexChunks(t *testing.T) {
 
 // parallel calls f once with each index, and a call's panic reaches the caller.
 func TestParallel(t *testing.T) {
+	t.Parallel()
 	for _, n := range []int{0, 1, 2, 100} {
 		calls := make([]atomic.Int32, n)
 		parallel(n, func(i int) { calls[i].Add(1) })
@@ -475,6 +486,7 @@ func TestParallel(t *testing.T) {
 
 // mergeRuns sorts what sortedEntries would, from each document's sorted entries.
 func TestMergeRuns(t *testing.T) {
+	t.Parallel()
 	r := rand.New(rand.NewPCG(1, 2))
 	for _, runs := range []int{0, 1, 2, 3, 7, 64, 501} {
 		var es []entry
