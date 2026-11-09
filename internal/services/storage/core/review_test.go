@@ -175,9 +175,7 @@ func TestCloseWaitsForWriters(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer leave()
-	old := closeWait
-	closeWait = 50 * time.Millisecond
-	defer func() { closeWait = old }()
+	e2.hooks.closeWait = 50 * time.Millisecond
 	if err := e2.s.Close(); err == nil || e2.s.lock == nil {
 		t.Errorf("Close past its wait: %v, lock %v", err, e2.s.lock)
 	}

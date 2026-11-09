@@ -172,7 +172,7 @@ func TestBootCrashBetweenFileAndRow(t *testing.T) {
 	if _, err := e.pool.Exec(ctx, `DELETE FROM storage.instance`); err != nil {
 		t.Fatal(err)
 	}
-	crashAt("boot.instance_file")
+	e.crashAt("boot.instance_file")
 	if !crashed(func() { _ = e.service().Boot(ctx) }) {
 		t.Fatal("no crash")
 	}

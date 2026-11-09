@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arumadev/aruma/internal/platform/authn"
@@ -342,6 +343,26 @@ type Service struct {
 	// authorizeHook decides for principals other than admins in this package's tests, until
 	// S2-E binds the rules (rules.go).
 	authorizeHook func(ctx context.Context, b Bucket, p Principal, op ruleOp) error
+
+	// test holds the faults this package's tests inject; nil in production. It is per Service,
+	// not per package, so tests that inject faults run in parallel.
+	test *testHooks
+}
+
+// testHooks are the points where this package's tests inject faults. A nil field keeps the
+// production behaviour.
+type testHooks struct {
+	// acquireLock replaces blob.AcquireLock with a lock of the test's own.
+	acquireLock func(ctx context.Context, root string, log func(time.Duration)) (blob.Lock, error)
+	// at runs at the named points of the write order; tests crash there (a panic is a process
+	// that dies at that instant) or race another write in.
+	at func(point string)
+	// commitTx replaces sending COMMIT, to lose the reply of a commit that happened.
+	commitTx func(ctx context.Context, tx pgx.Tx) error
+	// xactStatusOf replaces the pg_xact_status lookup.
+	xactStatusOf func(ctx context.Context, xid string) (string, error)
+	// closeWait, when positive, replaces how long Close waits for the writers.
+	closeWait time.Duration
 }
 
 // sessionLocks is a lock per upload session, held by a chunk across its append, Sync and the

@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -48,6 +47,8 @@ type env struct {
 	logs     *syncBuffer
 	a, b     Bucket
 	opts     Options
+	// hooks are the faults this test injects, in every Service it builds (env.service).
+	hooks testHooks
 }
 
 func newEnv(t *testing.T, tune ...func(*Options)) *env {
@@ -74,13 +75,7 @@ func newEnv(t *testing.T, tune ...func(*Options)) *env {
 	for _, f := range tune {
 		f(&e.opts)
 	}
-	acquireLock = memAcquire(e.store)
-	t.Cleanup(func() {
-		acquireLock = blob.AcquireLock
-		testHook = nil
-		commitTx = func(ctx context.Context, tx pgx.Tx) error { return tx.Commit(ctx) }
-		xactStatusOf = nil
-	})
+	e.hooks.acquireLock = memAcquire(e.store)
 	e.s = e.service()
 	if err := e.s.Boot(context.Background()); err != nil {
 		t.Fatal(err)
@@ -98,6 +93,7 @@ func (e *env) service() *Service {
 	}
 	// Until S2-E binds the rules: every principal passes, unless a test decides otherwise.
 	s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
+	s.test = &e.hooks
 	return s
 }
 
@@ -116,10 +112,10 @@ func (e *env) restart() *Service {
 
 // crashAt makes the write order die at point: a panic the test recovers, as a process that
 // stops at that instant.
-func crashAt(point string) {
-	testHook = func(p string) {
+func (e *env) crashAt(point string) {
+	e.hooks.at = func(p string) {
 		if p == point {
-			testHook = nil
+			e.hooks.at = nil
 			panic(errCrash)
 		}
 	}

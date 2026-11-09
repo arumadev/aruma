@@ -54,7 +54,7 @@ func TestCrashDuringInsert(t *testing.T) {
 		t.Run(c.point, func(t *testing.T) {
 			e := newEnv(t)
 			e.insert(e.a, "a.txt", "old")
-			crashAt(c.point)
+			e.crashAt(c.point)
 			if !crashed(func() {
 				_, _ = e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
 			}) {
@@ -103,7 +103,7 @@ func TestCrashDuringUpload(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			crashAt(point)
+			e.crashAt(point)
 			ok := crashed(func() {
 				switch point {
 				case "start.staging":
@@ -186,7 +186,7 @@ func TestPurgeProject(t *testing.T) {
 					t.Fatal("the cut purge succeeded")
 				}
 			default:
-				crashAt(point)
+				e.crashAt(point)
 				if !crashed(func() { _ = e.s.PurgeProject(ctx, projectA) }) {
 					t.Fatal("no crash")
 				}

@@ -125,7 +125,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 	ctx := context.Background()
 	e.insert(e.a, "a.txt", "one")
 	deletes := 0
-	testHook = func(p string) {
+	e.hooks.at = func(p string) {
 		if p == "commit.conflict" && deletes < 2 {
 			deletes++
 			if _, err := e.pool.Exec(ctx, `DELETE FROM storage.objects WHERE project_number = $1 AND name = 'a.txt'`, projectA); err != nil {
@@ -138,7 +138,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 		t.Fatalf("Insert = %+v, %v after %d deletes", o, err, deletes)
 	}
 	// A delete racing every write: none answers 412.
-	testHook = nil
+	e.hooks.at = nil
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Go(func() {
@@ -325,7 +325,7 @@ func TestAmbiguousCommit(t *testing.T) {
 	ctx := context.Background()
 	t.Run("the reply is lost after the commit", func(t *testing.T) {
 		e := newEnv(t)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
@@ -342,7 +342,7 @@ func TestAmbiguousCommit(t *testing.T) {
 	})
 	t.Run("the backend is killed before COMMIT", func(t *testing.T) {
 		e := newEnv(t)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			var pid int
 			if err := tx.QueryRow(ctx, "SELECT pg_backend_pid()").Scan(&pid); err != nil {
 				return err
@@ -368,7 +368,7 @@ func TestAmbiguousCommit(t *testing.T) {
 	t.Run("the request is cancelled during COMMIT", func(t *testing.T) {
 		e := newEnv(t)
 		rctx, cancel := context.WithCancel(ctx)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			cancel() // the client hangs up as COMMIT goes out
 			return tx.Commit(ctx)
 		}
@@ -380,13 +380,13 @@ func TestAmbiguousCommit(t *testing.T) {
 	t.Run("the outcome cannot be settled", func(t *testing.T) {
 		e := newEnv(t)
 		old := e.insert(e.a, "a.txt", "old")
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
 			return errors.New("i/o timeout")
 		}
-		xactStatusOf = func(context.Context, string) (string, error) { return "", errors.New("connection refused") }
+		e.hooks.xactStatusOf = func(context.Context, string) (string, error) { return "", errors.New("connection refused") }
 		_, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
 		if !errors.Is(err, errCommitUnknown) || !errors.Is(err, ErrUnavailable) {
 			t.Fatalf("Insert = %v, want an unknown outcome", err)
@@ -400,8 +400,8 @@ func TestAmbiguousCommit(t *testing.T) {
 			t.Error("the old version reads")
 		}
 		// The next boot's sweep keeps it: a row points to it.
-		commitTx = func(ctx context.Context, tx pgx.Tx) error { return tx.Commit(ctx) }
-		xactStatusOf = nil
+		e.hooks.commitTx = nil
+		e.hooks.xactStatusOf = nil
 		s := e.restart()
 		if err := s.deleteCandidates(ctx); err != nil {
 			t.Fatal(err)

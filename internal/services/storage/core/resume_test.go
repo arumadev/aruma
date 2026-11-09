@@ -27,7 +27,7 @@ func TestResumeVerifiesThePlacedFile(t *testing.T) {
 			if _, err := e.chunk(e.a, "a.txt", id, 0, "hello world", false); err != nil {
 				t.Fatal(err)
 			}
-			crashAt("finalize.promoted")
+			e.crashAt("finalize.promoted")
 			if !crashed(func() { _, _ = e.chunk(e.a, "a.txt", id, 11, "", true) }) {
 				t.Fatal("no crash")
 			}

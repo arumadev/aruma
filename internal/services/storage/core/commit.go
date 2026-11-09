@@ -35,21 +35,20 @@ const commitRetries = 5
 // sweep deletes it once no row points to it.
 var errCommitUnknown = errors.New("storage: the commit's outcome is unknown")
 
-// testHook, when set, runs at the named points of the write order; tests crash there (a panic
-// is a process that dies at that instant) or race another write in.
-var testHook func(point string)
-
-func hook(point string) {
-	if testHook != nil {
-		testHook(point)
+// hook runs a test's hook at a named point of the write order (testHooks.at).
+func (s *Service) hook(point string) {
+	if s.test != nil && s.test.at != nil {
+		s.test.at(point)
 	}
 }
 
-// commitTx sends COMMIT; a test replaces it to lose the reply of a commit that happened.
-var commitTx = func(ctx context.Context, tx pgx.Tx) error { return tx.Commit(ctx) }
-
-// xactStatusOf, when set, replaces the pg_xact_status lookup in tests.
-var xactStatusOf func(ctx context.Context, xid string) (string, error)
+// commitTx sends COMMIT, or what a test put in its place (testHooks.commitTx).
+func (s *Service) commitTx(ctx context.Context, tx pgx.Tx) error {
+	if s.test != nil && s.test.commitTx != nil {
+		return s.test.commitTx(ctx, tx)
+	}
+	return tx.Commit(ctx)
+}
 
 // commitObject is the one transaction that makes a file visible (ADR-022 §5): the object's row
 // with a new generation, the replaced file into blob_gc, and the quota moved from reserved to
@@ -124,12 +123,12 @@ func (s *Service) commitObject(ctx context.Context, w objectWrite) (Object, erro
 	if err := tx.QueryRow(ctx, "SELECT pg_current_xact_id()::text").Scan(&xid); err != nil {
 		return Object{}, fmt.Errorf("%w: read the transaction id: %w", ErrUnavailable, err)
 	}
-	hook("commit.before")
+	s.hook("commit.before")
 	sent = true
-	if err := commitTx(context.WithoutCancel(ctx), tx); err != nil {
+	if err := s.commitTx(context.WithoutCancel(ctx), tx); err != nil {
 		return s.settle(ctx, xid, obj, err)
 	}
-	hook("commit.after")
+	s.hook("commit.after")
 	return obj, nil
 }
 
@@ -161,7 +160,7 @@ func (s *Service) writeObjectRow(ctx context.Context, q *queries.Queries, w obje
 				return queries.StorageObject{}, nil, ErrPreconditionFailed
 			}
 		}
-		hook("commit.conflict")
+		s.hook("commit.conflict")
 		old, err := q.LockObject(ctx, queries.LockObjectParams{ProjectNumber: project, Name: o.Name})
 		switch {
 		case errors.Is(err, pgx.ErrNoRows) && mustExist:
@@ -237,8 +236,8 @@ func (s *Service) xactStatus(ctx context.Context, xid string) (string, error) {
 	for i := 0; ; i++ {
 		var status string
 		var err error
-		if xactStatusOf != nil {
-			status, err = xactStatusOf(ctx, xid)
+		if s.test != nil && s.test.xactStatusOf != nil {
+			status, err = s.test.xactStatusOf(ctx, xid)
 		} else {
 			var v *string
 			err = s.pool.QueryRow(ctx, "SELECT pg_xact_status($1::xid8)", xid).Scan(&v)

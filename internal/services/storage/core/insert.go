@@ -70,12 +70,12 @@ func (s *Service) Insert(ctx context.Context, b Bucket, p Principal, spec Upload
 		}
 		return Object{}, err
 	}
-	hook("insert.written")
+	s.hook("insert.written")
 	if err := w.Commit(); err != nil {
 		_ = w.Abort()
 		return s.dropNew(ctx, key, res, fmt.Errorf("%w: commit %s: %w", ErrUnavailable, key, err))
 	}
-	hook("insert.durable")
+	s.hook("insert.durable")
 	o.Size = n
 	o.CRC32C, o.MD5 = h.sums()
 	if spec.Declared >= 0 && n != spec.Declared {

@@ -14,9 +14,6 @@ import (
 	"github.com/arumadev/aruma/internal/services/storage/queries"
 )
 
-// acquireLock takes the data directory's lock; a test replaces it with a lock of its own.
-var acquireLock = blob.AcquireLock
-
 // Boot runs before the listener opens (ADR-022 §5.1): it takes the data directory's lock, binds
 // the directory to this database through the INSTANCE marker and storage.instance, lists the
 // files under p/ and s/ as deletion candidates, reconciles every project's quota, and warns when
@@ -26,6 +23,10 @@ func (s *Service) Boot(ctx context.Context) error {
 		return errors.New("storage: Boot runs once")
 	}
 	start := time.Now()
+	acquireLock := blob.AcquireLock
+	if s.test != nil && s.test.acquireLock != nil {
+		acquireLock = s.test.acquireLock
+	}
 	lock, err := acquireLock(ctx, s.dataDir, func(waited time.Duration) {
 		s.log.Warn("storage: waiting for the data directory's lock, which another instance holds; stop it to let this one start",
 			"data_dir", s.dataDir, "waited", waited.Round(time.Second))
@@ -172,7 +173,7 @@ func (s *Service) bindInstance(ctx context.Context) error {
 		if err := s.lock.SetInstance(id.String()); err != nil {
 			return fmt.Errorf("storage: write %s: %w", s.markerPath(), err)
 		}
-		hook("boot.instance_file")
+		s.hook("boot.instance_file")
 		if err := s.insertInstance(ctx, id); err != nil {
 			return err
 		}
@@ -217,8 +218,8 @@ func (s *Service) Close() error {
 	}
 	if !s.shut() {
 		s.log.Error("storage: writes still run after the shutdown wait; the data directory's lock stays until the process exits",
-			"waited", closeWait)
-		return fmt.Errorf("storage: writes still run after %v; the lock stays until the process exits", closeWait)
+			"waited", s.closeWait())
+		return fmt.Errorf("storage: writes still run after %v; the lock stays until the process exits", s.closeWait())
 	}
 	err := s.lock.Release()
 	s.lock = nil
