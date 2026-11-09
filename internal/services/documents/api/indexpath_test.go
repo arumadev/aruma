@@ -16,7 +16,6 @@ import (
 
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/core"
-	"github.com/arumadev/aruma/internal/services/documents/query"
 	"github.com/arumadev/aruma/internal/services/documents/value"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	"github.com/arumadev/aruma/internal/services/documents/wire/pb/adminpb"
@@ -99,7 +98,7 @@ func TestPlannerDifferentialResumed(t *testing.T) {
 			t.Errorf("a commit between batches: %v", err)
 		}
 	}
-	mismatches := query.MismatchCount()
+	mismatches := p.stats().MismatchCount()
 	n := 600
 	if testing.Short() {
 		n = 150
@@ -114,11 +113,11 @@ func TestPlannerDifferentialResumed(t *testing.T) {
 				{Alias: "n", Operator: &pb.StructuredAggregationQuery_Aggregation_Count_{Count: &pb.StructuredAggregationQuery_Aggregation_Count{}}},
 			}
 		}
-		before, resumed := indexServed(), resumes.Load()
+		before, resumed := p.stats().IndexServed(), resumes.Load()
 		got, rt := p.runAt(ctx, p.env.Service, sq, aggs, time.Time{})
-		served := indexServed() > before
+		served := p.stats().IndexServed() > before
 		api.SetIndexBatch(p.env.Service, 0, nil)
-		if query.MismatchCount() != mismatches {
+		if p.stats().MismatchCount() != mismatches {
 			t.Fatalf("query %d %v: a recheck mismatch: %v", i, sq, got)
 		}
 		if !served && got.err == nil {
@@ -160,7 +159,7 @@ func TestIndexPathStalledClient(t *testing.T) {
 	release := make(chan struct{})
 	var waiting, wg sync.WaitGroup
 	waiting.Add(stalled)
-	before := indexServed()
+	before := p.stats().IndexServed()
 	for range stalled {
 		wg.Go(func() {
 			sent := 0
@@ -196,7 +195,7 @@ func TestIndexPathStalledClient(t *testing.T) {
 	cancel()
 	close(release)
 	wg.Wait()
-	if got := indexServed() - before; got != int64(stalled) {
+	if got := p.stats().IndexServed() - before; got != int64(stalled) {
 		t.Errorf("the index path served %d of %d queries", got, stalled)
 	}
 }
@@ -221,9 +220,9 @@ func TestIndexPathUnionMemory(t *testing.T) {
 	var peak int
 	api.ObserveIndexPeak(p.env.Service, func(n int) { peak = n })
 	sq := &pb.StructuredQuery{From: from("c", false), Where: fieldFilter("a", pb.StructuredQuery_FieldFilter_IN, value.Array(vals...))}
-	before := indexServed()
+	before := p.stats().IndexServed()
 	got := p.run(ctx, p.env.Service, sq, nil)
-	if indexServed() != before+1 {
+	if p.stats().IndexServed() != before+1 {
 		t.Fatal("the in was not served by an index path")
 	}
 	if want := p.run(ctx, p.env.Reference, sq, nil); got.err != nil || len(got.docs) != values*perValue || !got.equal(want) {
@@ -286,9 +285,9 @@ func TestIndexPathChangedBound(t *testing.T) {
 
 	api.SetIndexBatch(p.env.Service, 1, once())
 	sq := &pb.StructuredQuery{From: from("c", true), Where: fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(1))}
-	before := indexServed()
+	before := p.stats().IndexServed()
 	got, rt := p.runAt(ctx, p.env.Service, sq, nil, time.Time{})
-	if indexServed() != before+1 {
+	if p.stats().IndexServed() != before+1 {
 		t.Fatal("not served by an index path")
 	}
 	if want, _ := p.runAt(ctx, p.env.Reference, sq, nil, rt); got.err != nil || len(got.docs) != 8 || !got.equal(want) {
@@ -335,9 +334,9 @@ func TestIndexPathCatalogChange(t *testing.T) {
 			t.Error(err)
 		}
 	}))
-	before := indexServed()
+	before := p.stats().IndexServed()
 	got := p.run(ctx, p.env.Service, sq, nil)
-	if want := p.run(ctx, p.env.Reference, sq, nil); indexServed() != before+1 || got.err != nil || len(got.docs) != 10 || !got.equal(want) {
+	if want := p.run(ctx, p.env.Reference, sq, nil); p.stats().IndexServed() != before+1 || got.err != nil || len(got.docs) != 10 || !got.equal(want) {
 		t.Errorf("another index created: %v, want the reference path's %v", got, want)
 	}
 
@@ -375,12 +374,12 @@ func TestNameEqualityBoundsScan(t *testing.T) {
 	sq := &pb.StructuredQuery{From: from("c", false), Where: composite(pb.StructuredQuery_CompositeFilter_AND,
 		fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(1)),
 		fieldFilter("__name__", pb.StructuredQuery_FieldFilter_IN, value.Array(ref("d007"), ref("d150"), ref("x"))))}
-	before, entries := indexServed(), query.EntriesReadCount()
+	before, entries := p.stats().IndexServed(), p.stats().EntriesReadCount()
 	got := p.run(ctx, p.env.Service, sq, nil)
-	if indexServed() != before+1 {
+	if p.stats().IndexServed() != before+1 {
 		t.Fatal("not served by an index path")
 	}
-	if n := query.EntriesReadCount() - entries; n > 10 {
+	if n := p.stats().EntriesReadCount() - entries; n > 10 {
 		t.Errorf("%d entries read for two results", n)
 	}
 	if want := p.run(ctx, p.env.Reference, sq, nil); got.err != nil || len(got.docs) != 2 || !got.equal(want) {

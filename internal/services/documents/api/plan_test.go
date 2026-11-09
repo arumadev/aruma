@@ -183,9 +183,8 @@ func (p *planEnv) run(ctx context.Context, svc *api.Service, sq *pb.StructuredQu
 }
 
 // indexServed is how many queries the index paths served.
-func indexServed() int64 {
-	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
-}
+// stats are the counters of the planner's service, the one p's tests query.
+func (p *planEnv) stats() *query.Stats { return p.env.Service.QueryStats() }
 
 // fieldFilter, unary, and, or, order and from build StructuredQuery parts.
 func fieldFilter(path string, op pb.StructuredQuery_FieldFilter_Operator, v value.Value) *pb.StructuredQuery_Filter {
@@ -457,7 +456,7 @@ func differentialSetup(t *testing.T) (*planEnv, *gen) {
 func TestPlannerDifferential(t *testing.T) {
 	p, g := differentialSetup(t)
 	ctx := t.Context()
-	mismatches, served := query.MismatchCount(), indexServed()
+	mismatches, served := p.stats().MismatchCount(), p.stats().IndexServed()
 	n := 1500
 	if testing.Short() {
 		n = 300
@@ -473,24 +472,24 @@ func TestPlannerDifferential(t *testing.T) {
 					Field: &pb.StructuredQuery_FieldReference{FieldPath: "m.x"}}}},
 			}
 		}
-		before := indexServed()
+		before := p.stats().IndexServed()
 		got := p.run(ctx, p.env.Service, sq, aggs)
 		want := p.run(ctx, p.env.Reference, sq, aggs)
 		switch {
-		case query.MismatchCount() != mismatches:
+		case p.stats().MismatchCount() != mismatches:
 			t.Fatalf("query %d %v: a recheck mismatch (planner %v, reference %v)", i, sq, got, want)
 		case !got.equal(want):
 			t.Errorf("query %d %v:\nplanner   %v\nreference %v", i, sq, got, want)
 		case want.err != nil:
 			counts["error"]++
-		case indexServed() > before:
+		case p.stats().IndexServed() > before:
 			counts["index"]++
 		default:
 			counts["reference"]++
 		}
 	}
-	t.Logf("%d queries: %v; %d served by an index path", n, counts, indexServed()-served)
-	if got := query.MismatchCount() - mismatches; got != 0 {
+	t.Logf("%d queries: %v; %d served by an index path", n, counts, p.stats().IndexServed()-served)
+	if got := p.stats().MismatchCount() - mismatches; got != 0 {
 		t.Errorf("%d recheck mismatches", got)
 	}
 	if counts["index"] < n/5 {
@@ -547,9 +546,9 @@ func TestPlannerPaths(t *testing.T) {
 		{"a CREATING composite", &pb.StructuredQuery{From: from("c", false),
 			OrderBy: []*pb.StructuredQuery_Order{order("b", false), order("a", true)}}, query.PathReference, 12},
 	} {
-		before, all := query.ServedCount(c.path), allServed()
+		before, all := p.stats().ServedCount(c.path), p.allServed()
 		got := p.run(ctx, p.env.Service, c.sq, nil)
-		if query.ServedCount(c.path) != before+1 || allServed() != all+1 {
+		if p.stats().ServedCount(c.path) != before+1 || p.allServed() != all+1 {
 			t.Errorf("%s: not served by %v alone", c.name, c.path)
 		}
 		want := p.run(ctx, p.env.Reference, c.sq, nil)
@@ -591,17 +590,17 @@ func BenchmarkIndexedQuery(b *testing.B) {
 	sq := &pb.StructuredQuery{From: from("big", false), Where: fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(7)),
 		OrderBy: []*pb.StructuredQuery_Order{order("b", false)}, Limit: wrapperspb.Int32(20)}
 	b.Run("index", func(b *testing.B) {
-		served, entries := query.ServedCount(query.PathIndex), query.EntriesReadCount()
+		served, entries := p.stats().ServedCount(query.PathIndex), p.stats().EntriesReadCount()
 		for b.Loop() {
 			if got := p.run(ctx, env.Service, sq, nil); got.err != nil || len(got.docs) != 20 {
 				b.Fatalf("%v", got)
 			}
 		}
-		ops := query.ServedCount(query.PathIndex) - served
+		ops := p.stats().ServedCount(query.PathIndex) - served
 		if ops != int64(b.N) {
 			b.Fatalf("%d of %d queries served by the index path", ops, b.N)
 		}
-		perOp := float64(query.EntriesReadCount()-entries) / float64(ops)
+		perOp := float64(p.stats().EntriesReadCount()-entries) / float64(ops)
 		b.ReportMetric(perOp, "entries/op")
 		if perOp > 100 {
 			b.Fatalf("%.0f entries read per query of 20 results", perOp)
@@ -616,7 +615,9 @@ func BenchmarkIndexedQuery(b *testing.B) {
 	})
 }
 
-func allServed() int64 { return indexServed() + query.ServedCount(query.PathReference) }
+func (p *planEnv) allServed() int64 {
+	return p.stats().IndexServed() + p.stats().ServedCount(query.PathReference)
+}
 
 // A candidate the index claims and the document refutes fails the query INTERNAL and is counted,
 // never dropped.
@@ -633,13 +634,13 @@ func TestRecheckMismatch(t *testing.T) {
 		p.db.Project, p.db.ID, core.SingleFieldIndexID("c", index.ScopeCollection, "a", index.Ascending), key); err != nil {
 		t.Fatal(err)
 	}
-	before := query.MismatchCount()
+	before := p.stats().MismatchCount()
 	got := p.run(ctx, p.env.Service, &pb.StructuredQuery{From: from("c", false),
 		Where: fieldFilter("a", pb.StructuredQuery_FieldFilter_EQUAL, value.Int(1))}, nil)
 	if we, ok := errors.AsType[*wire.Error](got.err); !ok || we.Code != wire.CodeInternal {
 		t.Errorf("a stray entry: %v", got)
 	}
-	if query.MismatchCount() != before+1 {
+	if p.stats().MismatchCount() != before+1 {
 		t.Errorf("the mismatch was not counted")
 	}
 }

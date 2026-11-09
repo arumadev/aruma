@@ -2,9 +2,6 @@ package query
 
 import (
 	"fmt"
-	"sync/atomic"
-
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/arumadev/aruma/internal/services/documents/value"
 )
@@ -12,28 +9,14 @@ import (
 // The recheck (ADR-025 §1): every candidate an index path reads is checked again with the
 // reference path's matcher before the runner sees it. A candidate the index claims and the
 // matcher refuses is a bug in an index's entries or in the plan, never a row to drop: the query
-// fails INTERNAL, and the mismatch is counted (documents_query_recheck_mismatch_total) and, by
-// the caller, logged.
+// fails INTERNAL, and the caller counts the mismatch (Stats.Mismatch,
+// documents_query_recheck_mismatch_total) and logs it.
 //
 // A stream's candidates must also come in the query's whole order, which ends with __name__, so
 // each comes strictly after the one before. Entries whose keys share their first 2,048 bytes are
 // stored in hash order; the store orders each such run by the whole key before it returns any of
 // it (core.ScanIndex, ADR-024 §1.4), so a limit, a cursor or a page never cuts a run unordered,
 // and the order check here holds the store to it.
-
-// mismatches counts the recheck mismatches since the process started.
-var mismatches atomic.Int64
-
-// MismatchCount is how many recheck mismatches there were since the process started.
-func MismatchCount() int64 { return mismatches.Load() }
-
-// mismatchCollector is documents_query_recheck_mismatch_total.
-func mismatchCollector() prometheus.Collector {
-	return prometheus.NewCounterFunc(prometheus.CounterOpts{
-		Name: "documents_query_recheck_mismatch_total",
-		Help: "Document Database index path candidates the reference matcher refused (each failed its query INTERNAL).",
-	}, func() float64 { return float64(mismatches.Load()) })
-}
 
 // RecheckError is a recheck mismatch: the query fails INTERNAL.
 type RecheckError struct {
@@ -103,6 +86,5 @@ func (r *Recheck) Check(d *Doc) (keep bool, err error) {
 }
 
 func (r *Recheck) mismatch(d *Doc, reason string) error {
-	mismatches.Add(1)
 	return &RecheckError{Name: d.Name, Reason: reason}
 }

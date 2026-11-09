@@ -17,6 +17,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/core"
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/listen"
+	"github.com/arumadev/aruma/internal/services/documents/query"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 )
 
@@ -70,6 +71,8 @@ type Service struct {
 	o        Options
 	log      *slog.Logger
 	inflight *rules.Inflight
+	// stats counts how this service served its queries (QueryStats).
+	stats *query.Stats
 
 	// Tests' hooks into the index paths (export_test.go): indexBatch, when set, is the results
 	// of every batch; afterBatch runs after a batch is sent, before the next snapshot begins;
@@ -88,8 +91,11 @@ func New(o Options) *Service {
 	if inflight == nil {
 		inflight = rules.NewInflight(defaultRulesInflight)
 	}
-	return &Service{o: o, log: cmp.Or(o.Logger, slog.Default()), inflight: inflight}
+	return &Service{o: o, log: cmp.Or(o.Logger, slog.Default()), inflight: inflight, stats: &query.Stats{}}
 }
+
+// QueryStats counts how the service served its queries: the app registers its collectors.
+func (s *Service) QueryStats() *query.Stats { return s.stats }
 
 // Call is how a request arrived, besides its message.
 type Call struct {
