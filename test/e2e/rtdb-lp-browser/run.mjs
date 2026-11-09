@@ -130,6 +130,9 @@ try {
     const net = watch(page);
     await page.goto(pageURL);
     const r = { firstConnectMs: await connected(page, 15000), flagAtStart: await page.evaluate(() => window.__flag()) };
+    // The SDK sets the flag as a WebSocket opens and clears it once the connection has carried a
+    // few responses, which may come just after .info/connected: wait for it.
+    r.flagClearedAtStartMs = await until(async () => (await page.evaluate(() => window.__flag())) === null, 10000);
     r.firstTransport = net.lp.some((x) => x.kind === 'start') ? 'long poll' : net.ws.length ? 'websocket' : 'none';
     await write('before-' + T0);
     r.seenBefore = await seen(page, 'before-' + T0);
@@ -148,7 +151,7 @@ try {
     r.net = { lp: net.lp.filter((x) => x.kind !== 'data').slice(0, 30), ws: net.ws };
     r.sdkLog = (await page.evaluate(() => window.__log)).filter((l) => /long-poll|Longpoll|Websocket connecting|upgrade|Upgrade|healthy|Realtime connection established/i.test(l)).slice(0, 40);
     report.scenarios.S1_restart = r;
-    check('S1 first connection over a WebSocket, flag clear', r.firstConnectMs !== null && r.firstTransport === 'websocket' && r.flagAtStart === null, r);
+    check('S1 first connection over a WebSocket, flag cleared', r.firstConnectMs !== null && r.firstTransport === 'websocket' && r.flagClearedAtStartMs !== null, r);
     check('S1 the flag is set while the server is down', r.flagWhileDown === 'true', r.flagWhileDown);
     check('S1 reconnects after the restart, over long polling', r.reconnectMs !== null && r.lpAfterRestart > 0, { reconnectMs: r.reconnectMs, lp: r.lpAfterRestart });
     check('S1 upgrades back to a WebSocket', r.upgradeAfterRestartMs !== null);
