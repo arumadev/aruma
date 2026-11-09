@@ -21,6 +21,7 @@ import (
 // holds both the issue and the upload, by the owner's account. The declared size is bound: a
 // session finalized short of it stores nothing.
 func TestStorageConsoleUploadThroughV0(t *testing.T) {
+	t.Parallel()
 	e, owner := newUploadProject(t, nil)
 	var account uuid.UUID
 	if err := e.Pool.QueryRow(t.Context(), `SELECT id FROM control.accounts WHERE email = 'owner@example.com'`).Scan(&account); err != nil {

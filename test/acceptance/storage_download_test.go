@@ -96,6 +96,7 @@ func (e *v0Env) expectMedia(r mediaReply, status int, body, what string) {
 // asks; a token that matches none 403 without the rules, on an object or on nothing; without
 // a token the rules, 403 before 404; the Admin past the rules.
 func TestStorageV0DownloadAccess(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	priv := e.putV0("users/alice/p.txt", "private bytes", map[string]string{storage.FieldContentType: "text/plain"})
 	pub := e.putV0("public/p.txt", "public bytes", nil)
@@ -142,6 +143,7 @@ func TestStorageV0DownloadAccess(t *testing.T) {
 // The reply's headers (ADR-022 §10): media's, through the router. Cache-Control by mode: the
 // stored value on a token link, private on the rules' decision, anonymous or not.
 func TestStorageV0DownloadHeaders(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	o := e.putV0("public/a b.html", "<script>x</script>", map[string]string{
 		storage.FieldContentType: "text/html", storage.FieldCacheControl: "public, max-age=60, s-maxage=600",
@@ -220,6 +222,7 @@ func TestStorageV0DownloadHeaders(t *testing.T) {
 
 // Range (ADR-022 §10.3) and the refusals of media (§10.1), through the router.
 func TestStorageV0DownloadRange(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	o := e.putV0("public/r.bin", "0123456789", nil)
 	path := e.obj(o.Name) + "?alt=media"
@@ -265,6 +268,7 @@ func TestStorageV0DownloadRange(t *testing.T) {
 // The bucket's CORS on alt=media (ADR-022 §11): none until the owner sets it, then the rule's
 // origin, also on a refusal so the page reads the status; the API's open CORS is never there.
 func TestStorageV0DownloadCORS(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	o := e.putV0("public/c.txt", "cors", nil)
 	path := e.obj(o.Name) + "?alt=media"
@@ -309,6 +313,7 @@ func TestStorageV0DownloadCORS(t *testing.T) {
 // client that takes them, the decompressed bytes to one that does not, and a reply cut at
 // object_bytes, counted.
 func TestStorageV0DownloadGzip(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	plain := strings.Repeat("hello gzip ", 100)
 	o := e.putV0("public/g.txt", gzipped(t, plain), map[string]string{
@@ -331,6 +336,7 @@ func TestStorageV0DownloadGzip(t *testing.T) {
 // A gzip bomb against a small object_bytes: the reply is cut once the decompressed bytes pass it,
 // and DecompressionsCut counts the cut.
 func TestStorageV0DownloadGzipCut(t *testing.T) {
+	t.Parallel()
 	e := &v0Env{Env: newEnv(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": t.TempDir(),
 		"ARUMA_STORAGE_OBJECT_BYTES": "65536"})}
 	b, err := e.App.Storage.Bucket(context.Background(), e.owner().project("chat-app").str("storageBucket"))
@@ -354,6 +360,7 @@ func TestStorageV0DownloadGzipCut(t *testing.T) {
 // on the stored bytes, the decompressed ones and a 304, so a cache never gives one origin's reply
 // to another.
 func TestStorageV0DownloadVary(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	if _, err := e.App.Storage.SetCORS(context.Background(), e.bucket, storage.Principal{Kind: storage.PrincipalAdmin},
 		[]storage.CORSRule{{Origins: []string{"*"}, Methods: []string{"GET"}, MaxAgeSeconds: 3600}}); err != nil {
@@ -393,6 +400,7 @@ func TestStorageV0DownloadVary(t *testing.T) {
 // An object whose file is gone is the server's fault: 503, and no Retry-After, since it is not
 // passing pressure and iOS would retry a Retry-After forever (ADR-023 §3-70).
 func TestStorageV0DownloadUnavailable(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	e := &v0Env{Env: newEnv(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": dir})}
 	b, err := e.App.Storage.Bucket(context.Background(), e.owner().project("chat-app").str("storageBucket"))

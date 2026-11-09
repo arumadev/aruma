@@ -176,6 +176,7 @@ var v0Time = regexp.MustCompile(`^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$`)
 // getMetadata (A §3.2, §4): the resource's shape, the token minted on the first authorized read
 // of an object an Admin uploaded and kept after, the rules on the read, and who may read.
 func TestStorageV0Metadata(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	o := e.put("public/a b.txt", "hello", "text/plain")
 
@@ -246,6 +247,7 @@ func TestStorageV0Metadata(t *testing.T) {
 // updateMetadata (A §3.5): JS's PATCH, Android's PUT override, iOS's nulls, the tokens the
 // client cannot touch, metadata: null, and the rules on the change.
 func TestStorageV0UpdateMetadata(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	e.put("users/alice/m.txt", "m", "text/plain")
 	path := e.obj("users/alice/m.txt")
@@ -294,6 +296,7 @@ func TestStorageV0UpdateMetadata(t *testing.T) {
 
 // delete (A §3.6): 204 without a body, then 404; the rules decide first.
 func TestStorageV0Delete(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	e.put("users/alice/d.txt", "d", "")
 	path := e.obj("users/alice/d.txt")
@@ -312,6 +315,7 @@ func TestStorageV0Delete(t *testing.T) {
 // create_token and delete_token (E §5, CT): admins only, create_token=true alone, the last
 // token's deletion making a new one.
 func TestStorageV0Tokens(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	e.put("public/t.txt", "t", "")
 	path := e.obj("public/t.txt")
@@ -344,6 +348,7 @@ func TestStorageV0Tokens(t *testing.T) {
 // list and listAll (A §3.7, ADR-022 §13): prefixes with their slash, items of two strings, the
 // pages walked to the end without an empty nextPageToken, the empty folder's two arrays.
 func TestStorageV0List(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	for _, n := range []string{"public/l/a", "public/l/b", "public/l/d/c", "public/l/d/e", "public/l/f/g", "public/l//x", "public/m"} {
 		e.put(n, "x", "")
@@ -401,6 +406,7 @@ func TestStorageV0List(t *testing.T) {
 // nothing, 404 for an unknown bucket whatever the credential, the preflight, and CORS on
 // alt=media from the bucket's rules alone.
 func TestStorageV0Routing(t *testing.T) {
+	t.Parallel()
 	e := newV0Env(t)
 	for _, c := range []struct {
 		method, path, auth string

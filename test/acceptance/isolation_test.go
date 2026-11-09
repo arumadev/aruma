@@ -45,6 +45,7 @@ func newIsolationWith(t *testing.T, env map[string]string) *isolationEnv {
 // Owner A can neither read nor change B's project, by id or by number, on either API, and
 // gets NOT_FOUND, never PERMISSION_DENIED.
 func TestIsolationOwnerCannotReachOtherProject(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	number := ie.bProject.str("projectNumber")
 	for _, ref := range []string{"bravo-app", number} {
@@ -97,6 +98,7 @@ func TestIsolationOwnerCannotReachOtherProject(t *testing.T) {
 
 // A service account token of A is refused on B's project.
 func TestIsolationServiceAccountToken(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	tokenA, _, err := exchange(t, ie.aKeyFile)
 	if err != nil {
@@ -114,6 +116,7 @@ func TestIsolationServiceAccountToken(t *testing.T) {
 
 // A's config files carry no value of B, even with identical package names in both projects.
 func TestIsolationConfigFiles(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	bValues := []string{"bravo-app", ie.bProject.str("projectNumber")}
 	for _, id := range ie.bApps {
@@ -139,6 +142,7 @@ func TestIsolationConfigFiles(t *testing.T) {
 
 // Moving an app, key or SHA between projects by editing a request is refused.
 func TestIsolationCannotMoveResources(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	// A's app id under A's own project path, but B's app id: not found.
 	expect(t, ie.a.do("GET", "/console/v1/projects/alpha-app/apps/"+ie.bApps["webApps"], nil), 404, "NOT_FOUND")
@@ -157,6 +161,7 @@ func TestIsolationCannotMoveResources(t *testing.T) {
 
 // Deleting and restoring A leaves B alone; both projects may use the same package name.
 func TestIsolationDeleteRestore(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	ie.a.mustOK(ie.a.do("POST", "/console/v1/projects/alpha-app:delete", map[string]any{"confirmProjectId": "alpha-app"}))
 	ie.b.mustOK(ie.b.do("GET", "/console/v1/projects/bravo-app/apps/"+ie.bApps["androidApps"]+"/config", nil))

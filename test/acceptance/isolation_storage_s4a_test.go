@@ -18,6 +18,7 @@ import (
 // token every request is 401. The tokens are real: each project's key file exchanged at
 // Aruma's OAuth endpoint, as the Admin SDKs do.
 func TestIsolationStorageServiceAccount(t *testing.T) {
+	t.Parallel()
 	ie := newIsolationWith(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": t.TempDir()})
 	st := ie.App.Storage
 	ctx := context.Background()

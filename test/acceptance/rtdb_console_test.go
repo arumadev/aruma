@@ -20,6 +20,7 @@ func consoleData(project, path string, query ...string) string {
 }
 
 func TestRTDBConsoleData(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
 	c := e.owner()
 	ns := c.projectNS("chat-app")
@@ -88,6 +89,7 @@ func TestRTDBConsoleData(t *testing.T) {
 }
 
 func TestRTDBConsoleRules(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -118,6 +120,7 @@ func TestRTDBConsoleRules(t *testing.T) {
 
 // Tenant isolation: an owner reaches only their own projects' databases.
 func TestRTDBConsoleIsolation(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	a, b := e.owner(), e.owner2()
 	a.project("chat-app")
@@ -152,6 +155,7 @@ func TestRTDBConsoleIsolation(t *testing.T) {
 
 // Disabled, the routes answer, and say so.
 func TestRTDBConsoleDisabled(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")

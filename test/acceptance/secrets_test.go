@@ -13,6 +13,7 @@ import (
 // usable form: no password, session, CSRF, CLI or service account token, no private key, no
 // master key.
 func TestNoSecretsInDatabaseOrLogs(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")

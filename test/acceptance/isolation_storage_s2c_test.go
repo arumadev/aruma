@@ -99,6 +99,7 @@ func (e *s2cEnv) put(t *testing.T, b storage.Bucket, name, body string) {
 // An object's download token opens that object alone: not the object of the same name in
 // another project, even with the other project's sealed list copied into its row.
 func TestIsolationStorageDownloadToken(t *testing.T) {
+	t.Parallel()
 	e := newS2CEnv(t)
 	ctx := context.Background()
 	admin := storage.Principal{Kind: storage.PrincipalAdmin}
@@ -147,6 +148,7 @@ func TestIsolationStorageDownloadToken(t *testing.T) {
 // A list's page token is for its own bucket: on another project's bucket it is 400, never a
 // first page of that bucket.
 func TestIsolationStoragePageToken(t *testing.T) {
+	t.Parallel()
 	e := newS2CEnv(t)
 	ctx := context.Background()
 	admin := storage.Principal{Kind: storage.PrincipalAdmin}

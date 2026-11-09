@@ -386,6 +386,7 @@ func googleClaims(sub, email string, verified bool) map[string]any {
 }
 
 func TestAuthIdPGooglePopup(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	start := x.start("/emulator/auth/handler", "google.com", "signInViaPopup", "http://localhost:5173/app")
 	if start.header.Get("Cross-Origin-Opener-Policy") != "unsafe-none" || start.header.Get("X-Frame-Options") != "DENY" || start.header.Get("Cache-Control") != "no-store" {
@@ -436,6 +437,7 @@ func TestAuthIdPGooglePopup(t *testing.T) {
 }
 
 func TestAuthIdPGoogleRedirect(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	start := x.start("/__/auth/handler", "google.com", "signInViaRedirect", "http://localhost:5173/login")
 	assertEqual(t, "mode", start.data["mode"], "start")
@@ -456,6 +458,7 @@ func TestAuthIdPGoogleRedirect(t *testing.T) {
 }
 
 func TestAuthIdPAppleFormPostAndRevoke(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	start := x.start("/emulator/auth/handler", "apple.com", "signInViaPopup", "http://localhost:5173/app")
 	u, _ := url.Parse(start.data["authUri"])
@@ -502,6 +505,7 @@ func TestAuthIdPAppleFormPostAndRevoke(t *testing.T) {
 }
 
 func TestAuthIdPDirectIDToken(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	tok := x.google.idToken(googleClient, googleClaims("g-3", "lina@gmail.com", true))
 	res := ok(t, x.direct("google.com", tok, "", ""))
@@ -535,6 +539,7 @@ func TestAuthIdPDirectIDToken(t *testing.T) {
 }
 
 func TestAuthIdPLinkingAndTakeover(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	// Someone registered the victim's address with a password and never verified it.
 	squatter := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "victim@gmail.com", "password": "squatter1", "returnSecureToken": true}))
@@ -591,6 +596,7 @@ func TestAuthIdPLinkingAndTakeover(t *testing.T) {
 }
 
 func TestAuthIdPAccountExistsAndReauth(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	existing := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "maha@example.com", "password": "secret12", "returnSecureToken": true}))
 	// The provider does not vouch for the email: the user must confirm by signing in first.
@@ -619,6 +625,7 @@ func TestAuthIdPAccountExistsAndReauth(t *testing.T) {
 }
 
 func TestAuthIdPAnonymousUpgrade(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	x.enableAnonymous()
 	anon := ok(t, x.call(itk+"accounts:signUp", map[string]any{"returnSecureToken": true}))
@@ -631,6 +638,7 @@ func TestAuthIdPAnonymousUpgrade(t *testing.T) {
 }
 
 func TestAuthIdPStateTampering(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	a := x.flow("google.com", "signInViaPopup", googleClaims("g-a", "a@gmail.com", true))
 	b := x.flow("google.com", "signInViaPopup", googleClaims("g-b", "b@gmail.com", true))
@@ -661,6 +669,7 @@ func TestAuthIdPStateTampering(t *testing.T) {
 }
 
 func TestAuthIdPUnauthorizedDomains(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	for _, redirect := range []string{"https://evil.example/app", "javascript:alert(1)", "http://localhost.evil.example/"} {
 		pg := x.start("/emulator/auth/handler", "google.com", "signInViaRedirect", redirect)
@@ -694,6 +703,7 @@ func TestAuthIdPUnauthorizedDomains(t *testing.T) {
 }
 
 func TestAuthIdPIframeAndInitJSON(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	resp, err := http.Get(x.env.URL + "/emulator/auth/iframe?apiKey=" + x.key + "&appName=%5BDEFAULT%5D&v=13.0.0&eid=p")
 	pg := readPage(t, resp, err)
@@ -748,6 +758,7 @@ func assertScriptHashes(t *testing.T, pg page) {
 }
 
 func TestAuthIdPConsoleProviders(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := "/console/v1/projects/chat-app/auth/providers"

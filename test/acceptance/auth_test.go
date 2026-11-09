@@ -119,6 +119,7 @@ func claims(t *testing.T, jwt string) map[string]any {
 }
 
 func TestAuthEmailPasswordLifecycle(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 
@@ -217,6 +218,7 @@ func TestAuthEmailPasswordLifecycle(t *testing.T) {
 
 // AC-A2: an anonymous user who signs up with an email keeps their uid.
 func TestAuthAnonymousUpgradeKeepsUID(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	authErr(t, p.call(itk+"accounts:signUp", map[string]any{}), "OPERATION_NOT_ALLOWED")
@@ -236,6 +238,7 @@ func TestAuthAnonymousUpgradeKeepsUID(t *testing.T) {
 }
 
 func TestAuthDisabledUser(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "d@example.com", "password": "secret1"}))
@@ -251,6 +254,7 @@ func TestAuthDisabledUser(t *testing.T) {
 }
 
 func TestAuthKeysAndProjects(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	a := e.authProject("alpha-app")
 	up := ok(t, a.call(itk+"accounts:signUp", map[string]any{"email": "x@example.com", "password": "secret1"}))
@@ -282,6 +286,7 @@ func TestAuthKeysAndProjects(t *testing.T) {
 }
 
 func TestAuthV3Aliases(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := ok(t, p.call(rp+"signupNewUser", map[string]any{"email": "ios@example.com", "password": "secret1", "returnSecureToken": true}))
@@ -295,6 +300,7 @@ func TestAuthV3Aliases(t *testing.T) {
 }
 
 func TestAuthCORS(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 
@@ -323,6 +329,7 @@ func TestAuthCORS(t *testing.T) {
 
 // The ID token verifies against the issuer's published keys, as any OIDC library would.
 func TestAuthDiscoveryAndJWKS(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	p.enableAnonymous()
@@ -405,6 +412,7 @@ func customToken(t *testing.T, keyFile []byte, uid string, extra map[string]any,
 }
 
 func TestAuthCustomToken(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	_, keyFile := p.owner.serviceAccountKey("chat-app", "backend")
@@ -452,6 +460,7 @@ func TestAuthCustomToken(t *testing.T) {
 }
 
 func TestAuthRecentLoginRequired(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "old@example.com", "password": "secret1"}))
@@ -466,6 +475,7 @@ func TestAuthRecentLoginRequired(t *testing.T) {
 }
 
 func TestAuthPasswordBackoff(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "v@example.com", "password": "secret1"}))
@@ -478,6 +488,7 @@ func TestAuthPasswordBackoff(t *testing.T) {
 
 // AC-A17: phone, MFA and email-link calls fail as a disabled provider does.
 func TestAuthDeferredMethods(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	for _, path := range []string{
@@ -492,6 +503,7 @@ func TestAuthDeferredMethods(t *testing.T) {
 // Firebase's own phone integration tests (docs/reference/compatibility.md): without an
 // answer carrying CORS headers the browser saw auth/network-request-failed, not the deferral.
 func TestAuthDeferredPhoneRecaptchaParams(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	for _, path := range []string{itk + "recaptchaParams", rp + "getRecaptchaParam"} {
@@ -508,6 +520,7 @@ func TestAuthDeferredPhoneRecaptchaParams(t *testing.T) {
 // returned session is dated at the revocation point, so its ID token always differs, the SDK
 // takes the new refresh token, and the one of the sign-in ends with the old password.
 func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "quick@example.com", "password": "secret1"}))
@@ -524,6 +537,7 @@ func TestAuthPasswordChangeRightAfterSignIn(t *testing.T) {
 // integration tests (email.test.ts, docs/reference/compatibility.md) set "photo-url" and read
 // it back after a reload. Aruma refused anything but http(s) with a code Firebase does not have.
 func TestAuthPhotoURLIsAnyString(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")

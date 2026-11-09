@@ -32,6 +32,7 @@ func units(s string) int { return len(utf16.Encode([]rune(s))) }
 // characters. Arabic, CJK and emoji text is placed so that multi-byte characters fall on
 // every frame boundary.
 func TestRTDBNonASCIIFramesAtBoundaries(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	writer := e.dial(ns, dialOpts{})
@@ -147,6 +148,7 @@ func (c *slowLink) Write(p []byte) (int, error) {
 // the 3.9 MB message about 4 s, and a deadline over the whole message closes the connection
 // after 1 s, which the client sees at once. Its wait for the reply only guards against a hang.
 func TestRTDBSlowClientLargeSync(t *testing.T) {
+	t.Parallel()
 	const timeout = time.Second
 	const rate = 1 << 20
 	slow := func(c net.Conn) net.Conn { return &slowLink{Conn: c, rate: rate} }
@@ -182,6 +184,7 @@ func TestRTDBSlowClientLargeSync(t *testing.T) {
 // is acked, so every push of the burst waits in its outbox at once, behind a 6 MB sync that
 // the kernel's buffers cannot hold.
 func TestRTDBManyQueuedPushes(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	value := strings.Repeat("abcdefghij", 400_000) + strings.Repeat("مرحبا بكم ", 100_000)
@@ -232,6 +235,7 @@ func TestRTDBManyQueuedPushes(t *testing.T) {
 // No spelling reads data it should not see (a/b against a/bc), and the listener of one
 // spelling hears the writes of another.
 func TestRTDBPathSpellings(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	c := e.dial(ns, dialOpts{})
@@ -285,6 +289,7 @@ func TestRTDBPathSpellings(t *testing.T) {
 // second decides who the session is, both get their replies, and nothing breaks, on many
 // connections at once (go test -race).
 func TestRTDBConcurrentAuth(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, pat, adm := rulesSetUp(t, e)
 	users.setUp("chat-app")
@@ -406,6 +411,7 @@ func (c *wsClient) awaitQuiet(r int64, timeout time.Duration) (reply, error) {
 // then deleting what was written, deleting a node and then writing below it, and update's
 // nulls, all sent back to back without waiting for acks.
 func TestRTDBRootWritesSurviveRestart(t *testing.T) {
+	t.Parallel()
 	settings := rtdbSettings(false, nil)
 	e := newEnv(t, settings)
 	ns := e.owner().projectNS("chat-app")
@@ -519,6 +525,7 @@ func restartRTDB(t *testing.T, e *Env, settings map[string]string) *Env {
 // emulator's verdicts for these and more): nulling a validated child in a multi-path update
 // is allowed, removing a child the parent requires is denied, over the protocol and REST.
 func TestRTDBValidateSkipsNulls(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")

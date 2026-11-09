@@ -15,6 +15,7 @@ var (
 
 // AC-12: a package name is unique within a project, but may repeat across projects.
 func TestDuplicatePackage(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -28,6 +29,7 @@ func TestDuplicatePackage(t *testing.T) {
 
 // AC-13: bundle ids and package names cannot change.
 func TestImmutableNamespaces(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -41,6 +43,7 @@ func TestImmutableNamespaces(t *testing.T) {
 
 // AC-14, AC-15: app ids and keys have the formats of ADR-007; one key per platform.
 func TestAppIDAndKeyFormats(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	p := c.project("chat-app")
@@ -77,6 +80,7 @@ func TestAppIDAndKeyFormats(t *testing.T) {
 
 // AC-16: a disabled key is refused; rotation moves config files to a new key.
 func TestKeyDisableAndRotate(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -117,6 +121,7 @@ func TestKeyDisableAndRotate(t *testing.T) {
 }
 
 func TestKeyRestrictions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -147,6 +152,7 @@ func TestKeyRestrictions(t *testing.T) {
 }
 
 func TestAppRemoveAndUndelete(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -167,6 +173,7 @@ func TestAppRemoveAndUndelete(t *testing.T) {
 }
 
 func TestShaCertificates(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -190,6 +197,7 @@ func TestShaCertificates(t *testing.T) {
 
 // Config files carry every field and the right identifiers for their platform.
 func TestConfigDownloads(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	p := c.project("chat-app")

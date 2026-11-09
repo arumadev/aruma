@@ -14,6 +14,7 @@ import (
 // API, the console or the user's own client, reaches an App.Revocations subscriber within a
 // second and is refused by the next verification.
 func TestIDTokenContract(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
@@ -102,6 +103,7 @@ func TestIDTokenContract(t *testing.T) {
 // Google sign-in that takes over an account whose email was never verified ends the
 // squatter's sessions, and says so; the owner's new session is valid.
 func TestIDTokenRevokedByIdPTakeover(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	x := newIdPEnv(t)
 	number := x.ref().Number

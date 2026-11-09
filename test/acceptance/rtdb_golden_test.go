@@ -28,6 +28,7 @@ import (
 // password, and the replay sends that user's ID token instead. The reply to auth then differs
 // in the token's claims and the provider, so for auth only the status and the uid are compared.
 func TestRTDBMatchesEmulator(t *testing.T) {
+	t.Parallel()
 	// RTDB_GOLDEN_DIR replays other captures, such as fresh ones not yet committed.
 	dir := "../../internal/services/rtdb/wire/testdata/golden"
 	if d := os.Getenv("RTDB_GOLDEN_DIR"); d != "" {

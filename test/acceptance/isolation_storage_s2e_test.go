@@ -20,6 +20,7 @@ import (
 // release is its own, and neither owner reaches the other's rulesets or releases, nor points a
 // release at the other's ruleset (ADR-021 §7). The server's own control plane answers.
 func TestIsolationStorageRuleset(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	ctx := context.Background()
 	svc := ie.App.Service

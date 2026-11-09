@@ -32,6 +32,7 @@ import (
 // personal CLI token, sent the same way. Its users signed in with unsigned tokens; here each
 // is a real Aruma user of the same uid and custom claims, who sends an ID token instead.
 func TestRTDBRESTMatchesEmulator(t *testing.T) {
+	t.Parallel()
 	file := "../../internal/services/rtdb/api/testdata/emulator/rest.golden.json"
 	if f := os.Getenv("RTDB_REST_GOLDEN"); f != "" {
 		file = f

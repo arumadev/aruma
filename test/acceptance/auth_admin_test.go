@@ -61,6 +61,7 @@ func (p *adminProject) lookup(uid string) map[string]any {
 // Only a service account of the project, or the owner's CLI token, reaches the Admin API.
 // Everything a client or the emulator-mode SDKs could send is refused before any handler.
 func TestAuthAdminCredentials(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "u@example.com", "password": "secret1"}))
@@ -127,6 +128,7 @@ func TestAuthAdminCredentials(t *testing.T) {
 // Admin-only fields sent by a client are ignored: a client can neither set claims, disable or
 // verify itself, nor reach another user.
 func TestAuthAdminFieldsFromClient(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	me := ok(t, p.call(itk+"accounts:signUp", map[string]any{
@@ -159,6 +161,7 @@ func TestAuthAdminFieldsFromClient(t *testing.T) {
 
 // AC-A14: the management calls answer in Identity Toolkit shapes with the codes the SDKs map.
 func TestAuthAdminUserManagement(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 
@@ -260,6 +263,7 @@ func TestAuthAdminUserManagement(t *testing.T) {
 // AC-A13: claims set by the admin appear in ID tokens after a refresh, not before; reserved
 // names and oversized claims are refused.
 func TestAuthAdminCustomClaims(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "c@example.com", "password": "secret1"}))
@@ -294,6 +298,7 @@ func TestAuthAdminCustomClaims(t *testing.T) {
 // AC-A11 and AC-A12 at the HTTP layer: revoking moves validSince and the refresh answers
 // TOKEN_EXPIRED; disabling refuses sign-in and refresh until the user is enabled again.
 func TestAuthAdminRevokeAndDisable(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "r@example.com", "password": "secret1"}))
@@ -325,6 +330,7 @@ func TestAuthAdminRevokeAndDisable(t *testing.T) {
 // AC-A20: a session cookie carries the ID token's claims under the session issuer and keys,
 // lives as long as asked within 5 minutes to 14 days, and dies with a revocation.
 func TestAuthAdminSessionCookie(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "s@example.com", "password": "secret1"}))
@@ -394,6 +400,7 @@ func TestAuthAdminSessionCookie(t *testing.T) {
 
 // generatePasswordResetLink and friends return a working link and email nothing.
 func TestAuthAdminEmailActionLinks(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	p.signUp("sara@example.com", "secret1")
@@ -413,6 +420,7 @@ func TestAuthAdminEmailActionLinks(t *testing.T) {
 // firebase-admin's own listUsers integration test creates {uid, password} users
 // (docs/reference/compatibility.md). The password provider appears with the email.
 func TestAuthAdminPasswordWithoutEmail(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 

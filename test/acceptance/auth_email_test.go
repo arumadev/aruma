@@ -104,6 +104,7 @@ func lookupUser(t *testing.T, p *authProject, idToken string) map[string]any {
 // AC-A6: verification end to end through the dev mailbox, with the link opened on the action
 // page; the same flow through applyActionCode from the SDK.
 func TestAuthEmailVerificationThroughDevMailbox(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -178,6 +179,7 @@ func TestAuthEmailVerificationThroughDevMailbox(t *testing.T) {
 // AC-A7: reset end to end. The new password works, the old one does not, and refresh tokens
 // from before the reset answer TOKEN_EXPIRED.
 func TestAuthPasswordReset(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -243,6 +245,7 @@ func TestAuthPasswordReset(t *testing.T) {
 // authorised domains is refused and never offered; a key of another project, a forged form
 // token and a cross-site post are refused.
 func TestAuthActionPage(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	p.signUp("sara@example.com", "secret1")
@@ -345,6 +348,7 @@ func TestAuthActionPage(t *testing.T) {
 
 // Used and expired codes are refused, by the API and on the page.
 func TestAuthEmailCodeExpiry(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -370,6 +374,7 @@ func TestAuthEmailCodeExpiry(t *testing.T) {
 // AC-A4 (email actions): with enumeration protection on, an unknown address for a reset and a
 // taken one for a change both succeed without sending; with it off they are reported.
 func TestAuthEmailEnumerationProtection(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -406,6 +411,7 @@ func TestAuthEmailEnumerationProtection(t *testing.T) {
 // verifyBeforeUpdateEmail end to end: the change happens when the new address confirms, the
 // sessions are revoked, and the old address gets a link that restores it.
 func TestAuthChangeAndRecoverEmail(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -452,6 +458,7 @@ func TestAuthChangeAndRecoverEmail(t *testing.T) {
 // Flood limits: per recipient (a reset answers RESET_PASSWORD_EXCEED_LIMIT, whether or not the
 // account exists), and per client address.
 func TestAuthEmailFloodLimits(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	p.signUp("sara@example.com", "secret1")
@@ -474,6 +481,7 @@ func TestAuthEmailFloodLimits(t *testing.T) {
 // SMTP delivery: settings with a sealed password, the outbox worker with retries, and the test
 // message; the dev mailbox stays empty once the project has an SMTP host.
 func TestAuthEmailSMTPDelivery(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	srv := smtptest.Start(t, nil)
@@ -552,6 +560,7 @@ func TestAuthEmailSMTPDelivery(t *testing.T) {
 
 // The console's template, mailbox and reset routes (docs/reference/console-api.md).
 func TestAuthEmailConsole(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := "/console/v1/projects/chat-app/auth/templates"
@@ -600,6 +609,7 @@ func TestAuthEmailConsole(t *testing.T) {
 
 // Outside loopback the dev mailbox does not exist unless configured.
 func TestAuthEmailNoDevMailboxInProduction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, map[string]string{"ARUMA_MAIL_DEV_MAILBOX": "false"})
 	p := e.authProject("chat-app")
 	expect(t, p.owner.do("GET", "/console/v1/projects/chat-app/auth/mailbox", nil), 404, "NOT_FOUND")
@@ -623,6 +633,7 @@ func TestAuthEmailNoDevMailboxInProduction(t *testing.T) {
 // Tamper scenario "dump of DB and logs": email codes, links and the SMTP password never appear
 // in the database or the log in a usable form.
 func TestAuthEmailNoRawSecretsStored(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -685,6 +696,7 @@ func dumpSchema(t *testing.T, e *Env, schema string) string {
 // The Android SDK sends requestType as the enum's number (1 = PASSWORD_RESET), which
 // protobuf's JSON mapping allows alongside the name.
 func TestAuthOobRequestTypeAsNumber(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	p.signUp("sara@example.com", "secret1")

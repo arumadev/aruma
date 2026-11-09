@@ -13,6 +13,7 @@ import (
 func consoleAuth(project string) string { return "/console/v1/projects/" + project + "/auth" }
 
 func TestConsoleAuthUsers(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := consoleAuth("chat-app")
@@ -93,6 +94,7 @@ func TestConsoleAuthUsers(t *testing.T) {
 }
 
 func TestConsoleAuthUserChanges(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := consoleAuth("chat-app")
@@ -153,6 +155,7 @@ func TestConsoleAuthUserChanges(t *testing.T) {
 }
 
 func TestConsoleAuthConfig(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := consoleAuth("chat-app")
@@ -199,6 +202,7 @@ func TestConsoleAuthConfig(t *testing.T) {
 // AC-A15 from the console: a normal rotation keeps issued tokens valid, an emergency one
 // invalidates them at once.
 func TestConsoleAuthSigningKeys(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := consoleAuth("chat-app")
@@ -247,6 +251,7 @@ func TestConsoleAuthSigningKeys(t *testing.T) {
 // Another account sees none of this project's Auth data and changes nothing; a CLI token of
 // the owner works like the session.
 func TestConsoleAuthOwnership(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	base := consoleAuth("chat-app")

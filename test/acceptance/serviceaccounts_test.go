@@ -59,6 +59,7 @@ func exchange(t *testing.T, key []byte) (string, time.Time, error) {
 // AC-17, AC-18: the key file is handed out once, its private half is never stored, and it
 // buys a one-hour token that works on the Management API.
 func TestServiceAccountKeyAndToken(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -188,6 +189,7 @@ func postAssertion(t *testing.T, e *Env, assertion string) (int, map[string]any)
 
 // RFC 7523 checks: algorithm, audience, lifetime and signature.
 func TestTokenEndpointRejectsBadAssertions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -244,6 +246,7 @@ func mustJSON(v any) []byte {
 
 // The firebase CLI sends FIREBASE_TOKEN as a refresh token to FIREBASE_TOKEN_URL.
 func TestRefreshTokenGrantForFirebaseCLI(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	pat := c.pat()
@@ -268,6 +271,7 @@ func TestRefreshTokenGrantForFirebaseCLI(t *testing.T) {
 }
 
 func TestServiceAccountLimitsAndNames(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -283,6 +287,7 @@ func TestServiceAccountLimitsAndNames(t *testing.T) {
 
 // The firebase CLI posts its refresh request as multipart/form-data.
 func TestRefreshTokenGrantAcceptsMultipart(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	pat := e.owner().pat()
 	var body bytes.Buffer
@@ -306,6 +311,7 @@ func TestRefreshTokenGrantAcceptsMultipart(t *testing.T) {
 // Review L-1, L-2: without the key, every account state looks the same; deleting a key revokes
 // the tokens it bought.
 func TestTokenEndpointRevealsNothingAndKeyDeletionRevokes(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")

@@ -18,6 +18,7 @@ import (
 // pool a single sign-in shows it. Each step rotates the key first, which drops the cached
 // signer, so every path starts cold.
 func TestSignInsOnAOneConnectionPool(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnvWithPool(t, 1)
 	p, e := x.authProject, x.env
 	p.enableAnonymous()

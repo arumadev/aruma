@@ -11,6 +11,7 @@ import (
 // the same frames with the emulator's.
 
 func TestRTDBListen(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	a := e.dial(ns, dialOpts{})
@@ -49,6 +50,7 @@ func TestRTDBListen(t *testing.T) {
 }
 
 func TestRTDBQueryListen(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	a := e.dial(ns, dialOpts{})
@@ -85,6 +87,7 @@ func TestRTDBQueryListen(t *testing.T) {
 // The rules document loads over REST with an admin credential; its .indexOn makes a child
 // query filtered and tagged.
 func TestRTDBRulesIndexOn(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")
@@ -138,6 +141,7 @@ func TestRTDBRulesIndexOn(t *testing.T) {
 
 // After unauth, under locked rules, the server cancels the listens with c before its reply.
 func TestRTDBUnauthRevokesListens(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")

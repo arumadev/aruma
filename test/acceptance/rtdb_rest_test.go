@@ -25,6 +25,7 @@ func restAs(t *testing.T, e *Env, method, target, body, bearer string, header ma
 // A REST write goes through the database's writer like an SDK's: a listener on a WebSocket
 // sees it as it commits, and a REST read sees the listener's own write.
 func TestRTDBRESTWritesReachListeners(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	ws := e.dial(ns, dialOpts{})
@@ -67,6 +68,7 @@ func TestRTDBRESTWritesReachListeners(t *testing.T) {
 // auth variable, and an Aruma user's ID token in ?auth= is held to them. A user's ID token as
 // a bearer is refused; a ?auth= that does not verify is ignored.
 func TestRTDBRESTCredentials(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, pat, _ := rulesSetUp(t, e)
 	project := strings.TrimSuffix(ns, "-default-rtdb")
@@ -130,6 +132,7 @@ func TestRTDBRESTCredentials(t *testing.T) {
 // The database host serves REST as the emulator does, and the main host with ?ns= the same
 // database. Streaming is refused (ADR-020 §3), and a body over rest_write_bytes too.
 func TestRTDBRESTRoutes(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test", "ARUMA_RTDB_REST_WRITE_BYTES": "1048576"})
 	e.owner().project("chat-app")
 	host := map[string]string{"Host": "chat-app-default-rtdb.rtdb.aruma.test"}
@@ -182,6 +185,7 @@ func TestRTDBRESTRoutes(t *testing.T) {
 // firebase deploy --only database --dry-run checks the rules and saves nothing; the Admin
 // SDKs' getRulesJSON reads them without comments.
 func TestRTDBRESTRulesDryRunAndStrict(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")
@@ -212,6 +216,7 @@ func TestRTDBRESTRulesDryRunAndStrict(t *testing.T) {
 // (management/database.ts). Another instance, another account's project and a server without
 // the Realtime Database find nothing.
 func TestRTDBManagementInstances(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
 	owner := e.owner()
 	owner.project("chat-app")

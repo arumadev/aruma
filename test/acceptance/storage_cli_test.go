@@ -42,6 +42,7 @@ import (
 //
 //	ARUMA_FIREBASE_CLI=1 go test -run TestStorageWithTheFirebaseCLI ./test/acceptance/
 func TestStorageWithTheFirebaseCLI(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("ARUMA_FIREBASE_CLI") == "" {
 		t.Skip("set ARUMA_FIREBASE_CLI=1 to run firebase-tools against the server (Node and npm needed)")
 	}
