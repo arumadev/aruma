@@ -24,6 +24,13 @@ export function formatSha(hex: string): string {
 
 /** Only same-site absolute paths are accepted as a post-login destination. */
 export function safeNextPath(next: string | null): string | null {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return null;
+  // Browsers drop tabs and line breaks inside a URL, so "/\t/evil.example" is "//evil.example":
+  // refuse control characters, then require that the browser's own parse stays on this origin.
+  if (!next || !next.startsWith('/') || next.startsWith('//') || /[\\\u0000-\u001f\u007f]/.test(next)) return null;
+  try {
+    if (new URL(next, 'http://aruma.invalid').origin !== 'http://aruma.invalid') return null;
+  } catch {
+    return null;
+  }
   return next;
 }
