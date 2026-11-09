@@ -54,6 +54,13 @@ type OpenOptions struct {
 	Sink Sink
 }
 
+// isClosed reports whether Close has begun.
+func (s *Session) isClosed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.closed
+}
+
 // Database is the database the session works on.
 func (s *Session) Database() *Database { return s.db }
 
