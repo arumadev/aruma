@@ -131,7 +131,14 @@ public class StorageGuardTest {
     public void withThePluginTheRedirectCanBeSwitchedOff() throws Exception {
         prodBaseUrl("https://aruma.example.com/v0");
         assertTrue(ArumaRedirect.installFromValues("https://aruma.example.com", null, null, "false", false));
-        assertNull(AuthEndpoints.rewrite(new URL("https://firebasestorage.googleapis.com/v0/b/b/o/x"),
-                new ArumaBase("https://aruma.example.com", false, false)));
+        // Switched off, a request that still names Google's Storage host is refused (a 403, never sent),
+        // not passed to Google with its token: the run-time redirect is off, and so is the fallback.
+        try {
+            AuthEndpoints.rewrite(new URL("https://firebasestorage.googleapis.com/v0/b/b/o/x"),
+                    new ArumaBase("https://aruma.example.com", false, false));
+            fail();
+        } catch (AuthEndpoints.StorageRefusedException expected) {
+            assertTrue(expected.getMessage().contains("ArumaStorageRedirect is false"));
+        }
     }
 }

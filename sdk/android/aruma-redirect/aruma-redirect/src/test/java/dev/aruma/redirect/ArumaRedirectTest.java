@@ -54,7 +54,9 @@ public class ArumaRedirectTest {
         assertEquals(1, installs.get());
         assertEquals("https://aruma.example.com", ArumaRedirect.baseUrl());
         assertTrue(last.createURLStreamHandler("https") != null);
-        assertNull(last.createURLStreamHandler("http"));
+        // http is handled too, only to refuse Cloud Storage on plain http while the Storage redirect is
+        // off (AuthEndpoints.rewrite): every other http URL goes to the platform handler untouched.
+        assertTrue(last.createURLStreamHandler("http") != null);
         assertNull(last.createURLStreamHandler("file"));
     }
 
