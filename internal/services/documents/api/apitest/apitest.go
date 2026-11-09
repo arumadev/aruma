@@ -86,8 +86,7 @@ type Env struct {
 // New returns the environment.
 func New(t testing.TB, o Options) *Env {
 	t.Helper()
-	t.Setenv("ARUMA_TEST_REQUIRE_DB", "1")
-	pool := storetest.NewPool(t)
+	pool := storetest.NewRequiredPool(t)
 	master := make([]byte, 32)
 	if _, err := rand.Read(master); err != nil {
 		t.Fatal(err)

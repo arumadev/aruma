@@ -55,19 +55,32 @@ func AdminURL() string {
 // NewDB returns the URL of a fresh, migrated database.
 func NewDB(t testing.TB) string {
 	t.Helper()
-	return newDB(t, true)
+	return newDB(t, true, false)
 }
 
 // NewEmptyDB returns the URL of a fresh database with no migrations applied.
 func NewEmptyDB(t testing.TB) string {
 	t.Helper()
-	return newDB(t, false)
+	return newDB(t, false, false)
 }
 
 // NewPool returns a pool on a fresh, migrated database.
 func NewPool(t testing.TB) *pgxpool.Pool {
 	t.Helper()
-	pool, err := store.Open(context.Background(), NewDB(t))
+	return open(t, NewDB(t))
+}
+
+// NewRequiredPool is NewPool for a test that fails, rather than skips, when there is no
+// Postgres, as every test does under ARUMA_TEST_REQUIRE_DB. It sets no environment, so such
+// tests may run in parallel.
+func NewRequiredPool(t testing.TB) *pgxpool.Pool {
+	t.Helper()
+	return open(t, newDB(t, true, true))
+}
+
+func open(t testing.TB, url string) *pgxpool.Pool {
+	t.Helper()
+	pool, err := store.Open(context.Background(), url)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +88,7 @@ func NewPool(t testing.TB) *pgxpool.Pool {
 	return pool
 }
 
-func newDB(t testing.TB, migrated bool) string {
+func newDB(t testing.TB, migrated, required bool) string {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("needs Postgres; skipped in -short mode")
@@ -85,7 +98,7 @@ func newDB(t testing.TB, migrated bool) string {
 
 	admin, err := pgx.Connect(ctx, AdminURL())
 	if err != nil {
-		if os.Getenv("ARUMA_TEST_REQUIRE_DB") != "" {
+		if required || os.Getenv("ARUMA_TEST_REQUIRE_DB") != "" {
 			t.Fatalf("connect to test Postgres: %v", err)
 		}
 		t.Skipf("no test Postgres at ARUMA_TEST_DATABASE_URL: %v", err)
