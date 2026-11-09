@@ -99,6 +99,26 @@ The key is not a secret, but you can limit where it is accepted, on the "API key
 
 A refused request returns 403 `PERMISSION_DENIED`. The web SDK reports a message such as `auth/requests-from-referer-https://other.example/-are-blocked.`.
 
+## Mobile browsers and Safari: the `apis.google.com` script
+
+`getAuth()` includes the popup and redirect helper. On mobile browsers and in Safari, the Firebase SDK starts that helper as soon as Auth loads, whether or not the app ever opens a popup, and the helper loads a script from `apis.google.com`. Firebase behaves the same. Two effects:
+
+- The page sends a request to Google, even when the app signs in only with email and password or anonymously.
+- Where that host is blocked without an answer (a firewall that drops the packets), the helper never finishes, so `authStateReady()` and the first `onAuthStateChanged` for a returning user wait for it. On a desktop browser this does not happen.
+
+If the app does not use Google or Apple sign-in by popup or redirect, start Auth without the helper:
+
+```js
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from "firebase/auth";
+
+const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  // no popupRedirectResolver: nothing is loaded from apis.google.com
+});
+```
+
+Call `initializeAuth` once, before any `getAuth()`. An app that does use Google or Apple sign-in by popup or redirect needs the helper and the script.
+
 ## Not supported yet
 
 | Feature | Status |
