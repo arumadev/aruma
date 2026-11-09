@@ -166,8 +166,9 @@ func TestChangedSinceScope(t *testing.T) {
 // What ChangedSince reads does not grow with what changed outside its scope: Postgres keeps
 // other collections' images out, and the rows stream, so 24 MiB of large documents changed in
 // another collection, and in a nested collection of the same id, cost little.
+// It measures the process's allocations (runtime.MemStats), so it runs alone, not in
+// parallel with tests that allocate.
 func TestChangedSinceMemory(t *testing.T) {
-	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	big := value.String(strings.Repeat("x", 1<<20-1000))

@@ -36,8 +36,9 @@ func eventually(t *testing.T, what string, cond func() bool) {
 // for its lock. When their clients go, their contexts end, and every waiter leaves at once with
 // ErrUnavailable instead of waiting for the holder: the goroutines come back to where they were.
 // The holder is untouched, and the session goes on.
+// It counts the process's goroutines (runtime.NumGoroutine), so it runs alone, not in
+// parallel with tests that start their own.
 func TestSessionLockWaitersLeaveWithTheirContext(t *testing.T) {
-	t.Parallel()
 	e := newEnv(t)
 	id := e.start(e.a, asAdmin(), uploadSpec("slow.bin", SurfaceGCS))
 	idHash := e.s.keys.HashToken(id)
