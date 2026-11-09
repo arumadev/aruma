@@ -119,6 +119,7 @@ func intField(n int64) map[string]*pb.Value {
 }
 
 func TestF1Methods(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok, c := t.Context(), x.env.JWT(t), x.client
 
@@ -376,6 +377,7 @@ func TestF1Methods(t *testing.T) {
 // Every name of a request binds to one database (f1-resource-names.json), and a database that
 // does not exist is NOT_FOUND with no message on gRPC (f0-missing-database.json).
 func TestResourceNames(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok, c := t.Context(), x.env.JWT(t), x.client
 	stream, err := c.BatchGetDocuments(ctx, req(&pb.BatchGetDocumentsRequest{Database: db,
@@ -406,6 +408,7 @@ func TestResourceNames(t *testing.T) {
 
 // The callers before F5 (ADR-029 §2, ADR-025 §8): admins only.
 func TestCallers(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{DevOwnerToken: true}, docgrpc.Limits{})
 	ctx, c := t.Context(), x.client
 	get := func(token, name string) error {
@@ -437,6 +440,7 @@ func TestCallers(t *testing.T) {
 
 // Every method not served yet, and every unknown one, answers UNIMPLEMENTED in gRPC form.
 func TestUnimplemented(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	st, err := x.client.ExecutePipeline(ctx, req(&pb.ExecutePipelineRequest{Database: db}, tok))
@@ -499,6 +503,7 @@ func rawCall(t *testing.T, base, path string, body io.Reader, window int, header
 // A stream that never delivers its first message is ended at stream_first_message, rather
 // than held to the server's 60 s ReadTimeout (ADR-027 §3.2).
 func TestFirstMessageDeadline(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamFirstMessage: 300 * time.Millisecond})
 	pr, pw := io.Pipe()
 	t.Cleanup(func() { pw.Close() })
@@ -538,6 +543,7 @@ func TestFirstMessageDeadline(t *testing.T) {
 // A client that stops reading a server stream is cut at stream_write_stall, and its stream no
 // longer counts (ADR-027 §3.2).
 func TestWriteStall(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamWriteStall: 300 * time.Millisecond})
 	big := value.String(strings.Repeat("x", 900_000))
 	var names []string
@@ -585,6 +591,7 @@ func holding(held chan struct{}) apitest.Options {
 // The drain ends the open streams with UNAVAILABLE at once, and answers new ones UNAVAILABLE
 // (ADR-027 §3.4).
 func TestDrain(t *testing.T) {
+	t.Parallel()
 	held := make(chan struct{}, 1)
 	x := newHarness(t, holding(held), docgrpc.Limits{})
 	tok := x.env.JWT(t)
@@ -624,6 +631,7 @@ func TestDrain(t *testing.T) {
 
 // A server stream without grpc-timeout ends at server_stream_max with DEADLINE_EXCEEDED.
 func TestServerStreamMax(t *testing.T) {
+	t.Parallel()
 	held := make(chan struct{}, 1)
 	x := newHarness(t, holding(held), docgrpc.Limits{ServerStreamMax: 300 * time.Millisecond})
 	s, err := x.client.BatchGetDocuments(t.Context(), req(&pb.BatchGetDocumentsRequest{Database: db, Documents: []string{root + "/hold/x"}}, x.env.JWT(t)))
@@ -648,6 +656,7 @@ func firstPageToken(t *testing.T, c firestorepbconnect.FirestoreClient, tok stri
 // TestWireErrorsReplay replays the gRPC cases of f1-wire-errors.json: a database field production
 // refuses, each recorded on BeginTransaction with google-cloud-resource-prefix naming (default).
 func TestWireErrorsReplay(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	// gaps are the cases this server does not answer as production, with the reason.
@@ -711,6 +720,7 @@ func TestWireErrorsReplay(t *testing.T) {
 // A forged page token on ListDocuments with no collection id, which once panicked the store
 // (F1 review M2), is refused.
 func TestForgedPageToken(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	sum := sha256.New()

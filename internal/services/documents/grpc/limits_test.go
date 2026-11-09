@@ -54,6 +54,7 @@ func removed(l *apitest.ListenClient, id int32) []*pb.ListenResponse {
 
 // A target past targets_per_stream is removed alone with RESOURCE_EXHAUSTED; the stream stays.
 func TestListenTargetsPerStream(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{TargetsPerStream: 2})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("tp/a", rankDoc(1)))
@@ -76,6 +77,7 @@ func TestListenTargetsPerStream(t *testing.T) {
 
 // A target whose read goes past snapshot_rows is removed alone with RESOURCE_EXHAUSTED.
 func TestListenSnapshotRows(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{Hub: listen.Options{SnapshotRows: 2}}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("sr/a", rankDoc(1)), update("sr/b", rankDoc(2)), update("sr/c", rankDoc(3)))
@@ -94,6 +96,7 @@ func TestListenSnapshotRows(t *testing.T) {
 
 // A Listen stream without a target for stream_idle ends UNAVAILABLE; one with a target does not.
 func TestListenIdle(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamIdle: 300 * time.Millisecond})
 	tok := x.env.JWT(t)
 	l := apitest.OpenListen(t, x.client, tok)
@@ -112,6 +115,7 @@ func TestListenIdle(t *testing.T) {
 // A client that stops reading fills the outbox; when nothing leaves it for stream_write_stall,
 // the stream ends, counted as stream_outbox_bytes.
 func TestListenOutbox(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamOutboxBytes: 1 << 20, StreamWriteStall: 300 * time.Millisecond})
 	tok := x.env.JWT(t)
 	slow := firestorepbconnect.NewFirestoreClient(h2c(64<<10), x.url, connect.WithGRPC())
@@ -137,6 +141,7 @@ func TestListenOutbox(t *testing.T) {
 // Listen and Write count together against streams_per_project and streams_per_ip; one more is
 // refused RESOURCE_EXHAUSTED, and a stream that ends frees its place.
 func TestStreamsPerProjectAndIP(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name   string
 		limits docgrpc.Limits
@@ -182,6 +187,7 @@ func TestStreamsPerProjectAndIP(t *testing.T) {
 
 // A service account's stream closes UNAUTHENTICATED at its token's exp.
 func TestStreamServiceAccountExpiry(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.ShortJWT(t, 2*time.Second)
 	l := apitest.OpenListen(t, x.client, tok)
@@ -237,6 +243,7 @@ func endUsers(t *testing.T, u *users, rev idtoken.Revocations) *harness {
 // An end user's stream closes UNAUTHENTICATED at its token's exp; a token refused at open is
 // UNAUTHENTICATED.
 func TestStreamEndUserExpiry(t *testing.T) {
+	t.Parallel()
 	u := &users{exp: time.Now().Add(time.Second)}
 	x := endUsers(t, u, idtoken.NewHub(0))
 	tok := apitest.IDToken(t)
@@ -256,6 +263,7 @@ func TestStreamEndUserExpiry(t *testing.T) {
 
 // A revocation closes the user's open Listen and Write streams at once, and not another user's.
 func TestStreamRevocation(t *testing.T) {
+	t.Parallel()
 	u := &users{exp: time.Now().Add(time.Hour)}
 	rev := idtoken.NewHub(0)
 	x := endUsers(t, u, rev)
@@ -284,6 +292,7 @@ func TestStreamRevocation(t *testing.T) {
 // A revocation that lands while a stream's token is being verified refuses the stream: the hold
 // keeps it from being lost between the verification and the stream's registration.
 func TestStreamRevocationRacesOpen(t *testing.T) {
+	t.Parallel()
 	u := &users{exp: time.Now().Add(time.Hour), gate: make(chan struct{}), in: make(chan struct{}, 1)}
 	rev := idtoken.NewHub(0)
 	x := endUsers(t, u, rev)
@@ -298,6 +307,7 @@ func TestStreamRevocationRacesOpen(t *testing.T) {
 
 // Revocations lost to a subscription that fell behind verify every end user's token again.
 func TestStreamRevocationsOverflow(t *testing.T) {
+	t.Parallel()
 	u := &users{exp: time.Now().Add(time.Hour)}
 	rev := idtoken.NewHub(1)
 	x := endUsers(t, u, rev)
@@ -320,6 +330,7 @@ func TestStreamRevocationsOverflow(t *testing.T) {
 // with its status: the cut of a stuck write leaves that Send its grace, rather than resetting the
 // stream INTERNAL. Each Send here stays in that window until the stream ends.
 func TestStreamsEndMidSend(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name string
 		end  func(x *harness)
@@ -354,6 +365,7 @@ func TestStreamsEndMidSend(t *testing.T) {
 // The lost instance lock closes every Listen and Write stream UNAVAILABLE and refuses new ones
 // until it is taken again.
 func TestStreamsInstanceLost(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	l := apitest.OpenListen(t, x.client, tok)

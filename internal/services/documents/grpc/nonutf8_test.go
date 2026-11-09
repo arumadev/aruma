@@ -19,6 +19,7 @@ import (
 // (f2-non-utf8.json grpc.*). The requests are hand-encoded: a marker in a valid message becomes
 // the bad bytes.
 func TestNonUTF8GRPCAsProductionF2(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	update := func(name, field, s string) *pb.CommitRequest {

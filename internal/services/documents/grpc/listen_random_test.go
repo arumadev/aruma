@@ -23,6 +23,7 @@ import (
 // SDK applies the frames (an ExistenceFilter that disagrees makes it query again), are its
 // result at the snapshot's read time; at the end, its result now.
 func TestListenRandom(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	const keys, writers, commits, listeners = 16, 4, 30, 3

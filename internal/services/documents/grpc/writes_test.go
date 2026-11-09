@@ -38,6 +38,7 @@ func increment(path string, v *pb.Value) *pb.DocumentTransform_FieldTransform {
 
 // Commit with every transform, in the modern form and the legacy separate transform write.
 func TestCommitTransforms(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	commit := func(ws ...*pb.Write) (*pb.CommitResponse, error) {
@@ -117,6 +118,7 @@ func TestCommitTransforms(t *testing.T) {
 // after a write of it (f2-commit.json same.*, grpc.same.update_update); BatchWrite refuses any two
 // (f2-batch-write.json grpc.same_document_twice).
 func TestWritesOfOneDocumentF2(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	commit := func(ws ...*pb.Write) (*pb.CommitResponse, error) {
@@ -178,6 +180,7 @@ func TestWritesOfOneDocumentF2(t *testing.T) {
 
 // BatchWrite applies each write on its own and answers each one's status.
 func TestBatchWrite(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	batch := func(ws ...*pb.Write) (*pb.BatchWriteResponse, error) {

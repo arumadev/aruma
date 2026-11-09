@@ -46,6 +46,7 @@ func untilRemoved(l *apitest.ListenClient) []*pb.ListenResponse {
 // rules read no other document; nothing written after reaches the stream (the review's
 // listen-release-never-reaches-open-query-targets).
 func TestListenRulesNewReleaseDenies(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	x.env.PublishFirestoreRules(t, rvRules("true"))
 	l, admin := openRV(t, x)
@@ -62,6 +63,7 @@ service cloud.firestore {
 
 // A new release that still allows the open targets sends nothing; they keep receiving commits.
 func TestListenRulesNewReleaseAllows(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	x.env.PublishFirestoreRules(t, rvRules("true"))
 	l, admin := openRV(t, x)
@@ -74,6 +76,7 @@ func TestListenRulesNewReleaseAllows(t *testing.T) {
 // A rule that reads request.time alone refuses the open targets once the time it allows has
 // passed.
 func TestListenRulesRequestTime(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	until := time.Now().Add(3 * time.Second)
 	x.env.PublishFirestoreRules(t, rvRules(fmt.Sprintf("request.time < timestamp.value(%d)", until.UnixMilli())))

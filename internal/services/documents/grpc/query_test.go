@@ -21,6 +21,7 @@ import (
 // through RunQuery and RunAggregationQuery: FAILED_PRECONDITION with the same message, or the
 // same documents in order, or the same aggregates.
 func TestIndexesReplay(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok, c := t.Context(), x.env.JWT(t), x.client
 	for _, d := range apitest.IndexSeed() {

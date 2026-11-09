@@ -28,6 +28,7 @@ func usageNow(t *testing.T, env *apitest.Env) documents.UsageHour {
 // TestUsage: over gRPC, the documents written, deleted and read (Get, RunQuery, Listen) are
 // counted as Firestore bills them, with the rules' decisions, the Listen stream and its targets.
 func TestUsage(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	x.env.PublishFirestoreRules(t, `rules_version = '2';
 service cloud.firestore {

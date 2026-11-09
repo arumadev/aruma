@@ -49,6 +49,7 @@ func batchGet(t *testing.T, c firestorepbconnect.FirestoreClient, tok string, r 
 var readOnly = &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadOnly_{ReadOnly: &pb.TransactionOptions_ReadOnly{}}}
 
 func TestTransactions(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	for _, id := range []string{"g1", "g2"} {
@@ -162,6 +163,7 @@ func TestTransactions(t *testing.T) {
 // read_time, an empty id and a write in a read-only transaction get production's texts; the
 // empty commit in a transaction has a commit_time.
 func TestTransactionsF2(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	begin(t, x.client, tok, &pb.TransactionOptions{Mode: &pb.TransactionOptions_ReadWrite_{ReadWrite: &pb.TransactionOptions_ReadWrite{RetryTransaction: []byte{}}}})
@@ -195,6 +197,7 @@ func TestTransactionsF2(t *testing.T) {
 // An end user (an ID token, or none) must ask for OPTIMISTIC to begin a read-write transaction
 // (ADR-025 §7.2); a read-only one needs nothing. Before F5 only dev_open_rules admits one.
 func TestEndUserTransactions(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{DevOpenRules: true}, docgrpc.Limits{})
 	ctx := t.Context()
 	_, err := x.client.BeginTransaction(ctx, req(&pb.BeginTransactionRequest{Database: db}, ""))

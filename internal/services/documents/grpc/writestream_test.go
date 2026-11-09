@@ -41,6 +41,7 @@ func openWrite(t *testing.T, x *harness, tok string) (*writeStream, *pb.WriteRes
 }
 
 func TestWriteStream(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	st, hs := openWrite(t, x, tok)
@@ -131,6 +132,7 @@ func TestWriteStream(t *testing.T) {
 // write.resume-stream): a stale token and another stream_id are accepted, a missing or unparseable
 // token is not, and a stream is not resumed.
 func TestWriteStreamTokens(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	first := func(req *pb.WriteRequest) error {
@@ -178,6 +180,7 @@ func TestWriteStreamTokens(t *testing.T) {
 }
 
 func TestWriteStreamClose(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	st, _ := openWrite(t, x, x.env.JWT(t))
 	// The client closes its side: the stream ends cleanly.
@@ -191,6 +194,7 @@ func TestWriteStreamClose(t *testing.T) {
 
 // A permanent error ends the stream with Commit's status, and the batches behind it are not applied.
 func TestWriteStreamPrecondition(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	st, _ := openWrite(t, x, tok)
@@ -225,6 +229,7 @@ func TestWriteStreamPrecondition(t *testing.T) {
 }
 
 func TestWriteStreamAuth(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	st := x.client.Write(t.Context())
 	_ = st.Send(&pb.WriteRequest{Database: db})
@@ -249,6 +254,7 @@ func TestWriteStreamAuth(t *testing.T) {
 }
 
 func TestWriteStreamIdle(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamIdle: 300 * time.Millisecond})
 	st, _ := openWrite(t, x, x.env.JWT(t))
 	start := time.Now()
@@ -260,6 +266,7 @@ func TestWriteStreamIdle(t *testing.T) {
 
 // A stream whose first message does not come is closed DEADLINE_EXCEEDED, before any work.
 func TestWriteStreamFirstMessage(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{StreamFirstMessage: 300 * time.Millisecond})
 	pr, pw := io.Pipe()
 	t.Cleanup(func() { pw.Close() })

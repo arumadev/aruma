@@ -116,6 +116,7 @@ func wantShapes(t *testing.T, what string, got []*pb.ListenResponse, want ...str
 }
 
 func TestListenTargets(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("lt/a", rankDoc(1)), update("lt/b", rankDoc(2)), update("lt/c", rankDoc(3)))
@@ -166,6 +167,7 @@ func TestListenTargets(t *testing.T) {
 }
 
 func TestListenRefusals(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("rf/p", intField(1)))
@@ -243,6 +245,7 @@ func settled(t *testing.T, l *apitest.ListenClient) {
 }
 
 func TestListenWindows(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("lw/r1", rankDoc(1)), update("lw/r2", rankDoc(2)), update("lw/r3", rankDoc(3)), update("lw/r4", rankDoc(4)))
@@ -273,6 +276,7 @@ func TestListenWindows(t *testing.T) {
 }
 
 func TestListenResume(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("rs/x1", rankDoc(1)), update("rs/x2", rankDoc(2)), update("rs/x3", rankDoc(3)))
@@ -340,6 +344,7 @@ func (d *dropOne) Committed(db documents.DB, seq int64, at time.Time, changes []
 // TestListenResync: a stream that falls behind the hub (more than LagEvents events at once)
 // has its events dropped; it answers with RESET and every target's result, never with a gap.
 func TestListenResync(t *testing.T) {
+	t.Parallel()
 	drop := &dropOne{}
 	x := newHarness(t, apitest.Options{Hub: listen.Options{LagEvents: 2, GapTimeout: 500 * time.Millisecond},
 		Notifier: func(n documents.Notifier) documents.Notifier { drop.Notifier = n; return drop }}, docgrpc.Limits{})
