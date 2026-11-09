@@ -266,8 +266,10 @@ function PathBar({ projectId, path, onGo }: { projectId: string; path: string; o
                 <Icon name="home" size={18} />
               </Link>
             ) : (
-              <span className={styles.current} aria-current="page" aria-label={t('root')}>
-                <Icon name="home" size={18} />
+              <span className={styles.current} aria-current="page">
+                <span role="img" aria-label={t('root')}>
+                  <Icon name="home" size={18} />
+                </span>
               </span>
             )}
           </li>
