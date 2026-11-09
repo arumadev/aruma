@@ -19,8 +19,9 @@ type nodeCache struct {
 	entries map[string]*cacheEntry
 	budget  *cacheBudget
 	clock   uint64 // orders entries by last use, for eviction
-	// check makes every node the cache serves be read from the store too and compared: for
-	// tests (ARUMA_RTDB_CHECK_CACHE).
+	// check makes every node the cache serves be read from the store too and compared, and
+	// every window updated from a change be filtered in full too and compared (views.window):
+	// for tests (ARUMA_RTDB_CHECK_CACHE).
 	check bool
 }
 
