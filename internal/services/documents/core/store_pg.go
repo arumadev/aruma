@@ -35,6 +35,9 @@ type Options struct {
 	// younger, and an index read continued in a later snapshot relies on it (IndexRead). Default
 	// 1 hour; less than MinChangelogRetention is raised to it.
 	ChangelogRetention time.Duration
+	// CommitTimeouts are each commit transaction's own timeouts; a zero field is its default
+	// (DefaultCommitTimeouts).
+	CommitTimeouts CommitTimeouts
 }
 
 // PGStore is Store on Postgres, schema documents (ADR-024).
@@ -64,7 +67,7 @@ func NewPGStore(pool *pgxpool.Pool, o Options) *PGStore {
 	return &PGStore{
 		pool:     pool,
 		q:        queries.New(pool),
-		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats, o.Instance),
+		seq:      newSequencer(pool, cmp.Or(o.CommitConcurrency, DefaultCommitConcurrency), o.Notifier, cats, o.Instance, o.CommitTimeouts),
 		location: cmp.Or(o.LocationID, DefaultLocation),
 		instance: o.Instance,
 		txns:     newTransactions(o.Transactions),

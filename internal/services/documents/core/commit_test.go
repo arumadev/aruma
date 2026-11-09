@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -102,28 +101,21 @@ func TestUnchangedCommitTimeAdvances(t *testing.T) {
 // A REQUEST_TIME commit whose session the server ends between its stamp and its second batch
 // (idle_in_transaction_session_timeout) committed nothing: it is ABORTED with the contention
 // text, not an unknown outcome, the hub hears of nothing, and the next commit takes its seq
-// (F2 review m3). It changes the package's commitSettings, so it runs alone, before the
-// parallel tests.
+// (F2 review m3).
 func TestStampFirstIdleTimeout(t *testing.T) {
+	t.Parallel()
 	notes := &recordingNotifier{}
-	s, _ := newStore(t, Options{Notifier: notes})
+	s, _ := newStore(t, Options{Notifier: notes, CommitTimeouts: CommitTimeouts{IdleInTransaction: 100 * time.Millisecond}})
 	p := ParsePath("c/idle")
 	mustCommit(t, s, set("c/idle", doc("n", value.Int(1))))
-	saved := commitSettings
-	commitSettings = slices.Clone(saved)
-	for i, set := range commitSettings {
-		if slices.Contains([]string{"SET LOCAL idle_in_transaction_session_timeout = '5s'"}, set) {
-			commitSettings[i] = "SET LOCAL idle_in_transaction_session_timeout = '100ms'"
-		}
-	}
 	s.seq.afterStamp = func() { time.Sleep(400 * time.Millisecond) }
-	t.Cleanup(func() { commitSettings, s.seq.afterStamp = saved, nil })
+	t.Cleanup(func() { s.seq.afterStamp = nil })
 	stamp := Transform{Path: value.FieldPath{"ts"}, Kind: TransformServerTime}
 	_, err := s.Commit(t.Context(), testDB, []Write{{Kind: WriteUpdate, Path: p, Masked: true, Fields: value.Map(), Transforms: []Transform{stamp}}})
 	if !errors.Is(err, ErrContention) {
 		t.Fatalf("got %v, want the contention error", err)
 	}
-	commitSettings, s.seq.afterStamp = saved, nil
+	s.seq.afterStamp = nil
 	got, _, _ := s.Get(t.Context(), testDB, p, ReadOptions{})
 	if _, ok := got.Fields.Get("ts"); ok {
 		t.Fatal("the commit is stored")

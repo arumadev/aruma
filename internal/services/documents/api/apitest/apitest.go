@@ -136,7 +136,10 @@ func New(t testing.TB, o Options) *Env {
 	if o.Notifier != nil {
 		notify = o.Notifier(hub)
 	}
-	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions, Notifier: notify})
+	// Commits as large as a test's may outlast production's statement and idle timeouts on a
+	// loaded machine; no test of the transports is about those timeouts.
+	store := documents.NewPGStore(pool, documents.Options{Transactions: o.Transactions, Notifier: notify,
+		CommitTimeouts: documents.CommitTimeouts{IdleInTransaction: 2 * time.Minute, Statement: 2 * time.Minute}})
 	hub.Bind(store)
 	tokens := idtoken.Verifier(idTokens{proj.Number})
 	var s documents.Store = store

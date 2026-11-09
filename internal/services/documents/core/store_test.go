@@ -29,8 +29,15 @@ func TestMain(m *testing.M) {
 func newStore(t *testing.T, o Options) (*PGStore, *pgxpool.Pool) {
 	t.Helper()
 	pool := storetest.NewPool(t)
+	if o.CommitTimeouts == (CommitTimeouts{}) {
+		o.CommitTimeouts = testCommitTimeouts
+	}
 	return NewPGStore(pool, o), pool
 }
+
+// testCommitTimeouts let a large commit finish on a loaded machine, where production's would end
+// it, for tests that are not about those timeouts. The lock timeout stays production's.
+var testCommitTimeouts = CommitTimeouts{IdleInTransaction: 2 * time.Minute, Statement: 2 * time.Minute}
 
 func doc(kv ...any) value.Value { return fieldsOf(kv...) }
 
