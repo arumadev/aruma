@@ -240,18 +240,21 @@ func endUsers(t *testing.T, u *users, rev idtoken.Revocations) *harness {
 	return newHarnessWith(t, apitest.Options{DevOpenRules: true}, docgrpc.Options{IDTokens: u, Revocations: rev})
 }
 
-// An end user's stream closes UNAUTHENTICATED at its token's exp; a token refused at open is
-// UNAUTHENTICATED.
-// It runs alone, not in parallel: it gives the stream one second of token, which a loaded
-// machine can spend before the first snapshot (its timing is to be made independent of load).
+// An end user's stream closes UNAUTHENTICATED at its token's exp, never before; a token refused
+// at open is UNAUTHENTICATED. A loaded machine may reach the exp before the stream's first
+// snapshot, so the test asks for none: the stream ends at exp either way.
 func TestStreamEndUserExpiry(t *testing.T) {
-	u := &users{exp: time.Now().Add(time.Second)}
+	t.Parallel()
+	exp := time.Now().Add(time.Second)
+	u := &users{exp: exp}
 	x := endUsers(t, u, idtoken.NewHub(0))
 	tok := apitest.IDToken(t)
 	l := apitest.OpenListen(t, x.client, tok)
 	l.Add(docTarget(1, "eu/a"))
-	l.UntilGlobal()
 	wantEnd(t, "at exp", l, connect.CodeUnauthenticated)
+	if time.Now().Before(exp) {
+		t.Error("the stream ended before its token's exp")
+	}
 	if n := x.metrics.Closes("token_expired"); n != 1 {
 		t.Errorf("token_expired closes: %v", n)
 	}
