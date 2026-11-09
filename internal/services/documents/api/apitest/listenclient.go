@@ -160,10 +160,15 @@ func (l *ListenClient) Quiet(d time.Duration) {
 	}
 }
 
-// Ended waits for the stream's end and returns its error: nil when it ended OK.
+// Ended waits for the stream's end and returns its error: nil when it ended OK. It fails the test
+// when no frame and no end come within ListenWait: a stream still sending what it had queued, as
+// a busy one may for longer than that in all, is still on its way to its end. A stream that never
+// stops sending fails it after endedCap.
 func (l *ListenClient) Ended() error {
 	l.t.Helper()
-	deadline := time.After(ListenWait)
+	idle := time.NewTimer(ListenWait)
+	defer idle.Stop()
+	capped := time.After(endedCap)
 	for {
 		select {
 		case res, ok := <-l.frames:
@@ -172,11 +177,17 @@ func (l *ListenClient) Ended() error {
 			}
 			l.Checker.Received(res)
 			l.Frames = append(l.Frames, res)
-		case <-deadline:
-			l.t.Fatal("listen: the stream did not end")
+			idle.Reset(ListenWait)
+		case <-idle.C:
+			l.t.Fatalf("listen: the stream did not end, nor sent anything, within %v", ListenWait)
+		case <-capped:
+			l.t.Fatalf("listen: the stream did not end within %v", endedCap)
 		}
 	}
 }
+
+// endedCap bounds Ended, however busy the stream.
+const endedCap = time.Minute
 
 // IsGlobal reports a global snapshot: NO_CHANGE without target ids.
 func IsGlobal(r *pb.ListenResponse) bool {
