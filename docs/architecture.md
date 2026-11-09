@@ -10,7 +10,7 @@ Aruma is one Go binary and one PostgreSQL database (version 18 or newer).
 - The console (a Next.js app, in English and Arabic) is built to static files and embedded in the binary. There is nothing else to deploy.
 - PostgreSQL holds all state. The exception is Cloud Storage, which keeps object bytes in a directory on a local disk and keeps everything that points to them in PostgreSQL.
 - `aruma serve` never changes the database schema. You run `aruma migrate up` first, and the server refuses to start on an old schema.
-- Realtime Database, Cloud Storage and the Document Database each assume one Aruma process per database. The Document Database enforces this with a PostgreSQL advisory lock. Storage enforces it with a lock on its data directory.
+- Realtime Database, Cloud Storage and the Document Database each assume one Aruma process per database. The Realtime Database and the Document Database enforce this with a PostgreSQL advisory lock that the process holds on a dedicated connection. Storage enforces it with a lock on its data directory. A second process answers the service it could not lock with `UNAVAILABLE`, and `/readyz` answers 503 while the Realtime Database lock is not held, so a load balancer keeps traffic on the instance that holds it. A lock lost to a Postgres restart is taken again by the guard, and the Realtime Database closes its open connections first.
 
 ## Ports and hosts
 
