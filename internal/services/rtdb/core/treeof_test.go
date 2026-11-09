@@ -126,3 +126,42 @@ func BenchmarkTreeOf(b *testing.B) {
 		}
 	}
 }
+
+// plainLeaf either declines or decodes exactly as ParseData does.
+func checkPlainLeaf(t *testing.T, raw []byte) {
+	fast := plainLeaf(raw)
+	if fast == nil {
+		return
+	}
+	slow, err := ParseData(raw, nil, len(raw))
+	if err != nil || !slow.IsLeaf() {
+		t.Fatalf("plainLeaf(%q) = %s, but ParseData refuses it (%v)", raw, fast.ExportJSON(), err)
+	}
+	if !Equal(fast, slow) || fast.isInt != slow.isInt {
+		t.Fatalf("plainLeaf(%q) = %s (int %v), ParseData %s (int %v)", raw, fast.ExportJSON(), fast.isInt, slow.ExportJSON(), slow.isInt)
+	}
+}
+
+var plainLeafSeeds = []string{
+	`true`, `false`, `null`, `0`, `-0`, `01`, `-`, `1.`, `.5`, `-.5`, `1e`, `1e+`, `1E-7`, `1.5e300`,
+	`1e400`, `-1e400`, `0x10`, `Inf`, `-Inf`, `NaN`, `1_000`, `9223372036854775807`,
+	`9223372036854775808`, `-9223372036854775808`, `3.0`, `"a"`, `""`, `"`, `"a`, `a"`, `"a"b"`,
+	`"\u0041"`, `"\n"`, "\"\n\"", "\"\xff\"", `"日本"`, ` 1`, `1 `, `true `, `"a" `, `["AA=="]`, `{}`,
+	`truex`, `tru`, `-01`, `00`, `1.0e5`, `2e-0`,
+}
+
+func TestPlainLeafAgreesWithParseData(t *testing.T) {
+	for _, s := range plainLeafSeeds {
+		checkPlainLeaf(t, []byte(s))
+	}
+	if plainLeaf([]byte(`"a"`)) == nil || plainLeaf([]byte(`1.5`)) == nil || plainLeaf([]byte(`true`)) == nil {
+		t.Fatal("plainLeaf should decode plain values itself")
+	}
+}
+
+func FuzzPlainLeaf(f *testing.F) {
+	for _, s := range plainLeafSeeds {
+		f.Add([]byte(s))
+	}
+	f.Fuzz(checkPlainLeaf)
+}

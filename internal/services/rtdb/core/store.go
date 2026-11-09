@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"strings"
+	"unicode/utf8"
 )
 
 // Store keeps the databases (ADR-019): one row per leaf, keyed by its path, and one row per
@@ -189,6 +190,9 @@ func (n *Node) objectAt(keys Path) *Node {
 
 // leafOf decodes a stored leaf value or priority (storedLeaf).
 func leafOf(raw json.RawMessage) (*Node, error) {
+	if n := plainLeaf(raw); n != nil {
+		return n, nil
+	}
 	if len(raw) > 0 && raw[0] == '[' {
 		var enc []string
 		if err := json.Unmarshal(raw, &enc); err != nil || len(enc) != 1 {
@@ -208,4 +212,88 @@ func leafOf(raw json.RawMessage) (*Node, error) {
 		return nil, ErrInvalidData
 	}
 	return v, nil
+}
+
+// plainLeaf decodes, without a JSON decoder, the leaves that Postgres returns for nearly every
+// row: true, false, a number, or a string with no escapes. It returns nil for anything else,
+// which ParseData then reads, so both always agree.
+func plainLeaf(raw []byte) *Node {
+	if len(raw) == 0 {
+		return nil
+	}
+	switch c := raw[0]; {
+	case c == 't' && string(raw) == "true":
+		return Bool(true)
+	case c == 'f' && string(raw) == "false":
+		return Bool(false)
+	case c == '"':
+		s := raw[1:]
+		if len(s) == 0 || s[len(s)-1] != '"' {
+			return nil
+		}
+		s = s[:len(s)-1]
+		for _, b := range s {
+			if b == '\\' || b == '"' || b < 0x20 {
+				return nil
+			}
+		}
+		if !utf8.Valid(s) {
+			return nil
+		}
+		return String(string(s))
+	case c == '-' || '0' <= c && c <= '9':
+		if !jsonNumber(raw) {
+			return nil
+		}
+		f, i, isInt, ok := parseNumber(string(raw))
+		switch {
+		case !ok:
+			return nil
+		case isInt:
+			return Int(i)
+		}
+		return Number(f)
+	}
+	return nil
+}
+
+// jsonNumber reports whether b is exactly a JSON number: -?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?
+func jsonNumber(b []byte) bool {
+	digits := func(i int) int {
+		for i < len(b) && '0' <= b[i] && b[i] <= '9' {
+			i++
+		}
+		return i
+	}
+	i := 0
+	if i < len(b) && b[i] == '-' {
+		i++
+	}
+	switch {
+	case i < len(b) && b[i] == '0':
+		i++
+	case i < len(b) && '1' <= b[i] && b[i] <= '9':
+		i = digits(i)
+	default:
+		return false
+	}
+	if i < len(b) && b[i] == '.' {
+		j := digits(i + 1)
+		if j == i+1 {
+			return false
+		}
+		i = j
+	}
+	if i < len(b) && (b[i] == 'e' || b[i] == 'E') {
+		i++
+		if i < len(b) && (b[i] == '+' || b[i] == '-') {
+			i++
+		}
+		j := digits(i)
+		if j == i {
+			return false
+		}
+		i = j
+	}
+	return i == len(b)
 }
