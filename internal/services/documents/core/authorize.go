@@ -87,12 +87,17 @@ func (s *PGStore) authorize(ctx context.Context, db DB, p *plan) error {
 	if err != nil {
 		return err
 	}
+	// A document's first write alone says what the commit asserts of it: a later write's
+	// precondition is checked against the state the earlier writes leave, so set then update of
+	// a missing document is a create, not an update of nothing.
 	asserts := make(map[*docChange]*bool, len(p.docs))
+	first := make(map[*docChange]bool, len(p.docs))
 	for i, w := range p.writes {
 		d := p.of[i]
-		if _, ok := asserts[d]; ok {
+		if first[d] {
 			continue
 		}
+		first[d] = true
 		switch {
 		case w.Precondition.Exists != nil:
 			asserts[d] = new(*w.Precondition.Exists)
