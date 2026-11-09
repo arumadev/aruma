@@ -333,7 +333,7 @@ func TestStreamsEndMidSend(t *testing.T) {
 			l := apitest.OpenListen(t, x.client, tok)
 			l.Add(docTarget(1, "ms/a"))
 			l.UntilGlobal()
-			docgrpc.SetAfterSend(t, func(ctx context.Context) {
+			docgrpc.SetAfterSend(t, x.h, func(ctx context.Context) {
 				select {
 				case <-ctx.Done():
 				case <-time.After(apitest.ListenWait):
