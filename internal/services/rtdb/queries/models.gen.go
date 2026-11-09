@@ -5,7 +5,6 @@
 package queries
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -22,6 +21,6 @@ type RtdbDatabase struct {
 type RtdbNode struct {
 	DatabaseID int64
 	Path       string
-	Value      json.RawMessage
-	Priority   json.RawMessage
+	Value      []byte
+	Priority   []byte
 }

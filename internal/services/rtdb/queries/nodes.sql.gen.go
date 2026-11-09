@@ -7,7 +7,6 @@ package queries
 
 import (
 	"context"
-	"encoding/json"
 )
 
 const countAll = `-- name: CountAll :one
@@ -183,8 +182,8 @@ func (q *Queries) HasRowsOutside(ctx context.Context, arg HasRowsOutsideParams) 
 type InsertNodesParams struct {
 	DatabaseID int64
 	Path       string
-	Value      json.RawMessage
-	Priority   json.RawMessage
+	Value      []byte
+	Priority   []byte
 }
 
 const readAll = `-- name: ReadAll :many
@@ -193,8 +192,8 @@ SELECT path, value, priority FROM rtdb.nodes WHERE database_id = $1
 
 type ReadAllRow struct {
 	Path     string
-	Value    json.RawMessage
-	Priority json.RawMessage
+	Value    []byte
+	Priority []byte
 }
 
 // scope: global — database_id comes from EnsureDatabase, which filters on project_number.
@@ -230,8 +229,8 @@ type ReadRowsParams struct {
 
 type ReadRowsRow struct {
 	Path     string
-	Value    json.RawMessage
-	Priority json.RawMessage
+	Value    []byte
+	Priority []byte
 }
 
 // scope: global — database_id comes from EnsureDatabase, which filters on project_number.
@@ -271,8 +270,8 @@ type ReadSubtreeParams struct {
 
 type ReadSubtreeRow struct {
 	Path     string
-	Value    json.RawMessage
-	Priority json.RawMessage
+	Value    []byte
+	Priority []byte
 }
 
 // Rows of rtdb.nodes are keyed by database_id, a key unique across projects that only
@@ -313,7 +312,7 @@ ON CONFLICT (database_id, path) DO UPDATE SET priority = EXCLUDED.priority
 type SetPriorityParams struct {
 	DatabaseID int64
 	Path       string
-	Priority   json.RawMessage
+	Priority   []byte
 }
 
 // Sets the priority on the row at path: a leaf keeps its value; an object gets a priority row.
@@ -329,8 +328,8 @@ WHERE database_id = $3 AND path = $4
 `
 
 type UpdateRowParams struct {
-	Value      json.RawMessage
-	Priority   json.RawMessage
+	Value      []byte
+	Priority   []byte
 	DatabaseID int64
 	Path       string
 }
