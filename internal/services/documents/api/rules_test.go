@@ -470,3 +470,45 @@ func TestRulesMissingReadInTransaction(t *testing.T) {
 		t.Errorf("outside it: %v, want NOT_FOUND", err)
 	}
 }
+
+// Writes to one document in one commit are judged once, on the state they leave, as what the
+// first of them asserts: set then update of a missing document is a create (the emulator
+// allows it), and an update first is still an update of nothing, denied.
+func TestRulesSeveralWritesToOneDocument(t *testing.T) {
+	r := newRulesEnv(t, apitest.Options{})
+	r.env.PublishFirestoreRules(t, bindingRules)
+	s, ctx := r.env.Service, t.Context()
+	alice := apitest.UserToken(t, "alice", nil)
+	exists := &pb.Precondition{ConditionType: &pb.Precondition_Exists{Exists: true}}
+	updateIfExists := func(name string, fields map[string]*pb.Value) *pb.Write {
+		w := update(name, fields)
+		w.CurrentDocument = exists
+		return w
+	}
+	for _, c := range []struct {
+		name   string
+		writes []*pb.Write
+		want   wire.Code
+	}{
+		{"set then update of a missing document", []*pb.Write{
+			update(r.name("owned/alice"), map[string]*pb.Value{"owner": str("alice"), "n": num(1)}),
+			updateIfExists(r.name("owned/alice"), map[string]*pb.Value{"owner": str("alice"), "n": num(2)}),
+		}, wire.CodeOK},
+		{"update first, of a missing document", []*pb.Write{
+			updateIfExists(r.name("owned/alice2"), map[string]*pb.Value{"owner": str("alice2"), "n": num(1)}),
+			update(r.name("owned/alice2"), map[string]*pb.Value{"owner": str("alice2"), "n": num(2)}),
+		}, wire.CodePermissionDenied},
+	} {
+		_, err := s.Commit(ctx, call(alice), &pb.CommitRequest{Database: r.db.Name(), Writes: c.writes})
+		if got := codeOf(err); got != c.want {
+			t.Errorf("%s: %v, want %v", c.name, err, c.want)
+		}
+	}
+	got, err := s.GetDocument(ctx, call(alice), &pb.GetDocumentRequest{Name: r.name("owned/alice")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := got.GetFields()["n"].GetIntegerValue(); n != 2 {
+		t.Errorf("n = %d, want 2", n)
+	}
+}
