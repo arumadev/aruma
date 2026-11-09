@@ -62,6 +62,16 @@ final class RewriteTests: XCTestCase {
       "https://aruma.example.com/securetoken.googleapis.com/v1/token")
   }
 
+  func testAFullyQualifiedHostIsTheSameHost() throws {
+    XCTAssertEqual(
+      try rewrite("https://securetoken.googleapis.com./v1/token?key=K"),
+      "https://aruma.example.com/securetoken.googleapis.com/v1/token?key=K")
+    XCTAssertEqual(
+      try rewrite("https://IdentityToolkit.googleapis.com.:443/v1/accounts:signUp"),
+      "https://aruma.example.com/identitytoolkit.googleapis.com/v1/accounts:signUp")
+    XCTAssertTrue(AuthEndpoints.matches(URL(string: "https://www.googleapis.com./identitytoolkit/v3/relyingparty/x")!))
+  }
+
   func testBaseValidation() throws {
     XCTAssertNoThrow(try base("https://aruma.example.com"))
     XCTAssertNoThrow(try base("http://localhost:8092"))
