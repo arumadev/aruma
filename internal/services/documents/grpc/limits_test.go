@@ -242,8 +242,9 @@ func endUsers(t *testing.T, u *users, rev idtoken.Revocations) *harness {
 
 // An end user's stream closes UNAUTHENTICATED at its token's exp; a token refused at open is
 // UNAUTHENTICATED.
+// It runs alone, not in parallel: it gives the stream one second of token, which a loaded
+// machine can spend before the first snapshot (its timing is to be made independent of load).
 func TestStreamEndUserExpiry(t *testing.T) {
-	t.Parallel()
 	u := &users{exp: time.Now().Add(time.Second)}
 	x := endUsers(t, u, idtoken.NewHub(0))
 	tok := apitest.IDToken(t)
