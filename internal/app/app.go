@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,6 +67,14 @@ type App struct {
 	// rules API takes the limits alone, since its :test evaluates nothing.
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
+
+	// rtdbAPI and rtdbLock are the Realtime Database's transport and its single-instance lock
+	// (BootRTDB); both nil while it is disabled, and the lock nil until Serve boots it.
+	rtdbAPI  *rtdbapi.API
+	rtdbLock *store.InstanceLock
+	// rtdbMu orders BootRTDB's admission with the lock's callbacks, which the guard may run as
+	// soon as StartInstanceLock returns.
+	rtdbMu sync.Mutex
 
 	Server  *server.Server
 	Console *console.API
@@ -139,6 +148,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	idTokens, revocations, users := authSvc.IDTokenVerifier(), authSvc.Revocations(), authSvc.Users()
 	m := metrics.New(version)
 	var rtdbSvc *rtdb.Service
+	var rtAPI *rtdbapi.API
 	if cfg.RTDB.Enabled {
 		l := cfg.RTDB.Limits
 		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
@@ -230,6 +240,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			WriteTimeout:   st.rtdbWriteTimeout,
 		}, logger)
 		handlers.RTDB, handlers.TLSAsk = rtdbAPI, rtdbAPI.TLSAsk()
+		handlers.RTDBServing = rtdbSvc.Serving
+		rtAPI = rtdbAPI
 		// A purged project's databases go with it.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
@@ -260,10 +272,52 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	}
 
 	srv := server.New(cfg, logger, pool, m, handlers)
-	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs,
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs, rtdbAPI: rtAPI,
 		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
 		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+}
+
+// BootRTDB takes the Realtime Database's single-instance lock, trying for up to 30 seconds so a
+// stop-then-start deploy takes over, and keeps it until Close. Its listeners and writer live in
+// this process, so a second process on the same Postgres database would store writes its peer's
+// listeners never hear of. Until the lock is held the database answers UNAVAILABLE and /readyz
+// 503; losing it (the Postgres session ended, as in a restart) closes every connection, and
+// taking it again serves again. Serve calls it before the listener opens; a caller that serves
+// App.Server's handler itself needs no lock and serves from the start. It does nothing while
+// the Realtime Database is disabled.
+func (a *App) BootRTDB(ctx context.Context, pool *pgxpool.Pool, o store.InstanceLockOptions) {
+	if a.RTDB == nil {
+		return
+	}
+	o.Name, o.Service, o.Log = "rtdb.instance", "rtdb", a.log
+	onLost, onAcquired := o.OnLost, o.OnAcquired
+	o.OnLost = func() {
+		a.rtdbMu.Lock()
+		defer a.rtdbMu.Unlock()
+		// Stop admitting first, then end what is open: a client that reconnects at once is
+		// refused rather than served by a process that no longer owns the database.
+		a.RTDB.SetServing(false)
+		a.rtdbAPI.DropConnections()
+		if onLost != nil {
+			onLost()
+		}
+	}
+	o.OnAcquired = func() {
+		a.rtdbMu.Lock()
+		defer a.rtdbMu.Unlock()
+		a.RTDB.SetServing(true)
+		if onAcquired != nil {
+			onAcquired()
+		}
+	}
+	a.rtdbMu.Lock()
+	defer a.rtdbMu.Unlock()
+	a.RTDB.SetServing(false)
+	a.rtdbLock = store.StartInstanceLock(ctx, pool.Config().ConnConfig, o)
+	if a.rtdbLock.Held() {
+		a.RTDB.SetServing(true)
+	}
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.
@@ -343,6 +397,7 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if cfg.Documents.DevOpenRules {
 		logger.Warn("documents.dev_open_rules is on: every client on this machine may read and write every Document Database")
 	}
+	a.BootRTDB(ctx, pool, store.InstanceLockOptions{})
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())
@@ -358,6 +413,10 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		defer cancel()
 		if err := a.RTDB.Close(stop); err != nil {
 			logger.Warn("rtdb: shutdown", "error", err)
+		}
+		// Only now may the next instance take over: this one's writers have drained.
+		if a.rtdbLock != nil {
+			a.rtdbLock.Close()
 		}
 	}
 	if a.Storage != nil {

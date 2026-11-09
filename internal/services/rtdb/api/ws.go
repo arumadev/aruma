@@ -174,6 +174,21 @@ func (a *API) untrack(c transport) {
 	delete(a.conns, c)
 }
 
+// DropConnections closes every open WebSocket and long-poll connection, as Shutdown does, but
+// keeps the API serving: the process lost its single-instance lock, and clients reconnect when
+// it is taken again (or to the process that holds it).
+func (a *API) DropConnections() {
+	a.mu.Lock()
+	conns := make([]transport, 0, len(a.conns))
+	for c := range a.conns {
+		conns = append(conns, c)
+	}
+	a.mu.Unlock()
+	for _, c := range conns {
+		c.shutdown()
+	}
+}
+
 // Shutdown closes every connection with 1001 (going away), then runs each one's
 // onDisconnect writes, as if the client had dropped (ADR-019). It sends no s control message:
 // that tells the SDKs the server is gone for good, and they would not reconnect

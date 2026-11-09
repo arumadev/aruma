@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/arumadev/aruma/internal/platform/apierr"
@@ -57,7 +58,19 @@ type Service struct {
 	// idTokens verifies users' ID tokens; revocations ends their sessions (revoke.go).
 	idTokens    idtoken.Verifier
 	revocations *revocations
+	// fenced is set while the process does not hold the single-instance lock (SetServing):
+	// listeners live in this process, so a second one serving the same database would store
+	// writes its peer's listeners never hear of.
+	fenced atomic.Bool
 }
+
+// SetServing says whether this process may serve databases. The entry point turns it off at
+// start and on once it holds the single-instance lock, and off again when the lock is lost;
+// while off, Resolve and Open answer ErrUnavailable. It does not close sessions already open.
+func (s *Service) SetServing(ok bool) { s.fenced.Store(!ok) }
+
+// Serving reports whether the process may serve databases.
+func (s *Service) Serving() bool { return !s.fenced.Load() }
 
 // New returns the service.
 func New(store Store, projects Projects, opts Options, logger *slog.Logger) *Service {
@@ -109,6 +122,9 @@ type Target struct {
 // exists in v0.2. Names starting with s- are reserved: the SDKs cache such hosts as the
 // server's own shards (RepoInfo.ts:62-84).
 func (s *Service) Resolve(ctx context.Context, ns string) (Target, error) {
+	if s.fenced.Load() {
+		return Target{}, ErrUnavailable
+	}
 	id, ok := strings.CutSuffix(ns, DatabaseSuffix)
 	if !ok || id == "" || strings.HasPrefix(ns, "s-") || ns != strings.ToLower(ns) {
 		return Target{}, ErrNoDatabase
@@ -140,6 +156,9 @@ func (s *Service) connect(t Target) (release func(), err error) {
 
 // Open starts a session on a database as auth. Close it when the client goes.
 func (s *Service) Open(t Target, auth Auth, o OpenOptions) (*Session, error) {
+	if s.fenced.Load() {
+		return nil, ErrUnavailable
+	}
 	db, err := s.registry.acquire(t.Project, t.Name)
 	if err != nil {
 		return nil, err
