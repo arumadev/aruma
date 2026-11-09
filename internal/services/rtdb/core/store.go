@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"strings"
+	"unicode/utf8"
 )
 
 // Store keeps the databases (ADR-019): one row per leaf, keyed by its path, and one row per
@@ -107,16 +108,16 @@ func storedLeaf(n *Node) json.RawMessage {
 }
 
 // treeOf builds the value at base from its rows: base's own row and those below it. It
-// builds in place, since Node.Set copies on every call.
+// builds in place, since Node.Set copies on every call. The leaves of one object usually
+// arrive one after another, so the last parent is kept rather than found again from the root.
 func treeOf(base Path, rows []row) (*Node, error) {
 	prefix := base.String()
 	var root *Node
+	var lastParent string // the path, relative to base, of lastObj
+	var lastObj *Node     // nil when no parent is kept
+	pruning := false
 	for _, r := range rows {
 		rel := strings.TrimPrefix(strings.TrimPrefix(r.Path, prefix), "/")
-		var keys Path
-		if rel != "" {
-			keys = strings.Split(rel, "/")
-		}
 		var prio *Node
 		if r.Priority != nil {
 			p, err := leafOf(r.Priority)
@@ -126,9 +127,10 @@ func treeOf(base Path, rows []row) (*Node, error) {
 			prio = p
 		}
 		if r.Value == nil {
-			// An object's priority: the object itself is built from its leaves.
-			root = ensureObject(root, keys)
-			root.objectAt(keys).priority = prio
+			// An object's priority: the object itself is built from its leaves, and is pruned
+			// if none come.
+			objectAt(&root, rel).priority = prio
+			pruning = true
 			continue
 		}
 		leaf, err := leafOf(r.Value)
@@ -136,14 +138,46 @@ func treeOf(base Path, rows []row) (*Node, error) {
 			return nil, err
 		}
 		leaf.priority = prio
-		if len(keys) == 0 {
-			root = leaf
+		if rel == "" {
+			root, lastObj = leaf, nil
 			continue
 		}
-		root = ensureObject(root, keys[:len(keys)-1])
-		root.objectAt(keys[:len(keys)-1]).children[keys[len(keys)-1]] = leaf
+		parent, key := "", rel
+		if i := strings.LastIndexByte(rel, '/'); i >= 0 {
+			parent, key = rel[:i], rel[i+1:]
+		}
+		// The kept parent stays in the tree: only a leaf at base replaces an object that holds
+		// it, and that forgets it. A leaf that replaces an object elsewhere has a parent of its
+		// own, which it is kept as.
+		if lastObj == nil || parent != lastParent {
+			lastParent, lastObj = parent, objectAt(&root, parent)
+		}
+		lastObj.children[key] = leaf
 	}
-	return prune(root), nil
+	if pruning {
+		root = prune(root)
+	}
+	return root, nil
+}
+
+// objectAt returns the object at rel, a relative path, below *root, creating objects on the way
+// and in place of leaves, and *root itself if needed. Used only while building a fresh tree.
+func objectAt(root **Node, rel string) *Node {
+	if *root == nil || (*root).kind != KindObject {
+		*root = &Node{kind: KindObject, children: map[string]*Node{}}
+	}
+	n := *root
+	for rel != "" {
+		var k string
+		k, rel, _ = strings.Cut(rel, "/")
+		c := n.children[k]
+		if c == nil || c.kind != KindObject {
+			c = &Node{kind: KindObject, children: map[string]*Node{}}
+			n.children[k] = c
+		}
+		n = c
+	}
+	return n
 }
 
 // prune drops objects left without children, which a priority row alone would make.
@@ -162,33 +196,11 @@ func prune(n *Node) *Node {
 	return n
 }
 
-// ensureObject makes sure an object exists at keys below root, creating objects on the way,
-// and returns the (possibly new) root. Used only while building a fresh tree.
-func ensureObject(root *Node, keys Path) *Node {
-	if root == nil || root.kind != KindObject {
-		root = &Node{kind: KindObject, children: map[string]*Node{}}
-	}
-	n := root
-	for _, k := range keys {
-		c := n.children[k]
-		if c == nil || c.kind != KindObject {
-			c = &Node{kind: KindObject, children: map[string]*Node{}}
-			n.children[k] = c
-		}
-		n = c
-	}
-	return root
-}
-
-func (n *Node) objectAt(keys Path) *Node {
-	for _, k := range keys {
-		n = n.children[k]
-	}
-	return n
-}
-
 // leafOf decodes a stored leaf value or priority (storedLeaf).
 func leafOf(raw json.RawMessage) (*Node, error) {
+	if n := plainLeaf(raw); n != nil {
+		return n, nil
+	}
 	if len(raw) > 0 && raw[0] == '[' {
 		var enc []string
 		if err := json.Unmarshal(raw, &enc); err != nil || len(enc) != 1 {
@@ -208,4 +220,88 @@ func leafOf(raw json.RawMessage) (*Node, error) {
 		return nil, ErrInvalidData
 	}
 	return v, nil
+}
+
+// plainLeaf decodes, without a JSON decoder, the leaves that Postgres returns for nearly every
+// row: true, false, a number, or a string with no escapes. It returns nil for anything else,
+// which ParseData then reads, so both always agree.
+func plainLeaf(raw []byte) *Node {
+	if len(raw) == 0 {
+		return nil
+	}
+	switch c := raw[0]; {
+	case c == 't' && string(raw) == "true":
+		return Bool(true)
+	case c == 'f' && string(raw) == "false":
+		return Bool(false)
+	case c == '"':
+		s := raw[1:]
+		if len(s) == 0 || s[len(s)-1] != '"' {
+			return nil
+		}
+		s = s[:len(s)-1]
+		for _, b := range s {
+			if b == '\\' || b == '"' || b < 0x20 {
+				return nil
+			}
+		}
+		if !utf8.Valid(s) {
+			return nil
+		}
+		return String(string(s))
+	case c == '-' || '0' <= c && c <= '9':
+		if !jsonNumber(raw) {
+			return nil
+		}
+		f, i, isInt, ok := parseNumber(string(raw))
+		switch {
+		case !ok:
+			return nil
+		case isInt:
+			return Int(i)
+		}
+		return Number(f)
+	}
+	return nil
+}
+
+// jsonNumber reports whether b is exactly a JSON number: -?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?
+func jsonNumber(b []byte) bool {
+	digits := func(i int) int {
+		for i < len(b) && '0' <= b[i] && b[i] <= '9' {
+			i++
+		}
+		return i
+	}
+	i := 0
+	if i < len(b) && b[i] == '-' {
+		i++
+	}
+	switch {
+	case i < len(b) && b[i] == '0':
+		i++
+	case i < len(b) && '1' <= b[i] && b[i] <= '9':
+		i = digits(i)
+	default:
+		return false
+	}
+	if i < len(b) && b[i] == '.' {
+		j := digits(i + 1)
+		if j == i+1 {
+			return false
+		}
+		i = j
+	}
+	if i < len(b) && (b[i] == 'e' || b[i] == 'E') {
+		i++
+		if i < len(b) && (b[i] == '+' || b[i] == '-') {
+			i++
+		}
+		j := digits(i)
+		if j == i {
+			return false
+		}
+		i = j
+	}
+	return i == len(b)
 }

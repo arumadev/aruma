@@ -24,6 +24,14 @@ func CompareKeys(a, b string) int {
 	}
 	ai, aInt := keyInt(a)
 	bi, bInt := keyInt(b)
+	return compareParsedKeys(a, ai, aInt, b, bi, bInt)
+}
+
+// compareParsedKeys is CompareKeys on keys whose keyInt is already known.
+func compareParsedKeys(a string, ai int64, aInt bool, b string, bi int64, bInt bool) int {
+	if a == b {
+		return 0
+	}
 	switch {
 	case aInt && bInt:
 		if ai != bi {
@@ -177,34 +185,118 @@ func ByChild(p Path) Index { return Index{kind: byChild, child: p} }
 
 // Compare orders two named children under the index, ties broken by key.
 func (ix Index) Compare(aKey string, a *Node, bKey string, b *Node) int {
-	var c int
-	switch ix.kind {
-	case byKey:
-		return CompareKeys(aKey, bKey)
-	case byPriority:
-		c = comparePriorities(a.Priority(), b.Priority())
-	case byValue:
-		c = CompareValues(a, b)
-	case byChild:
-		c = CompareValues(a.Get(ix.child), b.Get(ix.child))
-	}
-	if c != 0 {
-		return c
+	if ix.kind != byKey {
+		if c := CompareValues(ix.value(a), ix.value(b)); c != 0 {
+			return c
+		}
 	}
 	return CompareKeys(aKey, bKey)
 }
 
-// comparePriorities orders priorities: none first, then numbers, then strings.
-func comparePriorities(a, b *Node) int { return CompareValues(a, b) }
+// value is what the index orders child c by, as a value: its priority (none first, then
+// numbers, then strings), itself, or the value at the index's path. ByKey orders by key alone.
+func (ix Index) value(c *Node) *Node {
+	switch ix.kind {
+	case byPriority:
+		return c.Priority()
+	case byValue:
+		return c
+	case byChild:
+		return c.Get(ix.child)
+	}
+	return nil
+}
 
 // SortedKeys returns n's children in index order.
 func (n *Node) SortedKeys(ix Index) []string {
-	keys := n.Keys()
-	if ix.kind == byKey {
-		return keys
+	es := n.sortEntries(ix)
+	slices.SortFunc(es, ix.compareEntries)
+	return entryKeys(es)
+}
+
+// sortEntry is a child with what its order needs, read once rather than in every comparison
+// of a sort.
+type sortEntry struct {
+	key   string
+	ki    int64
+	isInt bool
+	child *Node
+	value *Node // ix.value(child)
+}
+
+func (n *Node) sortEntries(ix Index) []sortEntry {
+	if n.Len() == 0 {
+		return nil
 	}
-	slices.SortStableFunc(keys, func(a, b string) int {
-		return ix.Compare(a, n.children[a], b, n.children[b])
-	})
+	es := make([]sortEntry, 0, len(n.children))
+	for k, c := range n.children {
+		ki, isInt := keyInt(k)
+		es = append(es, sortEntry{key: k, ki: ki, isInt: isInt, child: c, value: ix.value(c)})
+	}
+	return es
+}
+
+// compareEntries is Compare on entries. The order is total (ties go to the key), so a sort by
+// it needs no stability.
+func (ix Index) compareEntries(a, b sortEntry) int {
+	if ix.kind != byKey {
+		if c := CompareValues(a.value, b.value); c != 0 {
+			return c
+		}
+	}
+	return compareParsedKeys(a.key, a.ki, a.isInt, b.key, b.ki, b.isInt)
+}
+
+func entryKeys(es []sortEntry) []string {
+	if es == nil {
+		return nil
+	}
+	keys := make([]string, len(es))
+	for i, e := range es {
+		keys[i] = e.key
+	}
 	return keys
+}
+
+// smallest returns the k smallest of es by cmp, in order, in O(len(es) log k) rather than the
+// O(len(es) log len(es)) of a full sort. It reorders es.
+func smallest[E any](es []E, k int, cmp func(a, b E) int) []E {
+	if k >= len(es) {
+		slices.SortFunc(es, cmp)
+		return es
+	}
+	if k <= 0 {
+		return es[:0]
+	}
+	// es[:k] is a max-heap of the k smallest so far: each later element that is smaller than
+	// its top replaces the top.
+	h := es[:k]
+	down := func(i int) {
+		for {
+			l := 2*i + 1
+			if l >= len(h) {
+				return
+			}
+			m := l
+			if r := l + 1; r < len(h) && cmp(h[r], h[l]) > 0 {
+				m = r
+			}
+			if cmp(h[m], h[i]) <= 0 {
+				return
+			}
+			h[i], h[m] = h[m], h[i]
+			i = m
+		}
+	}
+	for i := len(h)/2 - 1; i >= 0; i-- {
+		down(i)
+	}
+	for _, e := range es[k:] {
+		if cmp(e, h[0]) < 0 {
+			h[0] = e
+			down(0)
+		}
+	}
+	slices.SortFunc(h, cmp)
+	return h
 }

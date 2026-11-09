@@ -148,7 +148,13 @@ go run ./tools/bench -rtdb all -json run.json
 
 # One scenario, smaller
 go run ./tools/bench -rtdb query -rtdb-query-sizes 10000 -duration 5s
+
+# The query scenario with a CPU profile of the server for each case
+go run ./tools/bench -rtdb query -rtdb-cpuprofile prof/
+go tool pprof -top prof/query-write-under-the-listen-n-100000-orderbychild-score-limittolast-50-indexon.pb.gz
 ```
+
+`-rtdb-cpuprofile` builds the server with the `pprof` build tag, which adds Go's profiler to the private metrics address. Release builds never carry it.
 
 The scenarios are `conns`, `fanout`, `writes`, `query` and `lp`. Both tools build `./cmd/aruma` unless you pass `-bin` (chaos) or `-rtdb-bin` (bench). The chaos tool serves on port 8780. The bench serves on 8785 and its metrics on 8786.
 

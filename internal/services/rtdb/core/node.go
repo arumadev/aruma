@@ -475,18 +475,11 @@ func (p *parser) value(depth, pathBytes int) (*jv, error) {
 	case bool:
 		return &jv{kind: KindBool, b: t}, nil
 	case json.Number:
-		// An integer literal that fits 64 bits is an integer; anything else is a double, as
-		// the server parses JSON (12345678901234567890 and 1E2 are doubles).
-		if !strings.ContainsAny(string(t), ".eE") {
-			if i, err := strconv.ParseInt(string(t), 10, 64); err == nil {
-				return &jv{kind: KindNumber, n: float64(i), i: i, isInt: true}, nil
-			}
-		}
-		f, err := strconv.ParseFloat(string(t), 64)
-		if err != nil || math.IsInf(f, 0) {
+		f, i, isInt, ok := parseNumber(string(t))
+		if !ok {
 			return nil, ErrInvalidData
 		}
-		return &jv{kind: KindNumber, n: f}, nil
+		return &jv{kind: KindNumber, n: f, i: i, isInt: isInt}, nil
 	case string:
 		if len(t) > p.maxString {
 			return nil, ErrTooBig
@@ -529,6 +522,22 @@ func (p *parser) value(depth, pathBytes int) (*jv, error) {
 		return obj, nil
 	}
 	return nil, ErrInvalidData
+}
+
+// parseNumber reads a JSON number literal as the server does: an integer literal that fits 64
+// bits is an integer; anything else is a double (12345678901234567890 and 1E2 are doubles). A
+// double beyond float64's range is not ok.
+func parseNumber(t string) (f float64, i int64, isInt, ok bool) {
+	if !strings.ContainsAny(t, ".eE") {
+		if i, err := strconv.ParseInt(t, 10, 64); err == nil {
+			return float64(i), i, true, true
+		}
+	}
+	f, err := strconv.ParseFloat(t, 64)
+	if err != nil || math.IsInf(f, 0) {
+		return 0, 0, false, false
+	}
+	return f, 0, false, true
 }
 
 // node interprets the export format.

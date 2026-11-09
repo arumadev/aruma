@@ -98,6 +98,7 @@ func main() {
 	flag.IntVar(&o.rtdbOpts.fanoutWrites, "rtdb-fanout-writes", 200, "with -rtdb fanout: writes per listener count, the first tenth unrecorded")
 	writers := flag.String("rtdb-writers", "1,8,32,128", "with -rtdb writes: concurrent writer counts")
 	sizes := flag.String("rtdb-query-sizes", "10000,100000", "with -rtdb query: children of the queried nodes")
+	flag.StringVar(&o.rtdbOpts.cpuProfile, "rtdb-cpuprofile", "", "with -rtdb query: write a CPU profile of the server for each case into this directory (builds aruma with the pprof tag; a -rtdb-bin must have it)")
 	flag.Parse()
 	var err error
 	if o.rtdbOpts.fanout, err = parseInts(*fanout); err == nil {

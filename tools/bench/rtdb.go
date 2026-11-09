@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -54,6 +56,7 @@ type rtdbOptions struct {
 	fanoutWrites int
 	writers      []int
 	querySizes   []int
+	cpuProfile   string
 }
 
 // RTDBReport is the JSON output of -rtdb.
@@ -103,6 +106,11 @@ func runRTDB(ctx context.Context, o options) error {
 	}
 	b := &rtdbBench{o: o.rtdbOpts, duration: o.duration, warmup: o.warmup,
 		hc: &http.Client{Timeout: 60 * time.Second, Transport: &http.Transport{MaxIdleConnsPerHost: 512, MaxIdleConns: 512}}}
+	if b.o.cpuProfile != "" {
+		if err := os.MkdirAll(b.o.cpuProfile, 0o755); err != nil {
+			return err
+		}
+	}
 	if b.o.bin == "" {
 		dir, err := os.MkdirTemp("", "bench-rtdb-")
 		if err != nil {
@@ -110,7 +118,11 @@ func runRTDB(ctx context.Context, o options) error {
 		}
 		defer os.RemoveAll(dir)
 		fmt.Fprintln(os.Stderr, "building aruma…")
-		if b.o.bin, err = rtdbkit.Build(ctx, dir); err != nil {
+		var tags []string
+		if b.o.cpuProfile != "" {
+			tags = append(tags, "pprof")
+		}
+		if b.o.bin, err = rtdbkit.Build(ctx, dir, tags...); err != nil {
 			return err
 		}
 	}
@@ -697,6 +709,11 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 				return out, err
 			}
 			// Listen latency: the time from q to its ok, which follows the data.
+			listenCase := fmt.Sprintf("listen n=%d %s", size, v.name)
+			stopProfile, err := b.profileCase(ctx, srv, "query", listenCase)
+			if err != nil {
+				return out, err
+			}
 			h := &Histogram{}
 			var warnings string
 			pushBytes.Store(0)
@@ -719,8 +736,11 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 				}
 				n++
 			}
+			if err := stopProfile(); err != nil {
+				return out, err
+			}
 			lat := summarize(h)
-			res := RTDBResult{Scenario: "query", Case: fmt.Sprintf("listen n=%d %s", size, v.name), OK: int64(n), Latency: &lat,
+			res := RTDBResult{Scenario: "query", Case: listenCase, OK: int64(n), Latency: &lat,
 				Params: map[string]any{"children": size, "query": v.q, "indexOn": v.indexed},
 				Values: map[string]float64{"pushBytesPerListen": float64(pushBytes.Load()) / float64(n)}}
 			if warnings != "{}" {
@@ -735,8 +755,10 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 			if r, err := l.Call(ctx, "q", rtdbkit.ListenQuery(path, v.q, tag)); err != nil || !r.OK() {
 				return out, fmt.Errorf("listen: %v %v", r, err)
 			}
-			wres := b.writeUnder(ctx, c, path, size, rng)
-			wres.Case = fmt.Sprintf("write under the listen n=%d %s", size, v.name)
+			wres, err := b.writeUnder(ctx, srv, c, fmt.Sprintf("write under the listen n=%d %s", size, v.name), path, size, rng)
+			if err != nil {
+				return out, err
+			}
 			wres.Params = res.Params
 			out = append(out, wres)
 			if size == b.o.querySizes[0] {
@@ -748,8 +770,10 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 						return out, fmt.Errorf("listen: %v %v", r, err)
 					}
 				}
-				wres := b.writeUnder(ctx, c, path, size, rng)
-				wres.Case = fmt.Sprintf("write under 10 such listens n=%d %s", size, v.name)
+				wres, err := b.writeUnder(ctx, srv, c, fmt.Sprintf("write under 10 such listens n=%d %s", size, v.name), path, size, rng)
+				if err != nil {
+					return out, err
+				}
 				wres.Params = res.Params
 				out = append(out, wres)
 				for t := first + 1; t <= tag; t++ {
@@ -766,8 +790,10 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 				return out, err
 			}
 		}
-		wres := b.writeUnder(ctx, c, path, size, rng)
-		wres.Case = fmt.Sprintf("write, no listen n=%d", size)
+		wres, err := b.writeUnder(ctx, srv, c, fmt.Sprintf("write, no listen n=%d", size), path, size, rng)
+		if err != nil {
+			return out, err
+		}
 		wres.Params = map[string]any{"children": size}
 		out = append(out, wres)
 	}
@@ -775,8 +801,12 @@ func (b *rtdbBench) query(ctx context.Context) ([]RTDBResult, error) {
 }
 
 // writeUnder sets random children's scores in a closed loop, one at a time, for up to the
-// scenario duration.
-func (b *rtdbBench) writeUnder(ctx context.Context, c *rtdbkit.Conn, path string, size int, rng *rand.Rand) RTDBResult {
+// scenario duration, and reports them as the case name.
+func (b *rtdbBench) writeUnder(ctx context.Context, srv *rtdbkit.Server, c *rtdbkit.Conn, name, path string, size int, rng *rand.Rand) (RTDBResult, error) {
+	stopProfile, err := b.profileCase(ctx, srv, "query", name)
+	if err != nil {
+		return RTDBResult{}, err
+	}
 	h := &Histogram{}
 	n := 0
 	start := time.Now()
@@ -790,10 +820,30 @@ func (b *rtdbBench) writeUnder(ctx context.Context, c *rtdbkit.Conn, path string
 		h.Record(time.Since(t0))
 		n++
 	}
+	elapsed := time.Since(start)
+	if err := stopProfile(); err != nil {
+		return RTDBResult{}, err
+	}
 	lat := summarize(h)
 	fmt.Fprintf(os.Stderr, "  writes under %s: p50 %.2f ms\n", path, lat.P50)
-	return RTDBResult{Scenario: "query", OK: int64(n), Latency: &lat, OKPerSec: float64(n) / time.Since(start).Seconds()}
+	return RTDBResult{Scenario: "query", Case: name, OK: int64(n), Latency: &lat, OKPerSec: float64(n) / elapsed.Seconds()}, nil
 }
+
+// profileCase starts a CPU profile of srv for one case when -rtdb-cpuprofile is set. The
+// function it returns writes the profile to <dir>/<scenario>-<case>.pb.gz.
+func (b *rtdbBench) profileCase(ctx context.Context, srv *rtdbkit.Server, scenario, name string) (func() error, error) {
+	if b.o.cpuProfile == "" {
+		return func() error { return nil }, nil
+	}
+	stop, err := srv.StartCPUProfile(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cpu profile of %q: %w", name, err)
+	}
+	file := filepath.Join(b.o.cpuProfile, scenario+"-"+profileSlug.ReplaceAllString(strings.ToLower(name), "-")+".pb.gz")
+	return func() error { return stop(file) }, nil
+}
+
+var profileSlug = regexp.MustCompile(`[^a-z0-9]+`)
 
 // --- long polling
 
