@@ -216,16 +216,7 @@ func (q Query) compare(key string, c *Node, b *bound) int {
 	if q.Index.kind == byKey {
 		return compareNames(key, b.value.StringValue())
 	}
-	var v *Node
-	switch q.Index.kind {
-	case byPriority:
-		v = c.Priority()
-	case byValue:
-		v = c
-	case byChild:
-		v = c.Get(q.Index.child)
-	}
-	if cmp := CompareValues(v, b.value); cmp != 0 {
+	if cmp := CompareValues(q.Index.value(c), b.value); cmp != 0 {
 		return cmp
 	}
 	return compareNames(key, b.name)

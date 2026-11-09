@@ -1,6 +1,9 @@
 package core
 
 import (
+	"encoding/json"
+	"math/rand/v2"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -69,6 +72,55 @@ func TestSortedKeys(t *testing.T) {
 		got := strings.Join(n.SortedKeys(c.ix), " ")
 		if got != c.want {
 			t.Errorf("%+v: %s, want %s", c.ix, got, c.want)
+		}
+	}
+}
+
+// SortedKeys must give the order of a plain sort by Index.Compare, on keys that read as
+// integers in every form and on values that tie often.
+func TestSortedKeysMatchesCompare(t *testing.T) {
+	rng := rand.New(rand.NewPCG(7, 11))
+	keys := []string{"0", "00", "-0", "1", "01", "-1", "7", "10", "2147483647", "2147483648", "-2147483649",
+		"a", "b", "B", "ab", "z9", "日本", "😀", "￿", "-", "1a"}
+	values := []any{nil, false, true, 0, 1, 1.5, -3, "a", "b", "", map[string]any{"x": 1}}
+	priorities := []any{nil, 1, 2, "a", "b"}
+	ixs := []Index{ByKey, ByPriority, ByValue, ByChild(Path{"s"}), ByChild(Path{"s", "t"})}
+	for round := range 200 {
+		doc := map[string]any{}
+		for _, k := range keys {
+			if rng.IntN(4) == 0 {
+				continue
+			}
+			child := map[string]any{}
+			if v := values[rng.IntN(len(values))]; v != nil {
+				child["s"] = v
+			}
+			if rng.IntN(3) == 0 {
+				child["s"] = map[string]any{"t": values[rng.IntN(len(values))]}
+			}
+			if p := priorities[rng.IntN(len(priorities))]; p != nil {
+				child[".priority"] = p
+			}
+			if len(child) == 0 || rng.IntN(5) == 0 {
+				if v := values[rng.IntN(len(values)-1)]; v != nil {
+					doc[k] = v
+					continue
+				}
+				child["u"] = 1
+			}
+			doc[k] = child
+		}
+		b, err := json.Marshal(doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := mustParse(t, string(b))
+		for _, ix := range ixs {
+			want := n.Keys()
+			slices.SortFunc(want, func(a, b string) int { return ix.Compare(a, n.Child(a), b, n.Child(b)) })
+			if got := n.SortedKeys(ix); !slices.Equal(got, want) {
+				t.Fatalf("round %d, %+v on %s:\n got  %q\n want %q", round, ix, b, got, want)
+			}
 		}
 	}
 }

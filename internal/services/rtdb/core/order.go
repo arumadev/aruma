@@ -24,6 +24,14 @@ func CompareKeys(a, b string) int {
 	}
 	ai, aInt := keyInt(a)
 	bi, bInt := keyInt(b)
+	return compareParsedKeys(a, ai, aInt, b, bi, bInt)
+}
+
+// compareParsedKeys is CompareKeys on keys whose keyInt is already known.
+func compareParsedKeys(a string, ai int64, aInt bool, b string, bi int64, bInt bool) int {
+	if a == b {
+		return 0
+	}
 	switch {
 	case aInt && bInt:
 		if ai != bi {
@@ -177,34 +185,57 @@ func ByChild(p Path) Index { return Index{kind: byChild, child: p} }
 
 // Compare orders two named children under the index, ties broken by key.
 func (ix Index) Compare(aKey string, a *Node, bKey string, b *Node) int {
-	var c int
-	switch ix.kind {
-	case byKey:
-		return CompareKeys(aKey, bKey)
-	case byPriority:
-		c = comparePriorities(a.Priority(), b.Priority())
-	case byValue:
-		c = CompareValues(a, b)
-	case byChild:
-		c = CompareValues(a.Get(ix.child), b.Get(ix.child))
-	}
-	if c != 0 {
-		return c
+	if ix.kind != byKey {
+		if c := CompareValues(ix.value(a), ix.value(b)); c != 0 {
+			return c
+		}
 	}
 	return CompareKeys(aKey, bKey)
 }
 
-// comparePriorities orders priorities: none first, then numbers, then strings.
-func comparePriorities(a, b *Node) int { return CompareValues(a, b) }
-
-// SortedKeys returns n's children in index order.
-func (n *Node) SortedKeys(ix Index) []string {
-	keys := n.Keys()
-	if ix.kind == byKey {
-		return keys
+// value is what the index orders child c by, as a value: its priority (none first, then
+// numbers, then strings), itself, or the value at the index's path. ByKey orders by key alone.
+func (ix Index) value(c *Node) *Node {
+	switch ix.kind {
+	case byPriority:
+		return c.Priority()
+	case byValue:
+		return c
+	case byChild:
+		return c.Get(ix.child)
 	}
-	slices.SortStableFunc(keys, func(a, b string) int {
-		return ix.Compare(a, n.children[a], b, n.children[b])
+	return nil
+}
+
+// SortedKeys returns n's children in index order. Each child's key and value are read once,
+// not in every comparison; the order is total (ties go to the key), so the sort needs no
+// stability.
+func (n *Node) SortedKeys(ix Index) []string {
+	if n.Len() == 0 {
+		return nil
+	}
+	type entry struct {
+		key   string
+		ki    int64
+		isInt bool
+		value *Node
+	}
+	es := make([]entry, 0, len(n.children))
+	for k, c := range n.children {
+		ki, isInt := keyInt(k)
+		es = append(es, entry{key: k, ki: ki, isInt: isInt, value: ix.value(c)})
+	}
+	slices.SortFunc(es, func(a, b entry) int {
+		if ix.kind != byKey {
+			if c := CompareValues(a.value, b.value); c != 0 {
+				return c
+			}
+		}
+		return compareParsedKeys(a.key, a.ki, a.isInt, b.key, b.ki, b.isInt)
 	})
+	keys := make([]string, len(es))
+	for i, e := range es {
+		keys[i] = e.key
+	}
 	return keys
 }
