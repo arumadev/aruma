@@ -78,7 +78,11 @@ func TestTreeOfRoundTrip(t *testing.T) {
 			base = Path{"a", "b"}[:1+rng.IntN(2)]
 		}
 		want := randomTree(rng, 4)
-		got, err := treeOf(base, rowsOf(base, want))
+		rows := rowsOf(base, want)
+		if rng.IntN(2) == 0 {
+			rng.Shuffle(len(rows), func(i, j int) { rows[i], rows[j] = rows[j], rows[i] })
+		}
+		got, err := treeOf(base, rows)
 		if err != nil {
 			t.Fatalf("round %d: %v", round, err)
 		}
@@ -164,4 +168,87 @@ func FuzzPlainLeaf(f *testing.F) {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(checkPlainLeaf)
+}
+
+// treeOfBefore is treeOf as it was before it kept the last parent: the reference for rows in
+// any order and for inconsistent rows, such as a leaf with rows below it.
+func treeOfBefore(base Path, rows []row) (*Node, error) {
+	prefix := base.String()
+	var root *Node
+	ensure := func(keys Path) *Node {
+		if root == nil || root.kind != KindObject {
+			root = &Node{kind: KindObject, children: map[string]*Node{}}
+		}
+		n := root
+		for _, k := range keys {
+			c := n.children[k]
+			if c == nil || c.kind != KindObject {
+				c = &Node{kind: KindObject, children: map[string]*Node{}}
+				n.children[k] = c
+			}
+			n = c
+		}
+		return n
+	}
+	for _, r := range rows {
+		rel := strings.TrimPrefix(strings.TrimPrefix(r.Path, prefix), "/")
+		var keys Path
+		if rel != "" {
+			keys = strings.Split(rel, "/")
+		}
+		var prio *Node
+		if r.Priority != nil {
+			p, err := leafOf(r.Priority)
+			if err != nil {
+				return nil, err
+			}
+			prio = p
+		}
+		if r.Value == nil {
+			ensure(keys).priority = prio
+			continue
+		}
+		leaf, err := leafOf(r.Value)
+		if err != nil {
+			return nil, err
+		}
+		leaf.priority = prio
+		if len(keys) == 0 {
+			root = leaf
+			continue
+		}
+		ensure(keys[:len(keys)-1]).children[keys[len(keys)-1]] = leaf
+	}
+	return prune(root), nil
+}
+
+func TestTreeOfMatchesBeforeOnAnyRows(t *testing.T) {
+	rng := rand.New(rand.NewPCG(5, 8))
+	paths := []string{"", "a", "a/b", "a/b/c", "a/c", "b", "b/a", "b/a/x", "c"}
+	for round := range 20000 {
+		var rows []row
+		for range rng.IntN(10) {
+			r := row{Path: paths[rng.IntN(len(paths))]}
+			if rng.IntN(4) > 0 {
+				r.Value = storedLeaf(randomLeaf(rng))
+			}
+			if p := randomPriority(rng); p != nil {
+				r.Priority = storedLeaf(p)
+			} else if r.Value == nil {
+				r.Priority = storedLeaf(Number(1))
+			}
+			rows = append(rows, r)
+		}
+		want, err := treeOfBefore(nil, rows)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := treeOf(nil, rows)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !Equal(got, want) {
+			t.Fatalf("round %d, rows %v:\n got  %s\n want %s", round, rows, got.ExportJSON(), want.ExportJSON())
+		}
+	}
 }

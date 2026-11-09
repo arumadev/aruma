@@ -108,16 +108,16 @@ func storedLeaf(n *Node) json.RawMessage {
 }
 
 // treeOf builds the value at base from its rows: base's own row and those below it. It
-// builds in place, since Node.Set copies on every call.
+// builds in place, since Node.Set copies on every call. The leaves of one object usually
+// arrive one after another, so the last parent is kept rather than found again from the root.
 func treeOf(base Path, rows []row) (*Node, error) {
 	prefix := base.String()
 	var root *Node
+	var lastParent string // the path, relative to base, of lastObj
+	var lastObj *Node     // nil when no parent is kept
+	pruning := false
 	for _, r := range rows {
 		rel := strings.TrimPrefix(strings.TrimPrefix(r.Path, prefix), "/")
-		var keys Path
-		if rel != "" {
-			keys = strings.Split(rel, "/")
-		}
 		var prio *Node
 		if r.Priority != nil {
 			p, err := leafOf(r.Priority)
@@ -127,9 +127,10 @@ func treeOf(base Path, rows []row) (*Node, error) {
 			prio = p
 		}
 		if r.Value == nil {
-			// An object's priority: the object itself is built from its leaves.
-			root = ensureObject(root, keys)
-			root.objectAt(keys).priority = prio
+			// An object's priority: the object itself is built from its leaves, and is pruned
+			// if none come.
+			objectAt(&root, rel).priority = prio
+			pruning = true
 			continue
 		}
 		leaf, err := leafOf(r.Value)
@@ -137,14 +138,46 @@ func treeOf(base Path, rows []row) (*Node, error) {
 			return nil, err
 		}
 		leaf.priority = prio
-		if len(keys) == 0 {
-			root = leaf
+		if rel == "" {
+			root, lastObj = leaf, nil
 			continue
 		}
-		root = ensureObject(root, keys[:len(keys)-1])
-		root.objectAt(keys[:len(keys)-1]).children[keys[len(keys)-1]] = leaf
+		parent, key := "", rel
+		if i := strings.LastIndexByte(rel, '/'); i >= 0 {
+			parent, key = rel[:i], rel[i+1:]
+		}
+		// The kept parent stays in the tree: only a leaf at base replaces an object that holds
+		// it, and that forgets it. A leaf that replaces an object elsewhere has a parent of its
+		// own, which it is kept as.
+		if lastObj == nil || parent != lastParent {
+			lastParent, lastObj = parent, objectAt(&root, parent)
+		}
+		lastObj.children[key] = leaf
 	}
-	return prune(root), nil
+	if pruning {
+		root = prune(root)
+	}
+	return root, nil
+}
+
+// objectAt returns the object at rel, a relative path, below *root, creating objects on the way
+// and in place of leaves, and *root itself if needed. Used only while building a fresh tree.
+func objectAt(root **Node, rel string) *Node {
+	if *root == nil || (*root).kind != KindObject {
+		*root = &Node{kind: KindObject, children: map[string]*Node{}}
+	}
+	n := *root
+	for rel != "" {
+		var k string
+		k, rel, _ = strings.Cut(rel, "/")
+		c := n.children[k]
+		if c == nil || c.kind != KindObject {
+			c = &Node{kind: KindObject, children: map[string]*Node{}}
+			n.children[k] = c
+		}
+		n = c
+	}
+	return n
 }
 
 // prune drops objects left without children, which a priority row alone would make.
@@ -159,31 +192,6 @@ func prune(n *Node) *Node {
 	}
 	if len(n.children) == 0 {
 		return nil
-	}
-	return n
-}
-
-// ensureObject makes sure an object exists at keys below root, creating objects on the way,
-// and returns the (possibly new) root. Used only while building a fresh tree.
-func ensureObject(root *Node, keys Path) *Node {
-	if root == nil || root.kind != KindObject {
-		root = &Node{kind: KindObject, children: map[string]*Node{}}
-	}
-	n := root
-	for _, k := range keys {
-		c := n.children[k]
-		if c == nil || c.kind != KindObject {
-			c = &Node{kind: KindObject, children: map[string]*Node{}}
-			n.children[k] = c
-		}
-		n = c
-	}
-	return root
-}
-
-func (n *Node) objectAt(keys Path) *Node {
-	for _, k := range keys {
-		n = n.children[k]
 	}
 	return n
 }
