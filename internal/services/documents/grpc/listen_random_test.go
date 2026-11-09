@@ -22,6 +22,9 @@ import (
 // passes the checker, and at every global snapshot each target's documents, rebuilt as the JS
 // SDK applies the frames (an ExistenceFilter that disagrees makes it query again), are its
 // result at the snapshot's read time; at the end, its result now.
+// It runs alone, not in parallel: Ended waits a fixed ListenWait for the frames a listener has
+// left, which a loaded machine can take longer to send (its timing is to be made independent of
+// load).
 func TestListenRandom(t *testing.T) {
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)

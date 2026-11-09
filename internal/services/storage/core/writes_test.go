@@ -137,6 +137,7 @@ func isPool(e ast.Expr) bool {
 }
 
 func TestWritesOnlyInTransactions(t *testing.T) {
+	t.Parallel()
 	writes := writeQueries(t)
 	for _, w := range []string{"InsertObject", "LockObject", "ReplaceObject", "QueueBlobGC", "ReleaseUsage"} {
 		if !writes[w] {
@@ -171,6 +172,7 @@ func TestWritesOnlyInTransactions(t *testing.T) {
 
 // The checker finds what it is for.
 func TestWritesCheckerCatches(t *testing.T) {
+	t.Parallel()
 	src := `package core
 func New() { _ = queries.New(pool) }
 func (s *Service) ok(ctx context.Context) error {

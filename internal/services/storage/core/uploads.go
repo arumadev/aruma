@@ -255,7 +255,7 @@ func (s *Service) StartUpload(ctx context.Context, b Bucket, p Principal, spec U
 		_ = s.store.Delete(staging)
 		return "", fmt.Errorf("%w: create %s: %w", ErrUnavailable, staging, err)
 	}
-	hook("start.staging")
+	s.hook("start.staging")
 	now := s.now()
 	err = s.inTx(ctx, func(q *queries.Queries) error {
 		if err := s.checkSessionLimits(ctx, q, b.Project, idHash, p, ip, true); err != nil {
@@ -455,7 +455,7 @@ func (s *Service) appendChunk(ctx context.Context, sess *queries.StorageUploadSe
 	res := &reservation{project: sess.ProjectNumber, anonymous: sess.PrincipalKind == kindAnonymous,
 		session: sess.IDHash, n: held}
 	n, serr := s.stream(ctx, st.Append, body, h, length, limit, res)
-	hook("upload.appended")
+	s.hook("upload.appended")
 	if errors.Is(serr, errStoreMismatch) {
 		// Nothing of this request is announced; the next one cuts the file back to received.
 		return fmt.Errorf("%w: %w", ErrUnavailable, serr)
@@ -468,7 +468,7 @@ func (s *Service) appendChunk(ctx context.Context, sess *queries.StorageUploadSe
 			return fmt.Errorf("%w: sync %s: %w", ErrUnavailable, sess.StagingKey, err)
 		}
 	}
-	hook("upload.synced")
+	s.hook("upload.synced")
 	state, err := h.marshal()
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrUnavailable, err)
@@ -698,11 +698,11 @@ func (s *Service) placeBlob(ctx context.Context, sess *queries.StorageUploadSess
 		return "", fmt.Errorf("%w: write blob_key: %w", ErrUnavailable, err)
 	}
 	sess.BlobKey = &key
-	hook("finalize.blob_key")
+	s.hook("finalize.blob_key")
 	if err := s.promote(sess, key, false); err != nil {
 		return "", err
 	}
-	hook("finalize.promoted")
+	s.hook("finalize.promoted")
 	return key, nil
 }
 

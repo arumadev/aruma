@@ -12,6 +12,7 @@ import (
 // transaction-lost-on-restart); once it is older than production keeps a transaction (300 s,
 // f2-transactions.json lifetime), "Invalid transaction.", as production's forgotten ids.
 func TestTransactionUnknownAfterRestartAborted(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	clk := newClock()
 	key := bytes.Repeat([]byte{7}, 32)

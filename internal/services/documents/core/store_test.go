@@ -29,8 +29,15 @@ func TestMain(m *testing.M) {
 func newStore(t *testing.T, o Options) (*PGStore, *pgxpool.Pool) {
 	t.Helper()
 	pool := storetest.NewPool(t)
+	if o.CommitTimeouts == (CommitTimeouts{}) {
+		o.CommitTimeouts = testCommitTimeouts
+	}
 	return NewPGStore(pool, o), pool
 }
+
+// testCommitTimeouts let a large commit finish on a loaded machine, where production's would end
+// it, for tests that are not about those timeouts. The lock timeout stays production's.
+var testCommitTimeouts = CommitTimeouts{IdleInTransaction: 2 * time.Minute, Statement: 2 * time.Minute}
 
 func doc(kv ...any) value.Value { return fieldsOf(kv...) }
 
@@ -69,6 +76,7 @@ func paths(docs []Document) []string {
 // '(default)' is created on first use; other database ids answer production's NOT_FOUND
 // (f0-missing-database.json).
 func TestDatabases(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	d, err := s.Database(ctx, testDB)
@@ -109,6 +117,7 @@ func TestDatabases(t *testing.T) {
 }
 
 func TestCreateUpdateDeleteAndPreconditions(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	p := ParsePath("aruma-ref-f1-write/c1")
@@ -167,6 +176,7 @@ func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 // A read at a read_time sees the documents as they were, from the versions table; outside the
 // window it answers production's errors (f1-get.json).
 func TestReadTime(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	p := ParsePath("c/d")
@@ -234,6 +244,7 @@ func TestReadTime(t *testing.T) {
 // show_missing as production answers it (f0-list-show-missing.json): a document that does not
 // exist but has descendants is listed by name alone, in name order with the others.
 func TestShowMissing(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	var writes []Write
@@ -302,6 +313,7 @@ func TestShowMissing(t *testing.T) {
 // bytes, and documents whose keys share the first 2,048 bytes are ordered by their whole names,
 // through pages, show_missing and collection ids alike.
 func TestLongNames(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	long := strings.Repeat("x", 1499)
@@ -393,6 +405,7 @@ func short(ps []string) []string {
 // Commits run concurrently on many connections: seq is contiguous, commit_time strictly
 // increases in seq order, and each commit's result is the changelog's (ADR-024 §2.1).
 func TestConcurrentCommitsAreTotallyOrdered(t *testing.T) {
+	t.Parallel()
 	notes := &recordingNotifier{}
 	s, pool := newStore(t, Options{Notifier: notes})
 	ctx := t.Context()
@@ -469,6 +482,7 @@ func (r *recordingNotifier) count() int {
 // (conflict_unless), and a conflict computes the commit again. Read-modify-write with an
 // update_time precondition loses no increment.
 func TestConcurrentConflicts(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{CommitConcurrency: 8})
 	ctx := t.Context()
 	var wg sync.WaitGroup
@@ -527,6 +541,7 @@ func TestConcurrentConflicts(t *testing.T) {
 
 // A store whose process does not hold the instance lock serves nothing.
 func TestNotServingWithoutTheInstanceLock(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{Instance: &Instance{}})
 	_, err := s.Commit(t.Context(), testDB, nil)
 	wantError(t, err, Unavailable, ErrNotServing.Message)
@@ -537,6 +552,7 @@ func TestNotServingWithoutTheInstanceLock(t *testing.T) {
 // A ListRequest.After that is not a document of the listing, as a forged page token makes it,
 // is refused rather than indexed (review M2).
 func TestListDocumentsRefusesAForeignAfter(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	for _, r := range []ListRequest{
 		{After: Path{"a"}},

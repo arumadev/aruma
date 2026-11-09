@@ -69,6 +69,7 @@ func rulesSetUp(t *testing.T, e *Env) (ns string, users *rtdbUsers, pat string, 
 // the auth variable and the token's expiry, and the rules see auth.uid, auth.token and
 // auth.provider.
 func TestRTDBUserSignIn(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, _, adm := rulesSetUp(t, e)
 	users.setUp("chat-app")
@@ -147,6 +148,7 @@ func TestRTDBUserSignIn(t *testing.T) {
 // An Admin SDK with databaseAuthVariableOverride acts as the client it names (authvar), and
 // with null as an unauthenticated one (noauth); without either, it bypasses the rules.
 func TestRTDBAuthVariableOverride(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, _, adm := rulesSetUp(t, e)
 	adm.put("/users/u1", map[string]any{"name": "one"})
@@ -197,6 +199,7 @@ func (c *wsClient) readUntil(timeout time.Duration, match func(string) bool) []s
 // permission_denied; a token that is not a JWT "Could not parse auth token."; an unsigned one
 // "Unsupported jwt algorithm: none".
 func TestRTDBAuthRefusalsAsProduction(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, _, _ := rulesSetUp(t, e)
 	users.create("chat-app", "u1")
@@ -221,6 +224,7 @@ func TestRTDBAuthRefusalsAsProduction(t *testing.T) {
 // invalid_token, then c for each listen it may no longer read, and its writes are denied.
 // Enabled again, the client refreshes its token, as the SDKs do after ac, and signs in anew.
 func TestRTDBDisabledUserIsCutOff(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, _, adm := rulesSetUp(t, e)
 	users.create("chat-app", "u1")
@@ -277,6 +281,7 @@ func TestRTDBDisabledUserIsCutOff(t *testing.T) {
 
 // Revoking a user's sessions ends theirs too; signing in again starts a new one.
 func TestRTDBRevokedSessionsAreCutOff(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, _, _ := rulesSetUp(t, e)
 	users.create("chat-app", "u1")
@@ -295,6 +300,7 @@ func TestRTDBRevokedSessionsAreCutOff(t *testing.T) {
 // Editing the rules re-checks every open listen: those the new rules refuse are cancelled with
 // c, the rest keep their data coming.
 func TestRTDBRulesEditCancelsListens(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	ns, users, pat, adm := rulesSetUp(t, e)
 	users.create("chat-app", "u1")

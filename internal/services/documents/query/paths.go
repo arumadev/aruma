@@ -23,49 +23,67 @@ var pathNames = [numPaths]string{"reference", "index", "index_merged", "index_co
 
 func (p Path) String() string { return pathNames[p] }
 
-// served counts the queries and aggregations served, by path, since the process started.
-var served [numPaths]atomic.Int64
+// Stats counts how one service served its queries since it started. Each service has its own,
+// so tests that run at once each read only theirs; the app registers its service's (Collectors).
+type Stats struct {
+	// served counts the queries and aggregations served, by path.
+	served [numPaths]atomic.Int64
+	// entriesRead counts the index entries the index paths read.
+	entriesRead atomic.Int64
+	// unplanned counts the queries on fields the planner refused.
+	unplanned atomic.Int64
+	// mismatches counts the recheck mismatches (recheck.go).
+	mismatches atomic.Int64
+}
 
 // Served counts one query served by p.
-func Served(p Path) { served[p].Add(1) }
+func (s *Stats) Served(p Path) { s.served[p].Add(1) }
 
-// ServedCount is how many queries p served since the process started.
-func ServedCount(p Path) int64 { return served[p].Load() }
+// ServedCount is how many queries p served.
+func (s *Stats) ServedCount(p Path) int64 { return s.served[p].Load() }
 
-// entriesRead counts the index entries the index paths read since the process started.
-var entriesRead atomic.Int64
+// IndexServed is how many queries the index paths served, all of them together.
+func (s *Stats) IndexServed() int64 {
+	return s.ServedCount(PathIndex) + s.ServedCount(PathIndexMerged) + s.ServedCount(PathIndexContains)
+}
 
 // EntriesRead counts n index entries an index path read.
-func EntriesRead(n int) { entriesRead.Add(int64(n)) }
+func (s *Stats) EntriesRead(n int) { s.entriesRead.Add(int64(n)) }
 
-// EntriesReadCount is how many index entries the index paths read since the process started.
-func EntriesReadCount() int64 { return entriesRead.Load() }
-
-// unplanned counts the queries on fields the planner refused since the process started.
-var unplanned atomic.Int64
+// EntriesReadCount is how many index entries the index paths read.
+func (s *Stats) EntriesReadCount() int64 { return s.entriesRead.Load() }
 
 // Unplanned counts a query on fields the planner refused, which the reference path served: a
 // performance opportunity (ADR-025 §1).
-func Unplanned() { unplanned.Add(1) }
+func (s *Stats) Unplanned() { s.unplanned.Add(1) }
 
-// Collectors are the counters to register: documents_query_path_total{path},
+// Mismatch counts a recheck mismatch: a query that failed with a *RecheckError.
+func (s *Stats) Mismatch() { s.mismatches.Add(1) }
+
+// MismatchCount is how many recheck mismatches there were.
+func (s *Stats) MismatchCount() int64 { return s.mismatches.Load() }
+
+// Collectors are s's counters to register: documents_query_path_total{path},
 // documents_query_index_entries_read_total, documents_query_unplanned_total and
-// documents_query_recheck_mismatch_total (recheck.go).
-func Collectors() []prometheus.Collector {
+// documents_query_recheck_mismatch_total.
+func (s *Stats) Collectors() []prometheus.Collector {
 	out := make([]prometheus.Collector, 0, numPaths+3)
 	for p := range numPaths {
 		out = append(out, prometheus.NewCounterFunc(prometheus.CounterOpts{
 			Name:        "documents_query_path_total",
 			Help:        "Document Database queries and aggregations served, by the path that served them.",
 			ConstLabels: prometheus.Labels{"path": p.String()},
-		}, func() float64 { return float64(served[p].Load()) }))
+		}, func() float64 { return float64(s.served[p].Load()) }))
 	}
 	out = append(out, prometheus.NewCounterFunc(prometheus.CounterOpts{
 		Name: "documents_query_index_entries_read_total",
 		Help: "Document Database index entries the planner's index paths read.",
-	}, func() float64 { return float64(entriesRead.Load()) }), prometheus.NewCounterFunc(prometheus.CounterOpts{
+	}, func() float64 { return float64(s.entriesRead.Load()) }), prometheus.NewCounterFunc(prometheus.CounterOpts{
 		Name: "documents_query_unplanned_total",
 		Help: "Document Database queries on fields the planner refused, served on the reference path.",
-	}, func() float64 { return float64(unplanned.Load()) }))
-	return append(out, mismatchCollector())
+	}, func() float64 { return float64(s.unplanned.Load()) }), prometheus.NewCounterFunc(prometheus.CounterOpts{
+		Name: "documents_query_recheck_mismatch_total",
+		Help: "Document Database index path candidates the reference matcher refused (each failed its query INTERNAL).",
+	}, func() float64 { return float64(s.mismatches.Load()) }))
+	return out
 }

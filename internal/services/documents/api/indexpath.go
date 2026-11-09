@@ -78,7 +78,7 @@ func (s *Service) runIndexed(ctx context.Context, a admitted, parent wire.Name, 
 		if q.OnFields() {
 			// A shape the enforcement let through and the planner refused: a performance
 			// opportunity, counted and logged (ADR-025 §1).
-			query.Unplanned()
+			s.stats.Unplanned()
 			s.log.Debug("documents: a query on fields is served on the reference path", "project", a.wdb.Project,
 				"collection", q.CollectionID)
 		}
@@ -121,6 +121,7 @@ func (s *Service) runIndexed(ctx context.Context, a admitted, parent wire.Name, 
 		err = nil
 	}
 	if re, isMismatch := errors.AsType[*query.RecheckError](err); isMismatch {
+		s.stats.Mismatch()
 		s.log.Error("documents: index path recheck mismatch", "project", a.wdb.Project, "collection", q.CollectionID,
 			"document", re.Name, "reason", re.Reason)
 		return 0, time.Time{}, true, wire.Internal()
@@ -128,7 +129,7 @@ func (s *Service) runIndexed(ctx context.Context, a admitted, parent wire.Name, 
 	if err != nil {
 		return 0, time.Time{}, true, s.fail(ctx, err)
 	}
-	query.Served(plan.Path)
+	s.stats.Served(plan.Path)
 	return runner.Skipped(), x.readTime, true, nil
 }
 
@@ -426,7 +427,7 @@ func (r *scanReader) head(ctx context.Context) (*core.IndexHit, error) {
 			r.page = r.x.page
 		}
 		hits, read, err := r.x.rd.Scan(ctx, core.IndexRange{Index: r.id, Lo: r.lo, Hi: r.hi, Limit: r.page})
-		query.EntriesRead(read)
+		r.x.s.stats.EntriesRead(read)
 		if err != nil {
 			return nil, err
 		}

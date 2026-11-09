@@ -25,6 +25,7 @@ func limited(t *testing.T, quota int64) *env {
 
 // A start reserves nothing, whatever it declares; it only checks that the declaration fits.
 func TestStartReservesNothing(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	for range 5 {
@@ -54,6 +55,7 @@ func TestStartReservesNothing(t *testing.T) {
 
 // A hundred uploads at once, each through the check alone, never pass the quota together.
 func TestQuotaUnderConcurrency(t *testing.T) {
+	t.Parallel()
 	const quota, size = 10 << 20, 300 << 10
 	for _, mode := range []string{"insert", "session", "unknown length"} {
 		t.Run(mode, func(t *testing.T) {
@@ -107,6 +109,7 @@ func TestQuotaUnderConcurrency(t *testing.T) {
 // Sessions without an identity hold at most anonymous_staged_fraction of the quota; the rest
 // stays for signed-in users. The refusal is 402 and final.
 func TestAnonymousShare(t *testing.T) {
+	t.Parallel()
 	e := limited(t, 10<<20)
 	anon := Principal{Kind: PrincipalAnonymous}
 	mib := strings.Repeat("x", 1<<20)
@@ -142,6 +145,7 @@ func TestAnonymousShare(t *testing.T) {
 // Empty sessions count at start against the address's cap, so one client cannot make rows and
 // files without bound, and are gone after empty_session_ttl, so they hold nothing for long.
 func TestEmptySessions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, func(o *Options) { o.Limits.UploadSessionsPerIP = 3 })
 	ctx := context.Background()
 	ip := netip.MustParseAddr("2001:db8::1")
@@ -182,6 +186,7 @@ func TestEmptySessions(t *testing.T) {
 }
 
 func TestSessionLimitsPerUserAndProject(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, func(o *Options) {
 		o.Limits.UploadSessionsPerUser = 2
 		o.Limits.UploadSessionsPerProject = 3
@@ -207,6 +212,7 @@ func TestSessionLimitsPerUserAndProject(t *testing.T) {
 // An idle session gives back what it holds beyond its durable bytes, and an empty idle one ends;
 // the stored bytes stay counted, and the session can still finish.
 func TestIdleRelease(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	id := e.start(e.a, asUser("u1"), uploadSpec("a", SurfaceFirebase))
@@ -242,6 +248,7 @@ func TestIdleRelease(t *testing.T) {
 // The disk floor is reserved, not just checked: concurrent requests take it in one atomic step,
 // and below it a write is 503, which leaves a session active.
 func TestDiskFloor(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	e.store.free = e.s.limits.MinFreeBytes + 10<<20
 	var wg sync.WaitGroup
@@ -277,6 +284,7 @@ func TestDiskFloor(t *testing.T) {
 }
 
 func TestUsage(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	if u, err := e.s.Usage(ctx, e.b); err != nil || u != (Usage{QuotaBytes: 5 << 30}) {

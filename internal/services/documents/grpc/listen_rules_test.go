@@ -54,6 +54,7 @@ func pubQuery(coll string, pub *bool) *pb.StructuredQuery {
 }
 
 func TestListenRules(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	x.env.PublishFirestoreRules(t, deployedRules(t))
 	admin, user := x.env.JWT(t), apitest.UserToken(t, "user", nil)
@@ -108,6 +109,7 @@ func TestListenRules(t *testing.T) {
 // A document target's documents are judged again before each commit is sent: one the rules no
 // longer allow refuses the target, and the commit is not sent to it (ADR-026 §2).
 func TestListenRulesPerDocument(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	x.env.PublishFirestoreRules(t, `rules_version = '2';
 service cloud.firestore {

@@ -18,7 +18,12 @@ type writeGate struct {
 
 // closeWait bounds how long Close waits for the writers. Past it the lock is not released: the
 // process ends, and its exit releases it once nothing of it can write.
-var closeWait = 30 * time.Second
+func (s *Service) closeWait() time.Duration {
+	if s.test != nil && s.test.closeWait > 0 {
+		return s.test.closeWait
+	}
+	return 30 * time.Second
+}
 
 // enter admits a write, ErrUnavailable once Close began; the caller calls leave when done.
 // S2-C's Update, Delete, the token and CORS writes, and Stat's /v0 mint, take it too.
@@ -46,7 +51,7 @@ func (s *Service) shut() bool {
 	select {
 	case <-done:
 		return true
-	case <-time.After(closeWait):
+	case <-time.After(s.closeWait()):
 		return false
 	}
 }

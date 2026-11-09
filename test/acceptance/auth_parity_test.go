@@ -215,5 +215,6 @@ func runParity(t *testing.T, script []parityStep) {
 }
 
 func TestAuthV3Parity(t *testing.T) {
+	t.Parallel()
 	runParity(t, parityScript)
 }

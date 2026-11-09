@@ -110,6 +110,7 @@ func listAll(t *testing.T, s *Service, b Bucket, o ListOptions) ([]entry, int) {
 }
 
 func TestListAgainstTheModel(t *testing.T) {
+	t.Parallel()
 	f := newObjectsFixture(t)
 	names := []string{
 		"a", "a/", "a/b", "a/b/c", "a/b/d", "a/c", "a//x", "a//y/z", "a/b//c", "/root", "/", "//x",
@@ -143,6 +144,7 @@ func TestListAgainstTheModel(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	tok := newDownloadToken()
@@ -202,6 +204,7 @@ func TestList(t *testing.T) {
 // A page token is bound to its list: another bucket, project, prefix, delimiter, offset or
 // surface, a forged or truncated token, all are 400, never a list from the start.
 func TestListPageTokens(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	putNames(t, f.pool, testProject, []string{"d/1", "d/2", "d/3", "d/x/1", "d/y/1"})
@@ -278,6 +281,7 @@ func (c *countingDB) Query(ctx context.Context, sql string, args ...any) (pgx.Ro
 // layout: a thousand folders of a thousand files, listed at the root, inside a folder, and
 // without a delimiter (ADR-022 §13).
 func TestListSeeksOnAMillionNames(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("a million rows")
 	}
@@ -364,6 +368,7 @@ func TestListSeeksOnAMillionNames(t *testing.T) {
 // segment cost at most maxResults+1 seeks a page, with no delimiter and with one other than "/",
 // and the pages come back empty with a token until the range ends.
 func TestListSkipsCountAgainstThePage(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	names := make([]string, 20000)
@@ -407,6 +412,7 @@ func TestListSkipsCountAgainstThePage(t *testing.T) {
 // A seal that does not open fails no page: /v0 items do not open the tokens, GCS items leave out
 // the tokens that do not open.
 func TestListWithABadSeal(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	tok := newDownloadToken()

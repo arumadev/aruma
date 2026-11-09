@@ -20,6 +20,7 @@ import (
 // existed. The service is built on the server's control plane without the harness's Boot,
 // which waits for S2-D.
 func TestIsolationStorageBuckets(t *testing.T) {
+	t.Parallel()
 	ie := newIsolation(t)
 	ctx := context.Background()
 	master, err := base64.StdEncoding.DecodeString(testMasterKey)

@@ -17,6 +17,7 @@ func otherKeys(t *testing.T) *crypto.Keys {
 }
 
 func TestPageTokenRoundTrip(t *testing.T) {
+	t.Parallel()
 	s := &Service{keys: testKeys(t)}
 	b := Bucket{testProject, "chat-app.aruma.test"}
 	o := ListOptions{Prefix: "a/", Delimiter: "/", Surface: SurfaceFirebase}
@@ -47,6 +48,7 @@ func TestPageTokenRoundTrip(t *testing.T) {
 }
 
 func TestPageCursorNext(t *testing.T) {
+	t.Parallel()
 	if n, ok := (pageCursor{last: "a/b"}).next(); !ok || n != "a/b\x01" {
 		t.Errorf("after an object: %q, %v", n, ok)
 	}

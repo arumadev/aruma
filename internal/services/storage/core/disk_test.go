@@ -21,7 +21,7 @@ func onDisk(t *testing.T) (*env, string) {
 	t.Helper()
 	e := newEnv(t)
 	_ = e.s.Close()
-	acquireLock = blob.AcquireLock
+	e.hooks.acquireLock = nil // the real flock on the directory
 	dir := t.TempDir()
 	disk, err := blob.NewDisk(dir)
 	if err != nil {
@@ -36,6 +36,7 @@ func onDisk(t *testing.T) (*env, string) {
 		t.Fatal(err)
 	}
 	e.s.authorizeHook = func(context.Context, Bucket, Principal, ruleOp) error { return nil }
+	e.s.test = &e.hooks
 	if msg := pendingOn(func() { err = e.s.Boot(context.Background()) }); msg != "" {
 		t.Skipf("the disk is not written yet: %s", msg)
 	}
@@ -62,6 +63,7 @@ func pendingOn(f func()) (msg string) {
 }
 
 func TestOnDisk(t *testing.T) {
+	t.Parallel()
 	e, dir := onDisk(t)
 	ctx := context.Background()
 	if b, err := os.ReadFile(filepath.Join(dir, "INSTANCE")); err != nil || !strings.Contains(string(b), e.s.instance) {

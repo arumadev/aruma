@@ -13,7 +13,6 @@ import (
 
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
-	"github.com/arumadev/aruma/internal/services/documents/query"
 	"github.com/arumadev/aruma/internal/services/documents/wire"
 	pb "github.com/arumadev/aruma/internal/services/documents/wire/pb/firestorepb"
 )
@@ -22,6 +21,7 @@ import (
 // through RunQuery and RunAggregationQuery: FAILED_PRECONDITION with the same message, or the
 // same documents in order, or the same aggregates.
 func TestIndexesReplay(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok, c := t.Context(), x.env.JWT(t), x.client
 	for _, d := range apitest.IndexSeed() {
@@ -83,7 +83,7 @@ func TestIndexesReplay(t *testing.T) {
 	}
 	matched := 0
 	cases := apitest.IndexCases(t)
-	indexed := indexServed()
+	indexed := x.env.Service.QueryStats().IndexServed()
 	for i := range cases {
 		ic := &cases[i]
 		for _, empty := range []bool{true, false} {
@@ -114,7 +114,7 @@ func TestIndexesReplay(t *testing.T) {
 		t.Errorf("%d of 210 answers as production's", matched)
 	}
 	// The automatic single-field indexes serve some of the shapes production serves.
-	if indexServed() == indexed {
+	if x.env.Service.QueryStats().IndexServed() == indexed {
 		t.Error("no recorded shape was served by an index path")
 	}
 	// With the indexes production asked for, each needs-index shape is served by one.
@@ -123,8 +123,4 @@ func TestIndexesReplay(t *testing.T) {
 		return apitest.IndexAnswer{IDs: ids, Aggregates: aggs}, err
 	})
 	t.Logf("%d needs-index shapes replayed with their indexes", n)
-}
-
-func indexServed() int64 {
-	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
 }

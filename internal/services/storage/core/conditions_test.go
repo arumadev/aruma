@@ -12,6 +12,7 @@ import (
 // A rewrite's source conditions hold on the row whose file it copies (S4-A's review): a source
 // replaced after a caller looked at it is not copied in its place.
 func TestRewriteSourceConditions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	v1 := e.insert(e.a, "src.txt", "one")
@@ -57,6 +58,7 @@ func TestRewriteSourceConditions(t *testing.T) {
 // generation a caller saw run. Each copy that succeeds holds that generation's bytes, never the
 // next one's.
 func TestRewriteSourceConditionsUnderReplacement(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	cur := e.insert(e.a, "src.txt", "body-0")
@@ -95,6 +97,7 @@ func TestRewriteSourceConditionsUnderReplacement(t *testing.T) {
 // SetCORS's conditions hold on the settings row it locks (S4-A's review): of concurrent
 // changes with the same ifMetagenerationMatch, exactly one passes.
 func TestSetCORSConditions(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	f := newObjectsFixture(t)
 	created := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)

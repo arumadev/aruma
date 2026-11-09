@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// SetAfterSend makes f run after each Send returns, before the stream takes it as done, until
-// the test ends.
-func SetAfterSend(t testing.TB, f func(context.Context)) {
-	afterSend.Store(&f)
-	t.Cleanup(func() { afterSend.Store(nil) })
+// SetAfterSend makes f run after each Send of h's streams returns, before the stream takes it
+// as done, until the test ends.
+func SetAfterSend(t testing.TB, h *Handler, f func(context.Context)) {
+	h.afterSend.Store(&f)
+	t.Cleanup(func() { h.afterSend.Store(nil) })
 }

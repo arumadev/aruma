@@ -349,7 +349,7 @@ func (s *Service) runQuery(ctx context.Context, a admitted, parent wire.Name, q 
 	if err != nil {
 		return 0, time.Time{}, s.fail(ctx, err)
 	}
-	query.Served(query.PathReference)
+	s.stats.Served(query.PathReference)
 	return runner.Skipped(), readTime, nil
 }
 

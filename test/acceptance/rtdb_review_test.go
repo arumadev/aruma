@@ -41,6 +41,7 @@ func getAt(t *testing.T, e *Env, host, target string) (int, http.Header, string)
 // lets only its own script run; and the errors that quote what a client sent are JSON with
 // <, > and & escaped, under nosniff, never HTML.
 func TestRTDBOutputSafety(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
 	ns := e.owner().projectNS("chat-app")
 	evil := "</script><script>alert(1)</script><!-- \"quoted\" & " + string(rune(0x2028)) + string(rune(0x2029))
@@ -127,6 +128,7 @@ func TestRTDBOutputSafety(t *testing.T) {
 
 // ETags compare exactly: a near miss neither answers 304 nor lets a conditional write through.
 func TestRTDBETagsCompareExactly(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	q := "/x.json?ns=" + ns

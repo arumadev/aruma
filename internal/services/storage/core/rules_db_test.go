@@ -18,6 +18,7 @@ import (
 // publish on, with no restart: tenancy saves and publishes it under the logical name, and the
 // binding reads it there (ADR-021 §7, ADR-022 §2, §8). Until then the locked default denies.
 func TestRulesDeployedThroughTenancyDecide(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	ctx := context.Background()
 	tsvc := tcore.New(pool, nil, nil, tcore.Options{ProjectDomain: "aruma.test", PublicURL: "http://127.0.0.1",

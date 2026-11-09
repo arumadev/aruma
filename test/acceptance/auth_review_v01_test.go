@@ -16,6 +16,7 @@ import (
 // account under another company's address, so for other domains the sign-in must not merge into
 // the account that owns the address, verified or not, and must not delete its password.
 func TestAuthGoogleEmailTrustedOnlyWhereGoogleHostsIt(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	signUp := func(email string, verified bool) string {
 		t.Helper()
@@ -91,6 +92,7 @@ func TestAuthGoogleEmailTrustedOnlyWhereGoogleHostsIt(t *testing.T) {
 // link sent to B has restored B. A change of address retires the codes of the old address, and
 // a change of password the open reset links.
 func TestAuthRecoverCodeUndoesOnlyTheLatestChange(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("a@example.com", "secret1")
@@ -156,6 +158,7 @@ func TestAuthRecoverCodeUndoesOnlyTheLatestChange(t *testing.T) {
 // would carry a stranger's text from the project to any inbox. The built-in templates greet
 // without the name, and a custom template's %DISPLAY_NAME% is empty in such mail.
 func TestAuthMailCarriesNoNameToUnprovenAddresses(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	const lure = "Your bank account is locked, call +1 555 0100"
@@ -205,6 +208,7 @@ func TestAuthMailCarriesNoNameToUnprovenAddresses(t *testing.T) {
 // hosts are refused unless the instance allows them (mail.smtp_allow_private), checked on the
 // address actually dialled; the console gets a generic error and the log the detail.
 func TestAuthSMTPReachesOnlyPublicHosts(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, map[string]string{"ARUMA_MAIL_SMTP_ALLOW_PRIVATE": "false"})
 	p := e.authProject("chat-app")
 	smtp := "/console/v1/projects/chat-app/auth/smtp"
@@ -289,6 +293,7 @@ func banner(t *testing.T, line string) net.Listener {
 // by the old address, so nobody could register that address again. A password needs an
 // email: the removal is refused unless the password goes in the same call.
 func TestAuthAdminEmailRemovalLeavesNoPasswordBehind(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.adminProject("chat-app")
 	ok(t, p.admin(p.sa, "accounts", map[string]any{"localId": "user-1", "email": "sara@example.com", "password": "secret1"}))

@@ -22,7 +22,6 @@ import (
 	docgrpc "github.com/arumadev/aruma/internal/services/documents/grpc"
 	"github.com/arumadev/aruma/internal/services/documents/index"
 	"github.com/arumadev/aruma/internal/services/documents/listen"
-	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/services/documents/webchannel"
 	"github.com/arumadev/aruma/internal/tenancy/core"
@@ -104,7 +103,7 @@ func newDocuments(cfg *config.Config, svc *core.Service, pool *pgxpool.Pool, key
 	rpcMetrics := docgrpc.NewMetrics()
 	m.Registry.MustRegister(rpcMetrics.Collectors()...)
 	m.Registry.MustRegister(docgrpc.TransactionCollectors(store.transactionStats)...)
-	m.Registry.MustRegister(query.Collectors()...)
+	m.Registry.MustRegister(api.QueryStats().Collectors()...)
 	streams := docgrpc.New(docgrpc.Options{
 		Service:        api,
 		TrustedProxies: cfg.TrustedProxyPrefixes(),

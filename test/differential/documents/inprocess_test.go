@@ -12,7 +12,6 @@ import (
 	"github.com/arumadev/aruma/internal/platform/httpx"
 	"github.com/arumadev/aruma/internal/services/documents/api"
 	"github.com/arumadev/aruma/internal/services/documents/api/apitest"
-	"github.com/arumadev/aruma/internal/services/documents/query"
 	"github.com/arumadev/aruma/internal/services/documents/rest"
 	conformance "github.com/arumadev/aruma/test/conformance/documents"
 )
@@ -50,7 +49,7 @@ func TestReplayCorpusInProcess(t *testing.T) {
 
 	compared, f3 := 0, 0
 	seen := map[string]bool{}
-	indexed := servedByIndex()
+	indexed := env.Service.QueryStats().IndexServed()
 	for _, f := range files {
 		if err := planner.Setup(t.Context(), f); err != nil {
 			t.Fatal(err)
@@ -90,11 +89,7 @@ func TestReplayCorpusInProcess(t *testing.T) {
 	if f3 != 343 {
 		t.Errorf("%d F3 cases replayed, want the 343 marked replay", f3)
 	}
-	if servedByIndex() == indexed {
+	if env.Service.QueryStats().IndexServed() == indexed {
 		t.Error("the planner served no replayed case from an index")
 	}
-}
-
-func servedByIndex() int64 {
-	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
 }

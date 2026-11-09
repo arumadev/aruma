@@ -65,6 +65,7 @@ func checksummed(o Object, body []byte) Object {
 // (application/octet-stream, no disposition), the update with the settable fields and metadata,
 // or the metadata alone on partial-*; the overwrite with contentType text/plain.
 func TestPyricRequestResourceFields(t *testing.T) {
+	t.Parallel()
 	var rr pyricRR
 	readOracle(t, "imported/pyric/original/observations/storage-rules/stdlib-realstorage-request-resource-fields.json", &rr)
 	if rr.ObservedAt != "2026-09-27T16:19:58.707Z" || rr.FbSdkVersion != "12.13.0" || rr.Bucket != "digame-mas.appspot.com" {
@@ -187,6 +188,7 @@ func mapsKeys[V any](m map[string]V) func(func(string) bool) {
 // and etag strings as GCS shows them, its times timestamps; request.resource on a create has no
 // version, etag or time; an update and an upload over an object compare hashes with resource.
 func TestPyricNativeObjectFields(t *testing.T) {
+	t.Parallel()
 	var obs struct {
 		ObservedAt string         `json:"observedAt"`
 		Behavior   map[string]any `json:"behavior"`
@@ -263,6 +265,7 @@ func TestPyricNativeObjectFields(t *testing.T) {
 // resource carries (production/storage.json "CJqUmJ6Ry4ADEAE=", of generation
 // 1691431467354650 and metageneration 1), changing with the metageneration.
 func TestObjectETag(t *testing.T) {
+	t.Parallel()
 	if got := objectETag(1691431467354650, 1); got != "CJqUmJ6Ry4ADEAE=" {
 		t.Errorf("etag %s", got)
 	}
@@ -314,6 +317,7 @@ func (f *oracleFile) ruleset(t *testing.T, id string) string {
 // the Test API, which matches the path itself, allows). request.method and request.path follow
 // ADR-022 §8: aruma/storage/method_list and request_path, as the Test API answers them.
 func TestOracleListAndPath(t *testing.T) {
+	t.Parallel()
 	var pack, paths oracleFile
 	readOracle(t, "production/storage.json", &pack)
 	readOracle(t, "production/storage-paths.json", &paths)
@@ -353,6 +357,7 @@ func TestOracleListAndPath(t *testing.T) {
 // keys the oracle's resource left out, measure the request rather than the service: they are
 // listed, with the binding's answer.
 func TestOracleResourceView(t *testing.T) {
+	t.Parallel()
 	var pack oracleFile
 	readOracle(t, "production/storage.json", &pack)
 	r, ok := pack.Resources["default"]

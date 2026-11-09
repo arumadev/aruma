@@ -21,6 +21,7 @@ import (
 // that the data is the same; their answers are the wire package's to check. Each difference
 // left is listed in productionDifferences with its reason.
 func TestRTDBRESTMatchesProduction(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")

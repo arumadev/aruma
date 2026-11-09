@@ -78,6 +78,7 @@ const (
 // The finding this closes: a key restricted to one website must refuse another, and a request
 // without a Referer, on every client call and on the token refresh.
 func TestAuthKeyWebsiteRestriction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -127,6 +128,7 @@ func TestAuthKeyWebsiteRestriction(t *testing.T) {
 // API restrictions: the Identity Toolkit API covers the client calls, the Secure Token API the
 // refresh; a key that lists neither, or only the first, is refused where Google refuses it.
 func TestAuthKeyAPIRestriction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -160,6 +162,7 @@ func TestAuthKeyAPIRestriction(t *testing.T) {
 // IP address restrictions use the client address the server resolves, through trusted
 // proxies only.
 func TestAuthKeyIPRestriction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, map[string]string{"ARUMA_TRUSTED_PROXIES": "127.0.0.1"})
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -195,6 +198,7 @@ const (
 
 // Android restrictions read X-Android-Package and X-Android-Cert, which the Android SDKs send.
 func TestAuthKeyAndroidRestriction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -223,6 +227,7 @@ func TestAuthKeyAndroidRestriction(t *testing.T) {
 // iOS restrictions read X-Ios-Bundle-Identifier, which the iOS SDK sends on every Auth call,
 // the v3 paths and the refresh included.
 func TestAuthKeyIOSRestriction(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -243,6 +248,7 @@ func TestAuthKeyIOSRestriction(t *testing.T) {
 // must list firebaseapp.com at Google); app restrictions cannot be met by a browser and are
 // left to the calls that hand out tokens.
 func TestAuthKeyRestrictionsOnPages(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := p.signUp("sara@example.com", "secret1")
@@ -287,6 +293,7 @@ func TestAuthKeyRestrictionsOnPages(t *testing.T) {
 
 // The console validates restrictions as Google's API Keys API shapes them.
 func TestAuthKeyRestrictionsValidation(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	keys := p.owner.mustOK(p.owner.do("GET", "/console/v1/projects/chat-app/apiKeys", nil)).list("keys")

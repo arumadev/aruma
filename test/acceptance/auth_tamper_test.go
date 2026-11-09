@@ -204,6 +204,7 @@ func (u *tamperUser) resign(t *testing.T, claims map[string]any) string {
 }
 
 func TestAuthTamper(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	b := p.secondProject("other-app")

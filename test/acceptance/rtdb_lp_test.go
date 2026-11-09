@@ -180,6 +180,7 @@ func isDataAt(path string) func(string) bool {
 }
 
 func TestRTDBLongPollHandshake(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("lp-app")
 	c := &lpClient{t: t, base: e.URL, batches: map[int64][]string{}}
@@ -235,6 +236,7 @@ func TestRTDBLongPollHandshake(t *testing.T) {
 // Data both ways: requests and replies over the long poll, and pushes of writes another
 // client makes over a WebSocket.
 func TestRTDBLongPollData(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("lp-app")
 	c := e.startLP(ns)
@@ -268,6 +270,7 @@ func TestRTDBLongPollData(t *testing.T) {
 // One request is held; a newer one releases it, as the SDK's 25-second keepalive does, and
 // an idle one is answered within that time.
 func TestRTDBLongPollKeepalive(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("waits 20 seconds")
 	}
@@ -294,6 +297,7 @@ func TestRTDBLongPollKeepalive(t *testing.T) {
 // disconn, which the dframe page sends when the page unloads, ends the session at once and
 // runs its onDisconnect writes.
 func TestRTDBLongPollDisconnect(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("lp-app")
 	ws := e.dial(ns, dialOpts{})
@@ -311,6 +315,7 @@ func TestRTDBLongPollDisconnect(t *testing.T) {
 // The upgrade as Connection.ts makes it, while another client writes: every write reaches
 // the client once and in order, first over the long poll, then over the WebSocket.
 func TestRTDBLongPollUpgrade(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("lp-app")
 	c := e.startLP(ns)

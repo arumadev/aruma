@@ -21,6 +21,7 @@ import (
 // which the entry point's 404 is not: /v0/b/ names no operation, so a mounted /v0 answers it 400
 // (S3-A), and the GCS surface answers an unknown bucket with production's 404 (S4-A).
 func TestStorageBoots(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": t.TempDir()})
 	for _, c := range []struct {
 		path   string
@@ -48,6 +49,7 @@ func TestStorageBoots(t *testing.T) {
 // the real disk hides it again once mounted (security review v0.3, SR3-01). Boot refuses it,
 // naming the way out, and writes nothing there.
 func TestStorageBootRefusesAnUnmountedDisk(t *testing.T) {
+	t.Parallel()
 	disk := t.TempDir()
 	e := newEnv(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": disk})
 	owner := e.owner()

@@ -44,6 +44,7 @@ func dbService(t *testing.T) (*Service, *pgxpool.Pool) {
 // ADR-022 §5: a Storage transaction commits synchronously on a server whose default is off, and
 // the setting stays inside it: the pool keeps the server's default for every other service.
 func TestInTxCommitsSynchronously(t *testing.T) {
+	t.Parallel()
 	s, pool := dbService(t)
 	ctx := context.Background()
 	var name string
@@ -100,6 +101,7 @@ func TestInTxCommitsSynchronously(t *testing.T) {
 }
 
 func TestWarnUnsafeDurability(t *testing.T) {
+	t.Parallel()
 	s, _ := dbService(t)
 	var logs bytes.Buffer
 	s.log = slog.New(slog.NewTextHandler(&logs, nil))
@@ -114,6 +116,7 @@ func TestWarnUnsafeDurability(t *testing.T) {
 
 // releaseObject takes an object's bytes and count out of the quota and queues its file.
 func TestReleaseObject(t *testing.T) {
+	t.Parallel()
 	s, pool := dbService(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `INSERT INTO storage.usage (project_number, used_bytes, object_count) VALUES ($1, 100, 2)`, testProject); err != nil {
@@ -181,6 +184,7 @@ func write(ctx context.Context, s *Service, key string, mustNotExist bool, hold 
 // Two overwrites of one name at once: the second waits on the first's lock, then reads its
 // committed row, so each replaced key goes to blob_gc exactly once and no file leaks.
 func TestCommitStatementsUnderConcurrentOverwrites(t *testing.T) {
+	t.Parallel()
 	s, pool := dbService(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `INSERT INTO storage.usage (project_number, used_bytes, object_count) VALUES ($1, 1000, 3)`, testProject); err != nil {
@@ -233,6 +237,7 @@ func TestCommitStatementsUnderConcurrentOverwrites(t *testing.T) {
 // ifGenerationMatch=0 twice at once on a new name: the second insert waits for the first and
 // then does nothing, so exactly one create succeeds.
 func TestCommitStatementsCreateRace(t *testing.T) {
+	t.Parallel()
 	s, pool := dbService(t)
 	ctx := context.Background()
 	tx, err := s.begin(ctx)
@@ -274,6 +279,7 @@ func TestCommitStatementsCreateRace(t *testing.T) {
 // A delete that commits between InsertObject's conflict and LockObject leaves no row to lock:
 // the write retries the insert, which then succeeds, and never answers 412 for it.
 func TestCommitStatementsRetryAfterConcurrentDelete(t *testing.T) {
+	t.Parallel()
 	s, pool := dbService(t)
 	ctx := context.Background()
 	now := time.Now()

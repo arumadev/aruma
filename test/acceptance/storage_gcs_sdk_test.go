@@ -36,6 +36,7 @@ import (
 //
 //	ARUMA_GCS_SDK=1 go test -run TestStorageGCSWithTheAdminSDKs ./test/acceptance/
 func TestStorageGCSWithTheAdminSDKs(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("ARUMA_GCS_SDK") == "" {
 		t.Skip("set ARUMA_GCS_SDK=1 to run the Admin SDKs' GCS scenarios (Go and Node needed)")
 	}

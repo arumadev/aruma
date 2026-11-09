@@ -19,6 +19,7 @@ import (
 // GCS 429 rateLimitExceeded), until the held write ends. Both probes carry no credential: the
 // count is taken before authentication, as the session routes need none.
 func TestStorageWritesPerIPAcrossSurfaces(t *testing.T) {
+	t.Parallel()
 	e, owner := newUploadProject(t, map[string]string{"ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP": "1"})
 	_, key := owner.serviceAccountKey("chat-app", "storage-admin")
 	sa, _, err := exchange(t, key)

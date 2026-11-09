@@ -16,6 +16,7 @@ import (
 // replays the emulator's scenarios frame by frame.
 
 func TestRTDBDisabledByDefault(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner().project("chat-app")
 	if _, resp, err := e.tryDial("chat-app-default-rtdb", dialOpts{}); err == nil || resp == nil || resp.StatusCode != http.StatusNotFound {
@@ -24,6 +25,7 @@ func TestRTDBDisabledByDefault(t *testing.T) {
 }
 
 func TestRTDBHandshake(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	before := time.Now().UnixMilli()
@@ -57,6 +59,7 @@ func TestRTDBHandshake(t *testing.T) {
 // The handshake names the host the client connected to, whatever it is: a database host
 // under rtdb.domain, with its port.
 func TestRTDBHandshakeHostUnderDomain(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
 	e.owner().project("chat-app")
 	port := e.URL[strings.LastIndex(e.URL, ":"):]
@@ -92,6 +95,7 @@ func TestRTDBHandshakeHostUnderDomain(t *testing.T) {
 func (e *Env) owner2() *Client { return e.account("second@example.com") }
 
 func TestRTDBPutGet(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	// Shapes as in golden/put_get.json.
@@ -132,6 +136,7 @@ func TestRTDBPutGet(t *testing.T) {
 }
 
 func TestRTDBMultiPathUpdate(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	c.put("/golden/up", map[string]any{"a": 1, "b": map[string]any{"c": 2}, "d": 3})
@@ -163,6 +168,7 @@ func TestRTDBMultiPathUpdate(t *testing.T) {
 }
 
 func TestRTDBDataStale(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	// golden/datastale.json: the emulator's ETag of {"s":1} is the SDK hash the client sends.
@@ -186,6 +192,7 @@ func TestRTDBDataStale(t *testing.T) {
 }
 
 func TestRTDBServerValues(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	before := time.Now().UnixMilli()
@@ -219,6 +226,7 @@ func TestRTDBServerValues(t *testing.T) {
 }
 
 func TestRTDBLimits(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	expect := func(r reply, status, msg string) {
@@ -288,6 +296,7 @@ func TestRTDBLimits(t *testing.T) {
 }
 
 func TestRTDBNamespacesIsolated(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	owner := e.owner()
 	a := e.dial(owner.projectNS("chat-app"), dialOpts{})
@@ -307,6 +316,7 @@ func TestRTDBNamespacesIsolated(t *testing.T) {
 }
 
 func TestRTDBOrigin(t *testing.T) {
+	t.Parallel()
 	// Firebase checks no Origin; by default neither does Aruma (lead decision): credentials
 	// travel inside the messages, never in cookies.
 	e := rtdbEnv(t, false, nil)
@@ -339,6 +349,7 @@ func TestRTDBOrigin(t *testing.T) {
 }
 
 func TestRTDBOnDisconnect(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	ns := e.owner().projectNS("chat-app")
 	a := e.dial(ns, dialOpts{})
@@ -379,6 +390,7 @@ func TestRTDBOnDisconnect(t *testing.T) {
 
 // Locked rules (ADR-020): without dev_open_rules only admin credentials reach the data.
 func TestRTDBLockedUntilAdmin(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, nil)
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")
@@ -451,6 +463,7 @@ func TestRTDBLockedUntilAdmin(t *testing.T) {
 
 // Malformed messages get the emulator's error frame and the connection stays usable.
 func TestRTDBMalformed(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.dial(e.owner().projectNS("chat-app"), dialOpts{})
 	for _, m := range []string{`{"t":"d","d":{"r":50,"a":"zzz","b":{}}}`, "hello", `{"t":"d","d":{"r":51,"a":"p"}}`} {
@@ -485,6 +498,7 @@ func TestRTDBMalformed(t *testing.T) {
 // Behind a trusted proxy, the database and the hello's h come from X-Forwarded-Host, so the
 // client reconnects to the public host it used (review #11).
 func TestRTDBBehindProxy(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test", "ARUMA_TRUSTED_PROXIES": "127.0.0.1/32"})
 	e.owner().project("chat-app")
 	public := "chat-app-default-rtdb.rtdb.aruma.test"
@@ -501,6 +515,7 @@ func TestRTDBBehindProxy(t *testing.T) {
 // Anonymous clients cannot exhaust the server (review #3): they may send only small
 // messages, and they take none of the project's connection slots.
 func TestRTDBAnonymousClientsAreBounded(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, map[string]string{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "1"})
 	owner := e.owner()
 	ns := owner.projectNS("chat-app")
@@ -536,6 +551,7 @@ func TestRTDBAnonymousClientsAreBounded(t *testing.T) {
 
 // A purged project's databases go with it (review #17).
 func TestRTDBPurgedProjectLosesItsData(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, false, nil)
 	c := e.owner()
 	ns := c.projectNS("chat-app")

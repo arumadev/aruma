@@ -25,11 +25,11 @@ func (s *Service) PurgeProject(ctx context.Context, project int64) error {
 	if err := s.store.DeletePrefix(blob.StagingPrefix(project)); err != nil {
 		return fmt.Errorf("storage: purge the staging files of project %d: %w", project, err)
 	}
-	hook("purge.staging")
+	s.hook("purge.staging")
 	if err := s.store.DeletePrefix(blob.ProjectPrefix(project)); err != nil {
 		return fmt.Errorf("storage: purge the files of project %d: %w", project, err)
 	}
-	hook("purge.files")
+	s.hook("purge.files")
 	err = s.inTx(ctx, func(q *queries.Queries) error {
 		if err := q.PurgeUploadSessions(ctx, project); err != nil {
 			return err

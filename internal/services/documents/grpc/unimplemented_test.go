@@ -32,6 +32,7 @@ func runQueryErr(t *testing.T, x *harness, tok string, q *pb.StructuredQuery, ex
 // enforcement: a query that needs an index gets production's needs-index error first (parity
 // exception explain-rejected, f0-explain.json).
 func TestExplainOptionsRejected(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	plain := &pb.StructuredQuery{From: []*pb.StructuredQuery_CollectionSelector{{CollectionId: "aruma-ref-f0-explain"}}}
@@ -83,6 +84,7 @@ func fieldEquals(path string, n int64) *pb.StructuredQuery_Filter {
 // index of another dimension, field or prefix does not match (parity exception
 // find-nearest-with-vector-index, f0-find-nearest.json).
 func TestFindNearestWithVectorIndexRejected(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	admin, _ := adminClients(x)
 	tok := x.env.JWT(t)
@@ -146,6 +148,7 @@ func TestFindNearestWithVectorIndexRejected(t *testing.T) {
 // INVALID_ARGUMENT "Cannot add a target for a different database." (f4-listen.json), and the
 // stream stays open for the next target (parity exception mixed-project-resource-names).
 func TestListenForeignDatabaseTarget(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	tok := x.env.JWT(t)
 	x.commit(t, tok, update("lf/a", rankDoc(1)))

@@ -12,6 +12,7 @@ import (
 
 // AC-1, AC-4: the setup code is logged once, works once, and the setup page is gone afterwards.
 func TestFirstBootSetup(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.client()
 
@@ -54,6 +55,7 @@ func TestFirstBootSetup(t *testing.T) {
 
 // AC-5, ADR-010 S-7: unknown email, wrong password and disabled account look identical.
 func TestLoginFailuresAreUniform(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner()
 	e.account("disabled@example.com")
@@ -84,6 +86,7 @@ func TestLoginFailuresAreUniform(t *testing.T) {
 
 // ADR-010 S-6: repeated failures for one email are throttled.
 func TestLoginBackoff(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner()
 	c := e.client()
@@ -99,6 +102,7 @@ func TestLoginBackoff(t *testing.T) {
 
 // ADR-010 S-6: the per-IP bucket caps credential attempts across emails.
 func TestLoginIPLimit(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.client()
 	limited := false
@@ -113,6 +117,7 @@ func TestLoginIPLimit(t *testing.T) {
 
 // AC-6: changing the password signs out every other session, keeps the current one.
 func TestChangePasswordRevokesOtherSessions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	a := e.owner()
 	b := e.client()
@@ -129,6 +134,7 @@ func TestChangePasswordRevokesOtherSessions(t *testing.T) {
 
 // AC-7: CLI tokens work as bearer credentials until revoked, then stop at once.
 func TestAccessTokens(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	expect(t, c.do("POST", "/console/v1/me/tokens", map[string]any{"name": "laptop"}), 400, "INVALID_ARGUMENT")
@@ -159,6 +165,7 @@ func TestAccessTokens(t *testing.T) {
 
 // AC-20: sign-up is refused while closed, and works once the operator opens it.
 func TestSignupClosedThenOpen(t *testing.T) {
+	t.Parallel()
 	body := map[string]any{"email": "new@example.com", "password": testPassword}
 	closed := newEnv(t, nil)
 	closed.owner()
@@ -174,6 +181,7 @@ func TestSignupClosedThenOpen(t *testing.T) {
 
 // ADR-010 S-5: cookie writes need the session's CSRF token and a same-origin request.
 func TestCSRF(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	other := e.client()
@@ -207,6 +215,7 @@ func TestCSRF(t *testing.T) {
 
 // ADR-010 S-4: every console route except the public ones needs credentials.
 func TestEveryConsoleRouteRequiresAuth(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner()
 	anon := e.client()
@@ -244,6 +253,7 @@ func fillPattern(p string) string {
 
 // AC-28: the emulator owner token and unsigned JWTs never authenticate.
 func TestOwnerAndAlgNoneRefused(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner()
 	none := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`)) + "." +
@@ -255,6 +265,7 @@ func TestOwnerAndAlgNoneRefused(t *testing.T) {
 
 // Sessions end at their idle expiry, and logout ends them at once.
 func TestSessionExpiryAndLogout(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	if _, err := e.Pool.Exec(context.Background(), "UPDATE control.sessions SET idle_expires_at = now() - interval '1 second'"); err != nil {
@@ -277,6 +288,7 @@ func TestSessionExpiryAndLogout(t *testing.T) {
 // Review M-1: CLI tokens die with a password change or an operator reset, so a token minted
 // from a stolen session does not survive the owner's recovery.
 func TestPasswordChangeAndResetRevokeCLITokens(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	cli := e.withBearer(c.pat())
@@ -296,6 +308,7 @@ func TestPasswordChangeAndResetRevokeCLITokens(t *testing.T) {
 // Review M-2: a concurrent burst against one email runs no more password checks than the
 // backoff threshold.
 func TestConcurrentLoginBurstIsBounded(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	e.owner()
 	codes := make(chan int, 10)
@@ -322,6 +335,7 @@ func TestConcurrentLoginBurstIsBounded(t *testing.T) {
 
 // Review H-2: an attacker-sized email is refused before it reaches any limiter or query.
 func TestHugeEmailRefused(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	r := e.client().do("POST", "/console/v1/auth:login", map[string]any{"email": strings.Repeat("a", 300000) + "@x.io", "password": "x"})
 	expect(t, r, 400, "INVALID_ARGUMENT")
@@ -329,6 +343,7 @@ func TestHugeEmailRefused(t *testing.T) {
 
 // Review L-3: guessing the current password through change-password is throttled per account.
 func TestChangePasswordGuessesThrottled(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	last := 0

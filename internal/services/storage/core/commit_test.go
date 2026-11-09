@@ -19,6 +19,7 @@ import (
 // commitObject and the write order around it (ADR-022 §5), through Insert and Rewrite.
 
 func TestInsert(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	body := "hello, storage"
@@ -55,6 +56,7 @@ func TestInsert(t *testing.T) {
 
 // An overwrite replaces the row under its lock and queues the file it replaced, once.
 func TestInsertOverwrite(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	first := e.insert(e.a, "a.txt", "one")
 	_, row1, _ := e.s.storedObject(context.Background(), e.a, "a.txt")
@@ -77,6 +79,7 @@ func TestInsertOverwrite(t *testing.T) {
 // Concurrent overwrites of one name: each waits on the lock of the one before, so every replaced
 // key reaches blob_gc exactly once, the last write stands, and no file leaks.
 func TestCommitConcurrentOverwrites(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	const n = 12
 	var wg sync.WaitGroup
@@ -121,11 +124,12 @@ func TestCommitConcurrentOverwrites(t *testing.T) {
 // A delete that commits between the insert's conflict and the lock leaves no row to lock: the
 // write inserts again and succeeds, never 412.
 func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a.txt", "one")
 	deletes := 0
-	testHook = func(p string) {
+	e.hooks.at = func(p string) {
 		if p == "commit.conflict" && deletes < 2 {
 			deletes++
 			if _, err := e.pool.Exec(ctx, `DELETE FROM storage.objects WHERE project_number = $1 AND name = 'a.txt'`, projectA); err != nil {
@@ -138,7 +142,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 		t.Fatalf("Insert = %+v, %v after %d deletes", o, err, deletes)
 	}
 	// A delete racing every write: none answers 412.
-	testHook = nil
+	e.hooks.at = nil
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Go(func() {
@@ -166,6 +170,7 @@ func TestCommitRetriesAfterConcurrentDelete(t *testing.T) {
 // ifGenerationMatch=0 takes the DO NOTHING branch alone: on an existing name it is 412 and
 // nothing changes, and two creates at once do not both succeed.
 func TestIfGenerationMatchZero(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	zero := int64(0)
@@ -209,6 +214,7 @@ func TestIfGenerationMatchZero(t *testing.T) {
 }
 
 func TestPreconditions(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	o := e.insert(e.a, "a.txt", "x")
@@ -248,6 +254,7 @@ func TestPreconditions(t *testing.T) {
 
 // A refusal before COMMIT deletes the new file at once and gives the reservation back.
 func TestInsertRefusalsLeaveNothing(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	wrong := uint32(1)
@@ -305,6 +312,7 @@ func TestInsertRefusalsLeaveNothing(t *testing.T) {
 
 // The rules see the incoming object complete, and the existing one; an overwrite is a create.
 func TestInsertRulesOp(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a.txt", "old")
@@ -322,10 +330,11 @@ func TestInsertRulesOp(t *testing.T) {
 
 // The ambiguous COMMIT (ADR-022 §5): whatever happened to the reply, no committed version is lost.
 func TestAmbiguousCommit(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	t.Run("the reply is lost after the commit", func(t *testing.T) {
 		e := newEnv(t)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
@@ -342,7 +351,7 @@ func TestAmbiguousCommit(t *testing.T) {
 	})
 	t.Run("the backend is killed before COMMIT", func(t *testing.T) {
 		e := newEnv(t)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			var pid int
 			if err := tx.QueryRow(ctx, "SELECT pg_backend_pid()").Scan(&pid); err != nil {
 				return err
@@ -368,7 +377,7 @@ func TestAmbiguousCommit(t *testing.T) {
 	t.Run("the request is cancelled during COMMIT", func(t *testing.T) {
 		e := newEnv(t)
 		rctx, cancel := context.WithCancel(ctx)
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			cancel() // the client hangs up as COMMIT goes out
 			return tx.Commit(ctx)
 		}
@@ -380,13 +389,13 @@ func TestAmbiguousCommit(t *testing.T) {
 	t.Run("the outcome cannot be settled", func(t *testing.T) {
 		e := newEnv(t)
 		old := e.insert(e.a, "a.txt", "old")
-		commitTx = func(ctx context.Context, tx pgx.Tx) error {
+		e.hooks.commitTx = func(ctx context.Context, tx pgx.Tx) error {
 			if err := tx.Commit(ctx); err != nil {
 				return err
 			}
 			return errors.New("i/o timeout")
 		}
-		xactStatusOf = func(context.Context, string) (string, error) { return "", errors.New("connection refused") }
+		e.hooks.xactStatusOf = func(context.Context, string) (string, error) { return "", errors.New("connection refused") }
 		_, err := e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
 		if !errors.Is(err, errCommitUnknown) || !errors.Is(err, ErrUnavailable) {
 			t.Fatalf("Insert = %v, want an unknown outcome", err)
@@ -400,8 +409,8 @@ func TestAmbiguousCommit(t *testing.T) {
 			t.Error("the old version reads")
 		}
 		// The next boot's sweep keeps it: a row points to it.
-		commitTx = func(ctx context.Context, tx pgx.Tx) error { return tx.Commit(ctx) }
-		xactStatusOf = nil
+		e.hooks.commitTx = nil
+		e.hooks.xactStatusOf = nil
 		s := e.restart()
 		if err := s.deleteCandidates(ctx); err != nil {
 			t.Fatal(err)
@@ -416,6 +425,7 @@ func TestAmbiguousCommit(t *testing.T) {
 // Rewrite copies within a project, counted on the quota, with the tokens sealed again for the
 // destination's name unless the metadata is replaced.
 func TestRewrite(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	src, err := e.s.Insert(ctx, e.a, asAdmin(), UploadSpec{Name: "src.txt", Surface: SurfaceFirebase, Declared: -1,
@@ -466,6 +476,7 @@ func TestRewrite(t *testing.T) {
 }
 
 func TestCheckPreconditionsWithoutRow(t *testing.T) {
+	t.Parallel()
 	zero, one := int64(0), int64(1)
 	if checkRowPreconditions(Preconditions{IfGenerationMatch: &zero}, nil) != nil || checkRowPreconditions(Preconditions{}, nil) != nil {
 		t.Error("a create's preconditions on no row")

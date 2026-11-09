@@ -28,6 +28,7 @@ func adminClients(x *harness) (adminpbconnect.FirestoreAdminClient, longrunningp
 }
 
 func TestAdminGRPC(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	admin, ops := adminClients(x)
 	ctx, tok := t.Context(), x.env.JWT(t)
@@ -126,6 +127,7 @@ func TestAdminGRPC(t *testing.T) {
 
 // The Admin API is an admin's, whatever dev_open_rules says.
 func TestAdminGRPCCallers(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{DevOwnerToken: true, DevOpenRules: true}, docgrpc.Limits{})
 	admin, _ := adminClients(x)
 	ctx := t.Context()
@@ -151,6 +153,7 @@ func TestAdminGRPCCallers(t *testing.T) {
 // core's ErrIndexEntryTooLarge reaches gRPC with its google.rpc.ErrorInfo (f0-errors.json
 // rest.name_bytes_6127; the same details assumed on gRPC).
 func TestIndexEntryTooLargeGRPC(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	var name strings.Builder
 	for i := range 4 {

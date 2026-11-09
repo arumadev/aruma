@@ -16,6 +16,7 @@ import (
 //
 //	go test -tags browser -run TestAuthIdPBrowser -v ./test/acceptance/
 func TestAuthIdPBrowser(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	x.enableAnonymous()
 	x.google.consentAs = func(q url.Values) map[string]any {

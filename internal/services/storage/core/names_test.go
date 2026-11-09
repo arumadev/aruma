@@ -7,6 +7,7 @@ import (
 )
 
 func TestHasEmptySegment(t *testing.T) {
+	t.Parallel()
 	for name, want := range map[string]bool{
 		"a": false, "a/b": false, "a b/c.png": false, "..": false,
 		"": true, "/x": true, "x/": true, "a//b": true, "/": true, "a/b/": true,
@@ -20,6 +21,7 @@ func TestHasEmptySegment(t *testing.T) {
 // pastPrefix is above every name that starts with the prefix, and no valid name lies between
 // them that does not.
 func TestPastPrefix(t *testing.T) {
+	t.Parallel()
 	for prefix, want := range map[string]string{
 		"a/":                     "a0",
 		"photos/":                "photos0",
@@ -46,6 +48,7 @@ func TestPastPrefix(t *testing.T) {
 }
 
 func TestMaxNameAndAfter(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"a", strings.Repeat("\U0010FFFF", 256), strings.Repeat("\xf4\x8f\xbf\xbf", 255) + "zzzz"} {
 		if !(name < maxName) {
 			t.Errorf("%q is not below maxName", name)

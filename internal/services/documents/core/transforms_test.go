@@ -48,6 +48,7 @@ func tr(kind TransformKind, path string, operand value.Value) Transform {
 }
 
 func TestIncrement(t *testing.T) {
+	t.Parallel()
 	i, d := value.Int, value.Double
 	inc := func(path string, n value.Value) Transform { return tr(TransformIncrement, path, n) }
 	runTransforms(t, []transformCase{
@@ -82,6 +83,7 @@ func TestIncrement(t *testing.T) {
 // Decimal128 (f2-transforms.json bson.on_int32_field, bson.on_decimal_field); an array transform
 // replaces it as any other non-array.
 func TestTransformOfBSONNumber(t *testing.T) {
+	t.Parallel()
 	now := RequestTime(time.UnixMicro(1793042888857123))
 	dec, ok := value.Decimal128("1.5")
 	if !ok {
@@ -108,6 +110,7 @@ func TestTransformOfBSONNumber(t *testing.T) {
 }
 
 func TestMaximumMinimum(t *testing.T) {
+	t.Parallel()
 	i, d := value.Int, value.Double
 	maxT := func(n value.Value) Transform { return tr(TransformMaximum, "n", n) }
 	minT := func(n value.Value) Transform { return tr(TransformMinimum, "n", n) }
@@ -140,6 +143,7 @@ func TestMaximumMinimum(t *testing.T) {
 }
 
 func TestArrayTransforms(t *testing.T) {
+	t.Parallel()
 	i, d, a := value.Int, value.Double, value.Array
 	union := func(els ...value.Value) Transform { return tr(TransformAppendMissing, "a", a(els...)) }
 	remove := func(els ...value.Value) Transform { return tr(TransformRemoveAll, "a", a(els...)) }
@@ -171,6 +175,7 @@ func TestArrayTransforms(t *testing.T) {
 
 // REQUEST_TIME is the commit_time at whole milliseconds (f1-write-results.json).
 func TestServerTime(t *testing.T) {
+	t.Parallel()
 	commit := time.UnixMicro(1793042888857999)
 	runTransforms(t, []transformCase{
 		{"millisecond", doc(), Transform{Path: value.FieldPath{"ts"}, Kind: TransformServerTime}, value.Timestamp(1793042888, 857000000), value.Timestamp(1793042888, 857000000)},
@@ -182,6 +187,7 @@ func TestServerTime(t *testing.T) {
 
 // A write's transforms apply after its fields, in order, and each has its result.
 func TestPlanTransforms(t *testing.T) {
+	t.Parallel()
 	p := ParsePath("c/d")
 	locked := map[string]*lockedDoc{string(storedKey(nameKey(p))): {fields: doc("n", value.Int(1), "keep", value.Bool(true))}}
 	commit := time.UnixMicro(1793042888857999)
@@ -248,6 +254,7 @@ func TestPlanTransforms(t *testing.T) {
 // applyTransforms is apply of each transform in order, whatever the paths (equal, apart, under a
 // scalar or a missing map) and kinds: checked against the sequential apply on random writes.
 func TestApplyTransformsSequential(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewPCG(1, 2))
 	paths := []string{"a", "b", "m.x", "m.y", "m.n.z", "s.q", "v.k"}
 	vals := []value.Value{value.Int(1), value.Double(2.5), value.Int(-3), negZero, value.Double(math.NaN()), value.String("x"), value.Null()}
@@ -309,6 +316,7 @@ func TestApplyTransformsSequential(t *testing.T) {
 // decimal next to a string of about 1500 bytes). The array transforms answer alike past and
 // below the scan's bound.
 func TestElementSetKeyed(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("x", 2000)
 	dec, _ := value.Decimal128("1.0")
 	near := func(n value.Value, l int) value.Value {
@@ -352,6 +360,7 @@ func TestElementSetKeyed(t *testing.T) {
 // transforms of a quarter of a million elements. Each is timed at n and 4n, the best of three
 // runs: a linear cost grows about 4 times, a quadratic one 16.
 func TestTransformsWorstCase(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("short")
 	}

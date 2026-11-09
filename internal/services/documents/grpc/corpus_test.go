@@ -76,6 +76,7 @@ type f3File struct {
 // recorded gRPC case must get production's status and message, or its elements' keys and
 // documents.
 func TestF3CorpusReplay(t *testing.T) {
+	t.Parallel()
 	x := newHarness(t, apitest.Options{}, docgrpc.Limits{})
 	ctx, tok := t.Context(), x.env.JWT(t)
 	var files []f3File

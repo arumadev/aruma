@@ -53,6 +53,7 @@ func storageMgmtPaths(e *Env, bucket string) [][2]string {
 }
 
 func TestStorageDeployRequests(t *testing.T) {
+	t.Parallel()
 	e := storageMgmtEnv(t)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -225,6 +226,7 @@ func storageAllows(t *testing.T, e *Env, projectID, bucket, name string) bool {
 // "[E] line:column - description". Every compile error the production Rules Test API returned to
 // S0-A and S1-E (test/oracle/rules/production/raw) comes back the same, field for field.
 func TestStorageTestAPIMatchesProductionIssues(t *testing.T) {
+	t.Parallel()
 	e := storageMgmtEnv(t)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -400,6 +402,7 @@ func sameJSONBytes(a, b []byte) bool {
 // answered as passed), a named Firestore database, and a source that does not compile, whose
 // create is refused with its errors.
 func TestStorageRulesAPIRefusals(t *testing.T) {
+	t.Parallel()
 	e := storageMgmtEnv(t)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -460,6 +463,7 @@ func TestStorageRulesAPIRefusals(t *testing.T) {
 // Every S5-A route needs a credential; another account's project and an unknown one are
 // NOT_FOUND; a service account reaches its own project only; without Storage none is served.
 func TestStorageMgmtAuthAndIsolation(t *testing.T) {
+	t.Parallel()
 	e := storageMgmtEnv(t)
 	owner := e.owner()
 	owner.project("chat-app")

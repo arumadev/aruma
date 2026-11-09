@@ -92,6 +92,7 @@ var (
 
 // No task adds an exported method to Service: the surfaces are written against this list.
 func TestServiceMethodsArePinned(t *testing.T) {
+	t.Parallel()
 	want := []string{"AllowUploadStart", "Boot", "Bucket", "BucketInfo", "CORS", "CancelUpload", "Close", "CreateToken",
 		"Delete", "DeleteToken", "Insert", "Limits", "List", "MatchCORS", "Metrics", "Now", "Open", "PurgeProject",
 		"QueryUpload", "Rewrite", "Run", "SetCORS", "StartUpload", "Stat", "Update", "Usage", "WriteUpload"}
@@ -107,6 +108,7 @@ func TestServiceMethodsArePinned(t *testing.T) {
 
 // The exported types' fields, pinned by name and type.
 func TestTypesArePinned(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		v    any
 		want string
@@ -144,6 +146,7 @@ func TestTypesArePinned(t *testing.T) {
 
 // Projects is the control plane's side of the contract: tenancy implements exactly these.
 func TestProjectsIsPinned(t *testing.T) {
+	t.Parallel()
 	typ := reflect.TypeFor[Projects]()
 	var got []string
 	for i := range typ.NumMethod() {
@@ -164,6 +167,7 @@ func TestProjectsIsPinned(t *testing.T) {
 
 // The named errors, by code: a new one goes through the integrator.
 func TestErrorsArePinned(t *testing.T) {
+	t.Parallel()
 	want := []string{"bucket_not_found", "checksum_mismatch", "invalid_argument", "invalid_page_token", "not_found", "overloaded",
 		"permission_denied", "precondition_failed", "quota_exceeded", "size_mismatch", "too_large", "too_many_uploads",
 		"unauthenticated", "unavailable", "upload_cancelled", "upload_final", "upload_not_found"}
@@ -184,6 +188,7 @@ func fields(v any) string {
 }
 
 func TestValidateName(t *testing.T) {
+	t.Parallel()
 	for _, ok := range []string{"a", "photos/a b.png", "a//b", "/x", "naïve 'q' 1+1%;x.txt", ".well-known/x", strings.Repeat("é", 512), "..a", "a/.."} {
 		if err := validateName(ok); err != nil {
 			t.Errorf("validateName(%q) = %v", ok, err)
@@ -202,6 +207,7 @@ func TestValidateName(t *testing.T) {
 }
 
 func TestSegments(t *testing.T) {
+	t.Parallel()
 	for name, want := range map[string][]string{
 		"a":            {"a"},
 		"a/b c/d":      {"a", "b c", "d"},
@@ -219,6 +225,7 @@ func TestSegments(t *testing.T) {
 
 // PY-RR storedObjects: the default Content-Disposition production stores (ADR-022 §10.4).
 func TestDefaultDisposition(t *testing.T) {
+	t.Parallel()
 	for name, want := range map[string]string{
 		"plain.txt":                "inline; filename*=utf-8''plain.txt",
 		"dir/naïve 'q' 1+1%;x.txt": "inline; filename*=utf-8''na%C3%AFve%20%27q%27%201+1%25%3Bx.txt",
@@ -234,6 +241,7 @@ func TestDefaultDisposition(t *testing.T) {
 }
 
 func TestApplyDefaults(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		sf          Surface
 		disposition string
@@ -256,6 +264,7 @@ func TestApplyDefaults(t *testing.T) {
 }
 
 func TestStripClientTokens(t *testing.T) {
+	t.Parallel()
 	v := "planted"
 	md := map[string]*string{TokensKey: &v, "k": &v}
 	StripClientTokens(md)
@@ -271,6 +280,7 @@ func TestStripClientTokens(t *testing.T) {
 }
 
 func TestDownloadTokens(t *testing.T) {
+	t.Parallel()
 	a, b := newDownloadToken(), newDownloadToken()
 	if a == b || len(a) != 36 || a[14] != '4' {
 		t.Errorf("tokens %q, %q are not fresh version 4 UUIDs", a, b)
@@ -312,6 +322,7 @@ func TestDownloadTokens(t *testing.T) {
 // Only the terminal refusals of ADR-022 §6.1 make a session final, and each survives its row:
 // every repeat answers with the same error, so the same status.
 func TestFinalErrors(t *testing.T) {
+	t.Parallel()
 	for _, err := range []error{ErrPermissionDenied, ErrQuotaExceeded, ErrSizeMismatch, ErrChecksumMismatch,
 		ErrTooLarge, ErrUnauthenticated, ErrUploadCancelled, fmt.Errorf("finalize: %w", ErrPermissionDenied)} {
 		code, msg, ok := encodeError(err)
@@ -347,6 +358,7 @@ func TestFinalErrors(t *testing.T) {
 }
 
 func TestSessionTokens(t *testing.T) {
+	t.Parallel()
 	s := &Service{keys: testKeys(t)}
 	id := bytes.Repeat([]byte{9}, 32)
 	tokens := []string{"plaintext-token-one", "plaintext-token-two"}
@@ -370,6 +382,7 @@ func TestSessionTokens(t *testing.T) {
 }
 
 func TestAttrs(t *testing.T) {
+	t.Parallel()
 	ct, v := "image/png", "1"
 	raw, err := encodeAttrs(Patch{Fields: map[string]*string{FieldContentType: &ct}, Metadata: map[string]*string{"k": &v, "gone": nil},
 		ClearMetadata: true, Tokens: &[]string{"secret-token"}})
@@ -393,6 +406,7 @@ func TestAttrs(t *testing.T) {
 }
 
 func TestSnapshot(t *testing.T) {
+	t.Parallel()
 	at := time.Date(2026, 10, 24, 12, 0, 0, 123456000, time.UTC)
 	o := Object{Bucket: "b", Name: "a/b.png", Generation: 1784647629568292, Metageneration: 2, Size: 13, MD5: [16]byte{1, 2},
 		CRC32C: 0xdeadbeef, ContentType: "image/png", ContentDisposition: "inline", Metadata: map[string]string{"k": "v"},
@@ -409,6 +423,7 @@ func TestSnapshot(t *testing.T) {
 }
 
 func TestAllowUploadStart(t *testing.T) {
+	t.Parallel()
 	lim := DefaultLimits()
 	lim.UploadStartsPerMinutePerIP, lim.UploadStartsPerSecond = 2, 3
 	s, err := New(context.Background(), &pgxpool.Pool{}, &blob.Disk{}, Options{Limits: lim, Keys: testKeys(t),
@@ -430,6 +445,7 @@ func TestAllowUploadStart(t *testing.T) {
 }
 
 func TestLimits(t *testing.T) {
+	t.Parallel()
 	if err := DefaultLimits().Validate(); err != nil {
 		t.Fatalf("the defaults: %v", err)
 	}
@@ -482,6 +498,7 @@ func (f fakeProjects) Audit(ctx context.Context, p *authn.Principal, project int
 }
 
 func TestBucket(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	active := tcore.Project{Number: 482915736204, State: "ACTIVE", StorageBucket: "chat-app.aruma.test"}
 	s := &Service{projects: fakeProjects{project: active}}
@@ -502,6 +519,7 @@ func TestBucket(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	disk, _ := blob.NewDisk("/srv/aruma/storage")
 	opts := Options{Limits: DefaultLimits(), Keys: testKeys(t), Projects: fakeProjects{}, Inflight: rules.NewInflight(1 << 20),
@@ -537,6 +555,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNames(t *testing.T) {
+	t.Parallel()
 	for v, want := range map[fmt.Stringer]string{SurfaceFirebase: "firebase", SurfaceGCS: "gcs", SurfaceConsole: "console", Surface(0): "invalid",
 		UploadActive: "active", UploadFinal: "final", UploadCancelled: "cancelled", UploadStatus(0): "invalid"} {
 		if v.String() != want {
@@ -557,6 +576,7 @@ func testKeys(t *testing.T) *crypto.Keys {
 // Preconditions are GCS's alone: from any other surface, every write refuses them before it does
 // anything (a 412 would keep a /v0 session active and loop the mobile SDKs).
 func TestPreconditionsOnlyOnGCS(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	s := &Service{}
 	zero := int64(0)

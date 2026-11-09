@@ -38,6 +38,7 @@ func (n *lateNotifier) Committed(db documents.DB, seq int64, at time.Time, chang
 // store's head only after them: one document's versions never go back on the stream (ADR-026 §2),
 // which a client keeping the last version it got per document relies on.
 func TestListenTargetAfterPendingEvents(t *testing.T) {
+	t.Parallel()
 	for _, resumed := range []bool{false, true} {
 		t.Run(map[bool]string{false: "add", true: "resume"}[resumed], func(t *testing.T) {
 			late := &lateNotifier{}

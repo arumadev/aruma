@@ -40,6 +40,7 @@ func (e *env) unreferencedFiles() []string {
 }
 
 func TestCrashDuringInsert(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, c := range []struct {
 		point     string
@@ -54,7 +55,7 @@ func TestCrashDuringInsert(t *testing.T) {
 		t.Run(c.point, func(t *testing.T) {
 			e := newEnv(t)
 			e.insert(e.a, "a.txt", "old")
-			crashAt(c.point)
+			e.crashAt(c.point)
 			if !crashed(func() {
 				_, _ = e.s.Insert(ctx, e.a, asAdmin(), uploadSpec("a.txt", SurfaceGCS), strings.NewReader("new"), 3)
 			}) {
@@ -83,6 +84,7 @@ func TestCrashDuringInsert(t *testing.T) {
 // A resumable upload crashed at each of its steps finishes with its next requests: a query for
 // the durable offset, the rest from there, and the finalize.
 func TestCrashDuringUpload(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, point := range []string{
 		"start.staging",     // the staging file made, the row not written
@@ -103,7 +105,7 @@ func TestCrashDuringUpload(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			crashAt(point)
+			e.crashAt(point)
 			ok := crashed(func() {
 				switch point {
 				case "start.staging":
@@ -165,6 +167,7 @@ func TestCrashDuringUpload(t *testing.T) {
 // A purge cut in the middle, at each of its steps, finishes on its next run; running it twice is
 // nothing; the other project is untouched.
 func TestPurgeProject(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	for _, point := range []string{"", "purge.staging", "purge.files", "cut"} {
 		t.Run("crash at "+point, func(t *testing.T) {
@@ -186,7 +189,7 @@ func TestPurgeProject(t *testing.T) {
 					t.Fatal("the cut purge succeeded")
 				}
 			default:
-				crashAt(point)
+				e.crashAt(point)
 				if !crashed(func() { _ = e.s.PurgeProject(ctx, projectA) }) {
 					t.Fatal("no crash")
 				}

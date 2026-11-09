@@ -10,6 +10,7 @@ import (
 // ADR-018 §5: a TLS proxy issuing certificates on demand asks the private address whether a
 // name is a database host. Only an active project's database is.
 func TestRTDBTLSAsk(t *testing.T) {
+	t.Parallel()
 	e := rtdbEnv(t, true, map[string]string{"ARUMA_RTDB_DOMAIN": "rtdb.aruma.test"})
 	c := e.owner()
 	c.project("chat-app")

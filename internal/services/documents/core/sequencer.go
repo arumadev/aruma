@@ -1,8 +1,10 @@
 package core
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"iter"
 	"log/slog"
 	"maps"
@@ -49,13 +51,26 @@ const (
 	commitAttempts = 5
 )
 
-// commitSettings are the commit transaction's own timeouts (ADR-024 §2.3), SET LOCAL so that they
+// CommitTimeouts are a commit transaction's own timeouts (ADR-024 §2.3), SET LOCAL so that they
 // leave the shared connection as they found it. A commit that holds the sequencer row and goes
 // silent stops every commit of its database until the server ends its session.
-var commitSettings = []string{
-	"SET LOCAL idle_in_transaction_session_timeout = '5s'",
-	"SET LOCAL statement_timeout = '10s'",
-	"SET LOCAL lock_timeout = '5s'",
+type CommitTimeouts struct {
+	IdleInTransaction time.Duration
+	Statement         time.Duration
+	Lock              time.Duration
+}
+
+// DefaultCommitTimeouts are production's.
+var DefaultCommitTimeouts = CommitTimeouts{IdleInTransaction: 5 * time.Second, Statement: 10 * time.Second, Lock: 5 * time.Second}
+
+// settings are the SET LOCAL statements of t, a zero field taking its default.
+func (t CommitTimeouts) settings() []string {
+	ms := func(d, def time.Duration) int64 { return cmp.Or(d, def).Milliseconds() }
+	return []string{
+		fmt.Sprintf("SET LOCAL idle_in_transaction_session_timeout = '%dms'", ms(t.IdleInTransaction, DefaultCommitTimeouts.IdleInTransaction)),
+		fmt.Sprintf("SET LOCAL statement_timeout = '%dms'", ms(t.Statement, DefaultCommitTimeouts.Statement)),
+		fmt.Sprintf("SET LOCAL lock_timeout = '%dms'", ms(t.Lock, DefaultCommitTimeouts.Lock)),
+	}
 }
 
 // Notifier hears of a database's commits: the hub (F3) releases events in seq order from it.
@@ -80,6 +95,8 @@ type sequencer struct {
 	cats   *catalogs
 	// instance, when set, is the single-instance lock every stamp is fenced on (FenceCommit).
 	instance *Instance
+	// settings are the commits' timeouts (CommitTimeouts).
+	settings []string
 
 	mu    sync.Mutex
 	gates map[dbKey]chan struct{}
@@ -91,8 +108,9 @@ type sequencer struct {
 	largeCommits atomic.Int64
 }
 
-func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs, instance *Instance) *sequencer {
-	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, instance: instance, gates: map[dbKey]chan struct{}{}}
+func newSequencer(pool *pgxpool.Pool, size int, notify Notifier, cats *catalogs, instance *Instance, timeouts CommitTimeouts) *sequencer {
+	return &sequencer{pool: pool, size: max(size, 1), notify: notify, cats: cats, instance: instance,
+		settings: timeouts.settings(), gates: map[dbKey]chan struct{}{}}
 }
 
 func (s *sequencer) gate(db DB) chan struct{} {
@@ -178,7 +196,7 @@ func (s *sequencer) attempt(ctx context.Context, db DB, p *plan) (CommitResult, 
 	found := false
 	b := &pgx.Batch{}
 	b.Queue("BEGIN ISOLATION LEVEL READ COMMITTED")
-	for _, set := range commitSettings {
+	for _, set := range s.settings {
 		b.Queue(set)
 	}
 	lockSQL, lockArgs := statement(func(q *queries.Queries) error {

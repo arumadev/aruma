@@ -60,6 +60,7 @@ func ttlState(t *testing.T, s *PGStore, group, path string) adminpb.Field_TtlCon
 // creation stores expire_time: a Timestamp alone, the earliest policy's, never another group's.
 // Removing it clears the group's.
 func TestTTLCommitAndPolicy(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	at := time.Date(2030, 1, 2, 3, 4, 5, 678901234, time.UTC)
 	mustCommit(t, s,
@@ -131,6 +132,7 @@ func TestTTLCommitAndPolicy(t *testing.T) {
 
 // A policy's backfill resumes from its cursor after a restart.
 func TestTTLBackfillResumes(t *testing.T) {
+	t.Parallel()
 	s, pool := newStore(t, Options{})
 	ctx := t.Context()
 	at := time.Date(2031, 5, 6, 7, 8, 9, 0, time.UTC)
@@ -210,6 +212,7 @@ func (r *changeNotifier) deleted() []string {
 // one whose field is not a Timestamp, nor one of a CREATING policy's group, nor a subcollection's
 // document, nor a document rewritten after it was read.
 func TestTTLSweep(t *testing.T) {
+	t.Parallel()
 	notes := &changeNotifier{}
 	s, pool := newStore(t, Options{Notifier: notes})
 	ctx := t.Context()

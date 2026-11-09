@@ -15,6 +15,7 @@ import (
 // name: the id answers only on the bucket and the name it was started for, and every request
 // elsewhere is ErrUploadNotFound, leaving the session as it was.
 func TestIsolationStorageUploadURL(t *testing.T) {
+	t.Parallel()
 	ie := newIsolationWith(t, map[string]string{"ARUMA_STORAGE_ENABLED": "true", "ARUMA_STORAGE_DATA_DIR": t.TempDir()})
 	st := ie.App.Storage
 	ctx := context.Background()

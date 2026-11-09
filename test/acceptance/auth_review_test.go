@@ -12,6 +12,7 @@ import (
 // around accounts:update's rules: an account that already has a password keeps it, and an
 // account that already has an address keeps it unless the change is allowed there.
 func TestAuthLinkPasswordCannotReplaceCredentials(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	up := ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "victim@example.com", "password": "secret1"}))
@@ -44,6 +45,7 @@ func TestAuthLinkPasswordCannotReplaceCredentials(t *testing.T) {
 // protection drops their password, and a stolen session survives the password change that was
 // meant to end it.
 func TestAuthChangeEmailCodeEndsWithItsSession(t *testing.T) {
+	t.Parallel()
 	x := newIdPEnv(t)
 	squatter := ok(t, x.call(itk+"accounts:signUp", map[string]any{"email": "victim@gmail.com", "password": "squatter1", "returnSecureToken": true}))
 	ok(t, x.call(itk+"accounts:sendOobCode", map[string]any{"requestType": "VERIFY_AND_CHANGE_EMAIL", "idToken": squatter.str("idToken"), "newEmail": "attacker@evil.test"}))
@@ -74,6 +76,7 @@ func TestAuthChangeEmailCodeEndsWithItsSession(t *testing.T) {
 // through the password change meant to lock them out (or through takeover protection), while
 // the session the change itself returns must go on working, as the web SDK takes it.
 func TestAuthRevocationEndsSessionsOfTheSameSecond(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret1"}))
@@ -109,6 +112,7 @@ func TestAuthRevocationEndsSessionsOfTheSameSecond(t *testing.T) {
 // A second revocation in the same second also ends a session started after the first one:
 // such a session is dated at the first revocation's point, so the second moves past it.
 func TestAuthSecondRevocationInTheSameSecond(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	ok(t, p.call(itk+"accounts:signUp", map[string]any{"email": "owner@example.com", "password": "secret1"}))

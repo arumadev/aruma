@@ -15,6 +15,7 @@ import (
 
 // A second instance on the same directory waits for the lock, saying so, until the first closes.
 func TestBootWaitsForTheLock(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	second := e.service()
 	done := make(chan error, 1)
@@ -60,6 +61,7 @@ func TestBootWaitsForTheLock(t *testing.T) {
 // first boot is adopted only while the directory holds no file and the database expects none: an
 // empty directory under a database with objects or live uploads is a disk that is not mounted.
 func TestBootInstanceBinding(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	other := uuid.NewString()
 	cases := []struct {
@@ -165,6 +167,7 @@ func TestBootInstanceBinding(t *testing.T) {
 
 // A first boot that crashes between the INSTANCE file and the row adopts the file next time.
 func TestBootCrashBetweenFileAndRow(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	_ = e.s.Close()
@@ -172,7 +175,7 @@ func TestBootCrashBetweenFileAndRow(t *testing.T) {
 	if _, err := e.pool.Exec(ctx, `DELETE FROM storage.instance`); err != nil {
 		t.Fatal(err)
 	}
-	crashAt("boot.instance_file")
+	e.crashAt("boot.instance_file")
 	if !crashed(func() { _ = e.service().Boot(ctx) }) {
 		t.Fatal("no crash")
 	}
@@ -186,6 +189,7 @@ func TestBootCrashBetweenFileAndRow(t *testing.T) {
 // Boot lists every file as a candidate before anything is written; Run deletes those no row
 // names, and a key that a session moved to after the boot is never one of them.
 func TestBootCandidates(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	kept := e.insert(e.a, "kept", "x")
@@ -224,6 +228,7 @@ func TestBootCandidates(t *testing.T) {
 
 // Boot reconciles the quota: what a crash left reserved goes, and used follows the objects.
 func TestBootReconcilesUsage(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a", "abcd")

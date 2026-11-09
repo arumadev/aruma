@@ -31,6 +31,7 @@ func hours(t *testing.T, u *core.Usage, project int64, since time.Time) []core.U
 // alike, survive a new process (a new Usage on the same table), keep the projects apart, are
 // filtered by period, and the hours past the retention are pruned.
 func TestUsage(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	var clock usageClock
 	h0 := time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC)
@@ -120,6 +121,7 @@ func TestUsage(t *testing.T) {
 
 // TestUsageFlushFailure: counts a flush could not write are kept for the next.
 func TestUsageFlushFailure(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	u := core.NewUsage(pool, nil, nil)
 	u.Read(1, 3)
@@ -139,6 +141,7 @@ func TestUsageFlushFailure(t *testing.T) {
 // TestUsageRun: Run's last flush, when its context ends (the process stops), keeps the counts
 // for the next process.
 func TestUsageRun(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	u := core.NewUsage(pool, nil, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -158,6 +161,7 @@ func TestUsageRun(t *testing.T) {
 // TestUsagePurge: after a project is purged, the next flush writes nothing for it: neither the
 // counts it had not flushed, nor the listeners its open streams held. Another project is kept.
 func TestUsagePurge(t *testing.T) {
+	t.Parallel()
 	pool := storetest.NewPool(t)
 	u := core.NewUsage(pool, nil, nil)
 	const gone, kept = 301, 302

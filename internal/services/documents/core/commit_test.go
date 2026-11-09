@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 // Transforms apply under the document's lock: concurrent increments lose none. REQUEST_TIME is
 // the commit's own commit_time at whole milliseconds, in the stored document and the result.
 func TestTransformsCommit(t *testing.T) {
+	t.Parallel()
 	notes := &recordingNotifier{}
 	s, pool := newStore(t, Options{Notifier: notes})
 	ctx := t.Context()
@@ -70,6 +70,7 @@ func TestTransformsCommit(t *testing.T) {
 // A commit that changes nothing takes no seq, but its commit_time is the clock's, as
 // production's advances: later than the last commit, and a read at it answers.
 func TestUnchangedCommitTimeAdvances(t *testing.T) {
+	t.Parallel()
 	s, _ := newStore(t, Options{})
 	ctx := t.Context()
 	p := ParsePath("c/same")
@@ -102,25 +103,19 @@ func TestUnchangedCommitTimeAdvances(t *testing.T) {
 // text, not an unknown outcome, the hub hears of nothing, and the next commit takes its seq
 // (F2 review m3).
 func TestStampFirstIdleTimeout(t *testing.T) {
+	t.Parallel()
 	notes := &recordingNotifier{}
-	s, _ := newStore(t, Options{Notifier: notes})
+	s, _ := newStore(t, Options{Notifier: notes, CommitTimeouts: CommitTimeouts{IdleInTransaction: 100 * time.Millisecond}})
 	p := ParsePath("c/idle")
 	mustCommit(t, s, set("c/idle", doc("n", value.Int(1))))
-	saved := commitSettings
-	commitSettings = slices.Clone(saved)
-	for i, set := range commitSettings {
-		if slices.Contains([]string{"SET LOCAL idle_in_transaction_session_timeout = '5s'"}, set) {
-			commitSettings[i] = "SET LOCAL idle_in_transaction_session_timeout = '100ms'"
-		}
-	}
 	s.seq.afterStamp = func() { time.Sleep(400 * time.Millisecond) }
-	t.Cleanup(func() { commitSettings, s.seq.afterStamp = saved, nil })
+	t.Cleanup(func() { s.seq.afterStamp = nil })
 	stamp := Transform{Path: value.FieldPath{"ts"}, Kind: TransformServerTime}
 	_, err := s.Commit(t.Context(), testDB, []Write{{Kind: WriteUpdate, Path: p, Masked: true, Fields: value.Map(), Transforms: []Transform{stamp}}})
 	if !errors.Is(err, ErrContention) {
 		t.Fatalf("got %v, want the contention error", err)
 	}
-	commitSettings, s.seq.afterStamp = saved, nil
+	s.seq.afterStamp = nil
 	got, _, _ := s.Get(t.Context(), testDB, p, ReadOptions{})
 	if _, ok := got.Fields.Get("ts"); ok {
 		t.Fatal("the commit is stored")

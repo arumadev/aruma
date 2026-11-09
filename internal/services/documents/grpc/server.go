@@ -88,6 +88,10 @@ type Options struct {
 
 // Handler serves the Document Database's gRPC methods. It is safe for concurrent use.
 type Handler struct {
+	// afterSend, when set, runs after each Send of the handler's streams returns and before
+	// sendWithin takes it as done: a test's hook (export_test.go).
+	afterSend atomic.Pointer[func(context.Context)]
+
 	svc     *api.Service
 	trusted []netip.Prefix
 	limits  Limits
@@ -312,12 +316,14 @@ func (h *Handler) openStream(client netip.Addr) (release func(), err error) {
 // whichever is sooner; ended by the drain. However it ends, a write stuck on a client that does
 // not read is cut too. run maps the stream's error to its status.
 type serverStream struct {
-	ctx     context.Context
-	info    *rpc
-	stall   time.Duration
-	release func()
-	cancel  context.CancelCauseFunc
-	stops   []func() bool
+	ctx   context.Context
+	info  *rpc
+	stall time.Duration
+	// afterSend is its handler's (Handler.afterSend).
+	afterSend *atomic.Pointer[func(context.Context)]
+	release   func()
+	cancel    context.CancelCauseFunc
+	stops     []func() bool
 
 	mu       sync.Mutex // orders the cut of a stuck write with the sends and the trailers
 	sending  bool       // a Send is in progress: only then is it cut, which resets the stream
@@ -329,9 +335,6 @@ type serverStream struct {
 // A Send that already wrote its message may still be on its way back to sendWithin: cut at once,
 // the stream is reset INTERNAL and the client never sees the status it ends with.
 const cutGrace = time.Second
-
-// afterSend, when set, runs after each Send returns and before sendWithin takes it as done.
-var afterSend atomic.Pointer[func(context.Context)]
 
 func (h *Handler) serverStream(ctx context.Context) (*serverStream, error) {
 	return h.openServerStream(ctx, h.limits.ServerStreamMax)
@@ -348,7 +351,7 @@ func (h *Handler) openServerStream(ctx context.Context, maxLife time.Duration) (
 	if err != nil {
 		return nil, err
 	}
-	s := &serverStream{info: info, stall: h.limits.StreamWriteStall}
+	s := &serverStream{info: info, stall: h.limits.StreamWriteStall, afterSend: &h.afterSend}
 	// server_stream_max bounds a grpc-timeout too: a client cannot hold a stream for hours.
 	cancel := context.CancelFunc(func() {})
 	if maxLife > 0 {
@@ -398,7 +401,7 @@ func (s *serverStream) sendWithin(d time.Duration, send func() error) error {
 	_ = s.info.rc.SetWriteDeadline(s.deadline)
 	s.mu.Unlock()
 	err := send()
-	if f := afterSend.Load(); f != nil {
+	if f := s.afterSend.Load(); f != nil {
 		(*f)(s.ctx)
 	}
 	s.mu.Lock()

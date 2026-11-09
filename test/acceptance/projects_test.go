@@ -8,6 +8,7 @@ import (
 
 // AC-8: invalid or taken project ids are refused; ids are never reused.
 func TestProjectIDs(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	for _, bad := range []string{"chat", "Chat-App", "1chat-app", "chat-app-", "chat_app"} {
@@ -36,6 +37,7 @@ func TestProjectIDs(t *testing.T) {
 
 // AC-9: the project number has 12 digits and never changes.
 func TestProjectNumberIsStable(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	p := c.project("chat-app")
@@ -52,6 +54,7 @@ func TestProjectNumberIsStable(t *testing.T) {
 
 // AC-10, AC-11: deletion is soft for 30 days and restores the project with all its apps.
 func TestProjectDeleteAndRestore(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -99,6 +102,7 @@ func TestProjectDeleteAndRestore(t *testing.T) {
 
 // etag guards against lost updates.
 func TestProjectETag(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	p := c.project("chat-app")
@@ -111,6 +115,7 @@ func TestProjectETag(t *testing.T) {
 
 // Administrative actions land in the project's audit log, newest first, without secrets.
 func TestAuditLog(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	c.project("chat-app")
@@ -128,6 +133,7 @@ func TestAuditLog(t *testing.T) {
 }
 
 func TestProjectListPagination(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	c := e.owner()
 	for _, id := range []string{"alpha-app", "bravo-app", "charlie-app"} {

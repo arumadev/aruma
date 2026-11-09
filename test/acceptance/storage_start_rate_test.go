@@ -14,6 +14,7 @@ import (
 // /v0, and the service account ten on GCS; a user then gets three and the 503 with Retry-After,
 // an anonymous client the same 503, and the admins still start, the address's budget spent.
 func TestStorageStartRateSparesAdmins(t *testing.T) {
+	t.Parallel()
 	e, owner := newUploadProject(t, map[string]string{"ARUMA_STORAGE_UPLOAD_STARTS_PER_MINUTE_PER_IP": "3"})
 	users := e.rtdbUsers(owner)
 	users.create("chat-app", "alice")

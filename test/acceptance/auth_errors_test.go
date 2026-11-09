@@ -320,6 +320,7 @@ func customTokenT(f *errFixture, key []byte, uid string, extra map[string]any, m
 }
 
 func TestAuthErrorTables(t *testing.T) {
+	t.Parallel()
 	for _, protection := range []bool{true, false} {
 		name := "protection on"
 		if !protection {
@@ -350,6 +351,7 @@ func TestAuthErrorTables(t *testing.T) {
 
 // The API key is checked before anything in the body.
 func TestAuthErrorAPIKeyFirst(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	p := e.authProject("chat-app")
 	bad := map[string]any{"email": "bad", "password": "1", "tenantId": "t1"}

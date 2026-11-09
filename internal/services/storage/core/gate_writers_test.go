@@ -10,6 +10,7 @@ import (
 // create_token, delete_token and the /v0 mint as well as the uploads, so nothing begins a
 // transaction while the lock is being released. A plain read still answers.
 func TestChangesRefusedOnceCloseStarts(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	o := e.insert(e.a, "g/a", "abc") // through GCS: no token yet, so a /v0 read would mint one
 	leave, err := e.s.enter()        // a write in flight: Close waits for it

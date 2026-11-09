@@ -87,13 +87,13 @@ func IndexedReplay(t *testing.T, e *Env, root string, cases []IndexCase, run fun
 	call := api.Call{Authorization: "Bearer " + e.JWT(t), Transport: authn.Transport{Peer: netip.MustParseAddr("127.0.0.1")}}
 	for _, r := range needed {
 		c := r.c
-		before := indexServed()
+		before := e.Service.QueryStats().IndexServed()
 		got, err := run(c)
 		if err != nil {
 			t.Errorf("%s (%s) with its indexes: %v", c.ID, c.Description, err)
 			continue
 		}
-		if r.indexed && indexServed() != before+1 {
+		if r.indexed && e.Service.QueryStats().IndexServed() != before+1 {
 			t.Errorf("%s (%s) with its indexes: not served by an index path", c.ID, c.Description)
 		}
 		want := c.reference(t, e, call, root)
@@ -103,10 +103,6 @@ func IndexedReplay(t *testing.T, e *Env, root string, cases []IndexCase, run fun
 		}
 	}
 	return len(needed)
-}
-
-func indexServed() int64 {
-	return query.ServedCount(query.PathIndex) + query.ServedCount(query.PathIndexMerged) + query.ServedCount(query.PathIndexContains)
 }
 
 func sameAggregates(a, b []json.RawMessage) bool {

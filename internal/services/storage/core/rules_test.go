@@ -123,6 +123,7 @@ const operationRules = `
 
 // Every operation of ADR-022 §8's table, for owners, strangers and anonymous clients.
 func TestAuthorizeOperations(t *testing.T) {
+	t.Parallel()
 	s := rulesService(t, storageRules(operationRules))
 	ctx := context.Background()
 	get := func(name string, res *Object) ruleOp {
@@ -233,6 +234,7 @@ func TestAuthorizeOperations(t *testing.T) {
 // An operation that forgets prepareRules fails loudly: authorize logs it, answers
 // ErrUnavailable, and reads nothing from the control plane.
 func TestAuthorizeWithoutPrepareRulesFails(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	var logs strings.Builder
 	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
@@ -265,6 +267,7 @@ func TestAuthorizeWithoutPrepareRulesFails(t *testing.T) {
 
 // The release read is the project's Storage release under its logical name (ADR-022 §2).
 func TestAuthorizeReadsTheLogicalRelease(t *testing.T) {
+	t.Parallel()
 	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
 	if err := authz(s, context.Background(), rulesBucket, anonymous, ruleOp{Method: rules.MethodGet, Name: "a"}); err != nil {
 		t.Fatal(err)
@@ -280,6 +283,7 @@ func TestAuthorizeReadsTheLogicalRelease(t *testing.T) {
 
 // list is denied under rules_version 1, whatever the rules say (ADR-022 §8).
 func TestListNeedsRulesVersion2(t *testing.T) {
+	t.Parallel()
 	s := rulesService(t, "service firebase.storage {\n  match /b/{bucket}/o {\n    match /{all=**} { allow read; }\n  }\n}\n")
 	ctx := context.Background()
 	if err := authz(s, ctx, rulesBucket, ruleAlice, ruleOp{Method: rules.MethodGet, Name: "a/b"}); err != nil {
@@ -293,6 +297,7 @@ func TestListNeedsRulesVersion2(t *testing.T) {
 // What is not a denial is never 403: the control plane's outage, an engine overloaded, a
 // cancelled request (ADR-022 §8, ADR-021 §2.2).
 func TestAuthorizeOutagesAreNotDenials(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	op := ruleOp{Method: rules.MethodGet, Name: "a.png"}
 	s := rulesService(t, storageRules("match /{all=**} { allow read: if ('a' + 'b') == 'ab'; }"))
@@ -369,6 +374,7 @@ func (d *countingDocuments) Get(_ context.Context, project int64, path []string,
 // Storage's lookups are two per evaluation, as the engine counts them for a Storage ruleset;
 // rules.NoDocuments, the Documents of v0.3, makes every lookup an error.
 func TestStorageLookups(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	s := rulesService(t, storageRules(`
     match /two/{f} { allow get: if firestore.exists(/databases/(default)/documents/c/a) && firestore.exists(/databases/(default)/documents/c/b); }
@@ -393,6 +399,7 @@ func TestStorageLookups(t *testing.T) {
 // The match path: the bucket's, then the name the surface decoded once, split on "/" and never
 // decoded again; a list's folder, then an unknown segment.
 func TestRulePaths(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name  string
 		list  bool
@@ -434,6 +441,7 @@ func TestRulePaths(t *testing.T) {
 
 // A name of more segments than the engine takes is denied, not an outage the SDKs would retry.
 func TestLongPathsAreDenied(t *testing.T) {
+	t.Parallel()
 	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
 	ctx := context.Background()
 	name := strings.Repeat("/", maxNameBytes-1) + "x"
@@ -466,6 +474,7 @@ func TestLongPathsAreDenied(t *testing.T) {
 // decides with it and asks the control plane nothing, for each bucket of a request (Rewrite has
 // two).
 func TestPrepareRules(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	s := rulesService(t, storageRules("match /{all=**} { allow read; }"))
 	other := Bucket{Project: testProject + 1, Name: "other-app.aruma.test"}

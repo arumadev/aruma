@@ -153,6 +153,7 @@ type recording struct {
 // differently by decision is left aside: crc32c in base64 (ADR-023 §3-16), the stored
 // contentDisposition (§3-35), and no empty metadata object (§3-40).
 func TestStorageUploadWebRecorded(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	raw, err := os.ReadFile("../oracle/storage/emulator/sdk_upload.json")
 	if err != nil {
@@ -251,6 +252,7 @@ func TestStorageUploadWebRecorded(t *testing.T) {
 // finalize alone with an empty body when the file ends on a chunk's boundary; a query after a
 // failed chunk; a cancel by POST.
 func TestStorageUploadAndroid(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	auth := firebase(e.alice)
 	proto := func(cmd string, more ...string) map[string]string {
@@ -303,6 +305,7 @@ func TestStorageUploadAndroid(t *testing.T) {
 // X-Goog-Upload-Content-*; then the whole file in one PUT without any credential; a query after
 // final answers the object, which iOS takes as the result; a cancel by PUT.
 func TestStorageUploadIOS(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	data := strings.Repeat("ios-", 1000)
 	ios := map[string]string{"X-Goog-Upload-Protocol": "resumable", "X-Goog-Upload-Command": "start",
@@ -345,6 +348,7 @@ func TestStorageUploadIOS(t *testing.T) {
 // one included, and another user's token does not make the upload theirs; the identity bound at
 // start decides at finalize. An unknown id is 404 without a status.
 func TestStorageUploadSessionCredential(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	h := func(cmd string, offset int) map[string]string {
 		return map[string]string{"X-Goog-Upload-Command": cmd, "X-Goog-Upload-Offset": strconv.Itoa(offset)}
@@ -373,6 +377,7 @@ func TestStorageUploadSessionCredential(t *testing.T) {
 // The session URL is absolute from public_url, never from the Host header: behind a proxy the
 // client reaches the session where public_url says (ADR-022 §6.1, D §7.2).
 func TestStorageUploadSessionURLBehindProxy(t *testing.T) {
+	t.Parallel()
 	e, _ := newUploadProject(t, map[string]string{"ARUMA_PUBLIC_URL": "https://files.example.test"})
 	r := e.call("POST", e.list()+"?name=public%2Fa", "", "", map[string]string{"X-Goog-Upload-Protocol": "resumable",
 		"X-Goog-Upload-Command": "start", "Host": "10.0.0.7:8080", "X-Forwarded-Host": "evil.example", "X-Forwarded-Proto": "http"})
@@ -386,6 +391,7 @@ func TestStorageUploadSessionURLBehindProxy(t *testing.T) {
 // and answers its repeats and queries the same; a gap is 400 active with the size received, so
 // the client queries; md5Hash that does not match is 400 and no object, resumable or multipart.
 func TestStorageUploadRefusals(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	auth := firebase(e.alice)
 	h := func(cmd string, offset int) map[string]string {
@@ -482,6 +488,7 @@ func TestStorageUploadRefusals(t *testing.T) {
 // them, and the rest sent again from there completes the object whole. The first chunk of a
 // session is the case net/http's cancelled context used to lose.
 func TestStorageUploadCutBody(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, nil)
 	auth := firebase(e.alice)
 	data := strings.Repeat("0123456789", 10)
@@ -518,6 +525,7 @@ func TestStorageUploadCutBody(t *testing.T) {
 // The quota is a terminal refusal too: 402 final, on the chunk that goes over (ADR-022 §6.5),
 // and at start when the declared size does not fit.
 func TestStorageUploadQuota(t *testing.T) {
+	t.Parallel()
 	e := newUploadEnv(t, map[string]string{"ARUMA_STORAGE_PROJECT_BYTES": strconv.Itoa(1 << 20),
 		"ARUMA_STORAGE_OBJECT_BYTES": strconv.Itoa(1 << 20)})
 	auth := firebase(e.alice)
@@ -539,6 +547,7 @@ func TestStorageUploadQuota(t *testing.T) {
 // run on the server's own listener (server.Run), whose timeouts are the production ones, on
 // S3-B's port 9211; about 70 seconds.
 func TestStorageUploadSlow(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("70 seconds of slow uploads")
 	}

@@ -15,6 +15,7 @@ import (
 // A replaced file waits gc_grace in blob_gc, covering a reader between its row and its file;
 // then it goes, and its row with it. A delete that fails keeps the row for a later round.
 func TestCollectGarbage(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a", "1")
@@ -54,6 +55,7 @@ func TestCollectGarbage(t *testing.T) {
 
 // The periodic sweep reports and deletes nothing.
 func TestReportInconsistencies(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	ctx := context.Background()
 	e.insert(e.a, "a", "1")
@@ -85,6 +87,7 @@ func TestReportInconsistencies(t *testing.T) {
 
 // Run sweeps the boot's orphans, works its rounds, and returns when its context ends.
 func TestRun(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t)
 	e.insert(e.a, "a", "1")
 	orphan := "s/482915736204/0b0d6d0e-6c3a-4b8e-9d5e-0e0f10111213"
@@ -113,6 +116,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestHashState(t *testing.T) {
+	t.Parallel()
 	data := bytes.Repeat([]byte("the quick brown fox "), 1000)
 	for _, cut := range []int{0, 1, 63, 64, 65, 1000, len(data)} {
 		h := newHasher()
@@ -146,6 +150,7 @@ func TestHashState(t *testing.T) {
 }
 
 func TestChecksumClaims(t *testing.T) {
+	t.Parallel()
 	a, b := uint32(1), uint32(2)
 	m1, m2 := md5.Sum([]byte("1")), md5.Sum([]byte("2"))
 	if c, err := mergeChecksums(Checksums{CRC32C: &a}, Checksums{MD5: &m1}); err != nil || c.CRC32C != &a || c.MD5 != &m1 {

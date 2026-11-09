@@ -10,6 +10,7 @@ import (
 // The flows the firebase CLI runs: projects:list, apps:create (with polling), apps:list,
 // apps:sdkconfig through projects/-/.
 func TestManagementAPIFirebaseCLIFlows(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -114,6 +115,7 @@ func TestManagementAPIFirebaseCLIFlows(t *testing.T) {
 
 // AC-21: the Management API and the console serve the same bytes for every config file.
 func TestConfigBytesMatchAcrossAPIs(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -143,6 +145,7 @@ func TestConfigBytesMatchAcrossAPIs(t *testing.T) {
 // AC-27 and ADR-010 S-10: every Management API route needs a credential, an API key is not one,
 // and every error is a google.rpc.Status.
 func TestManagementAPIAuthAndErrors(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -188,6 +191,7 @@ func TestManagementAPIAuthAndErrors(t *testing.T) {
 
 // Review L-4: removing through the wrong collection with allowMissing leaves the app alone.
 func TestRemoveThroughWrongCollectionIsANoOp(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")
@@ -200,6 +204,7 @@ func TestRemoveThroughWrongCollectionIsANoOp(t *testing.T) {
 }
 
 func TestOperationsRespectOwnership(t *testing.T) {
+	t.Parallel()
 	e := newEnv(t, nil)
 	owner := e.owner()
 	owner.project("chat-app")
