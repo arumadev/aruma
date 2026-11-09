@@ -34,6 +34,10 @@ aruma config check
 | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | | `false` | Accept the emulators' `Bearer owner` on the Document Database from this machine, as an admin of every project. For local development only: accepted only when `public_url` and `listen` are loopback addresses, see [Document Database](#document-database) |
 | `ARUMA_PG_BIN` | | | Directory of the PostgreSQL tools when they are not on `PATH`. Used by `make dev` |
 
+## Realtime Database instance
+
+The Realtime Database keeps its listeners in memory, so it runs on one Aruma process per Postgres database. At startup the process takes a session advisory lock (`rtdb.instance`) on a dedicated connection, waiting up to 30 seconds so that a stop-then-start deploy takes over. A second process on the same database serves everything else, logs `rtdb: another Aruma instance serves rtdb on this Postgres database`, answers the Realtime Database with `UNAVAILABLE` and `/readyz` with 503 until the lock is free. If the process loses its Postgres session (a restart or failover), it closes its Realtime Database connections and takes the lock again; clients reconnect. In Kubernetes use `strategy: Recreate`, or a rolling update leaves the new pod unready until the old one stops. The connection must reach Postgres itself: a pooler in transaction mode does not keep the lock.
+
 ## Storage
 
 Storage is off by default. Turn it on with `storage.enabled: true` and give it `storage.data_dir`; the server refuses to start without an absolute `data_dir`. The bucket of each project is `<project_id>.<project_domain>`, and each project starts with locked rules (`allow read, write: if false;`) until you deploy its own.

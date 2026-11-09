@@ -58,6 +58,14 @@ func Migrate(ctx context.Context, databaseURL string) error {
 	if err != nil {
 		return err
 	}
+	// One migrator at a time: two replicas started together (init containers, a rolling
+	// deploy) otherwise race on the same DDL, and the loser fails with a duplicate key error
+	// from the catalog. The loser now waits, finds nothing pending and succeeds.
+	unlock, err := lockMigrations(ctx, cfg.ConnConfig)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := refuseAhead(ctx, cfg.ConnConfig); err != nil {
 		return err
 	}
@@ -76,6 +84,24 @@ func Migrate(ctx context.Context, databaseURL string) error {
 		}
 	}
 	return nil
+}
+
+// migrationLockKey is the advisory lock that serialises migrators (the bytes "arumamig").
+const migrationLockKey int64 = 0x6172756d616d6967
+
+// lockMigrations takes the migration advisory lock on a connection of its own, waiting for
+// another migrator to finish, and returns what releases it. Closing the connection releases
+// the lock too, so a migrator that dies never leaves it held.
+func lockMigrations(ctx context.Context, cfg *pgx.ConnConfig) (func(), error) {
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("connect: %w", err)
+	}
+	if _, err := conn.Exec(ctx, "SELECT pg_advisory_lock($1)", migrationLockKey); err != nil {
+		_ = conn.Close(context.WithoutCancel(ctx))
+		return nil, fmt.Errorf("migration lock: %w", err)
+	}
+	return func() { _ = conn.Close(context.WithoutCancel(ctx)) }, nil
 }
 
 // Status reads the applied and latest version of each schema without writing anything,

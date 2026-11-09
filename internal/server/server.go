@@ -38,6 +38,11 @@ type Handlers struct {
 	// proxy that issues the database hosts' certificates on demand (ADR-018 §5). Nil while the
 	// Realtime Database is disabled.
 	TLSAsk http.Handler
+	// RTDBServing reports whether this process may serve the Realtime Database, which it may
+	// only while it holds the database's single-instance lock. While it reports false, /readyz
+	// answers 503 so a load balancer keeps traffic to the instance that holds it. Nil counts
+	// as serving.
+	RTDBServing func() bool
 	// Storage is Cloud Storage's Firebase REST API, under StoragePrefixes, and GCS its GCS JSON
 	// API, under GCSPrefixes (ADR-022 §1). Their bodies may be as large as an object. Nil while
 	// Storage is disabled: the paths then fall through to the rest of the entry point.
@@ -288,6 +293,10 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 	if err := s.pool.Ping(ctx); err != nil {
 		s.log.Warn("readiness: database unreachable", "error", err)
 		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "database"})
+		return
+	}
+	if f := s.handlers.RTDBServing; f != nil && !f() {
+		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "rtdb-instance"})
 		return
 	}
 	// A schema newer than the binary keeps a running server ready: `aruma migrate up` runs

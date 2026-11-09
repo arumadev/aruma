@@ -290,6 +290,12 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 		case c.barrier:
 			continue
 		case c.listen != nil:
+			if c.abandoned() {
+				// Its client is gone: no one will read the data, and loading them costs the
+				// writer what a node this big takes, for every listen the client queued.
+				results[i].Err = ErrUnavailable
+				continue
+			}
 			if results[i], err = d.startListen(ctx, tx, c.acc, c.listen, state, now); err != nil {
 				return nil, Commit{}, nil, err
 			}
@@ -325,6 +331,10 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 			}
 			continue
 		case c.write == nil:
+			if c.abandoned() {
+				results[i].Err = ErrUnavailable
+				continue
+			}
 			if results[i], err = d.read(ctx, tx, c, now); err != nil {
 				return nil, Commit{}, nil, err
 			}
@@ -405,6 +415,13 @@ func (d *Database) apply(ctx context.Context, batch []*command, state *batchStat
 		}
 	}
 	return tx, commit, results, nil
+}
+
+// abandoned reports whether the command only reads for a session that has closed since it
+// queued it. Its reply has no reader, so the writer need not do the work. Writes are never
+// abandoned: a client that sends one and disconnects still has it applied.
+func (c *command) abandoned() bool {
+	return c.acc != nil && c.acc.sess != nil && c.acc.sess.isClosed()
 }
 
 // readRules is the query a command's read shows to rules: its own, else a listen's default

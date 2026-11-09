@@ -55,7 +55,10 @@ type verifier struct {
 	http      *http.Client
 	now       func() time.Time
 
-	mu        sync.Mutex
+	// loading admits one key-set load at a time; a verification waiting for it gives up with its
+	// own context (a mutex held across the network calls would not).
+	loading   chan struct{}
+	mu        sync.Mutex // guards the fields below
 	keys      map[string]*rsa.PublicKey
 	fetchedAt time.Time
 	expiresAt time.Time
@@ -65,7 +68,7 @@ func newVerifier(base, projectID string, kind tokenKind, hc *http.Client) *verif
 	u, _ := url.Parse(base)
 	return &verifier{
 		kind: kind, projectID: projectID, issuer: base + kind.prefix + projectID,
-		origin: u.Scheme + "://" + u.Host, http: hc, now: time.Now,
+		origin: u.Scheme + "://" + u.Host, http: hc, now: time.Now, loading: make(chan struct{}, 1),
 	}
 }
 
@@ -148,19 +151,52 @@ func decode(seg string, out any) error {
 }
 
 func (v *verifier) key(ctx context.Context, kid string) (*rsa.PublicKey, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	now := v.now()
-	if v.keys == nil || !now.Before(v.expiresAt) || (v.keys[kid] == nil && now.Sub(v.fetchedAt) > refetchCooldown) {
+	if k, ok := v.cached(kid); ok {
+		return k, nil
+	}
+	select {
+	case v.loading <- struct{}{}:
+	case <-ctx.Done():
+		return nil, newError(platformUnknown, codeCertificateFetch, "cannot fetch the public keys of "+v.issuer+": "+ctx.Err().Error())
+	}
+	defer func() { <-v.loading }()
+	// Another verification may have loaded the keys while this one waited.
+	if k, ok := v.cached(kid); ok {
+		return k, nil
+	}
+	if v.needsLoad(kid) {
 		if err := v.load(ctx); err != nil {
 			return nil, newError(platformUnknown, codeCertificateFetch, "cannot fetch the public keys of "+v.issuer+": "+err.Error())
 		}
 	}
+	v.mu.Lock()
 	k := v.keys[kid]
+	v.mu.Unlock()
 	if k == nil {
 		return nil, v.invalid("has 'kid' %q, which is not a published key of %s", kid, v.issuer)
 	}
 	return k, nil
+}
+
+// cached returns the key when the cache is fresh and holds it.
+func (v *verifier) cached(kid string) (*rsa.PublicKey, bool) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.keys != nil && v.now().Before(v.expiresAt) {
+		if k := v.keys[kid]; k != nil {
+			return k, true
+		}
+	}
+	return nil, false
+}
+
+// needsLoad: no keys yet, the keys are stale, or the kid is unknown and the last load is older
+// than refetchCooldown.
+func (v *verifier) needsLoad(kid string) bool {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	now := v.now()
+	return v.keys == nil || !now.Before(v.expiresAt) || (v.keys[kid] == nil && now.Sub(v.fetchedAt) > refetchCooldown)
 }
 
 // load reads the issuer's discovery document, then its JWKS. Both must come from the Aruma
@@ -199,7 +235,9 @@ func (v *verifier) load(ctx context.Context) error {
 		keys[k.Kid] = &rsa.PublicKey{N: new(big.Int).SetBytes(n), E: int(new(big.Int).SetBytes(e).Int64())}
 	}
 	now := v.now()
+	v.mu.Lock()
 	v.keys, v.fetchedAt, v.expiresAt = keys, now, now.Add(maxAge)
+	v.mu.Unlock()
 	return nil
 }
 
