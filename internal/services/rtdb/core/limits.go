@@ -30,6 +30,9 @@ type Limits struct {
 	// the database's writer: a get, the first data of a listen, the value a conditional
 	// write compares. A larger read is refused with too_big, before it is loaded.
 	ReadRows int64
+	// CacheRows caps the stored rows the writers of all databases keep in memory, together, for
+	// the nodes query listens read on every write below them; 0 keeps none.
+	CacheRows int64
 }
 
 // DefaultLimits are Firebase's published limits where a developer sees them.
@@ -44,6 +47,7 @@ var DefaultLimits = Limits{
 	ConnectionsPerProject:       10_000,
 	OutboxBytes:                 64 << 20,
 	ReadRows:                    1_000_000,
+	CacheRows:                   500_000,
 }
 
 // rateWindow counts bytes per minute in two fixed windows, weighting the previous one by how
