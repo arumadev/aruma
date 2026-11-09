@@ -44,7 +44,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Do not open a publ
 **Project isolation and API keys**
 
 - Using an API key as an admin identity: keys never reach an admin authenticator.
-- Using a restricted key from another site, address, app or API: key restrictions are enforced on every request. Website, Android and iOS restrictions rely on headers that a non-browser client can forge, so they limit accidental use, not a determined attacker. This is how Google's keys work too. An IP restriction reads `X-Forwarded-For` only from a trusted proxy.
+- Using a restricted key from another site, address, app or API: key restrictions are enforced on every Auth request and on the Document Database's WebChannel handshake. The Document Database's REST and gRPC requests do not check the key, as production does not: a Firestore REST read with a made-up key and a valid ID token succeeds there. Security rules and the caller's identity decide access on those paths, as they do on the Realtime Database and Storage, which take no key. Website, Android and iOS restrictions rely on headers that a non-browser client can forge, so they limit accidental use, not a determined attacker. This is how Google's keys work too. An IP restriction reads `X-Forwarded-For` only from a trusted proxy.
 - Reaching another project by changing a project number or ID: the project is resolved and its ownership checked at the entrance, and every query carries the project number.
 - Listing projects: anything the caller does not own returns the same `NOT_FOUND`.
 - Moving an app or key between projects by editing a request: identifiers are immutable, and the project comes from the resolved path, not the body.
