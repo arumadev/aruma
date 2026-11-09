@@ -207,35 +207,96 @@ func (ix Index) value(c *Node) *Node {
 	return nil
 }
 
-// SortedKeys returns n's children in index order. Each child's key and value are read once,
-// not in every comparison; the order is total (ties go to the key), so the sort needs no
-// stability.
+// SortedKeys returns n's children in index order.
 func (n *Node) SortedKeys(ix Index) []string {
+	es := n.sortEntries(ix)
+	slices.SortFunc(es, ix.compareEntries)
+	return entryKeys(es)
+}
+
+// sortEntry is a child with what its order needs, read once rather than in every comparison
+// of a sort.
+type sortEntry struct {
+	key   string
+	ki    int64
+	isInt bool
+	child *Node
+	value *Node // ix.value(child)
+}
+
+func (n *Node) sortEntries(ix Index) []sortEntry {
 	if n.Len() == 0 {
 		return nil
 	}
-	type entry struct {
-		key   string
-		ki    int64
-		isInt bool
-		value *Node
-	}
-	es := make([]entry, 0, len(n.children))
+	es := make([]sortEntry, 0, len(n.children))
 	for k, c := range n.children {
 		ki, isInt := keyInt(k)
-		es = append(es, entry{key: k, ki: ki, isInt: isInt, value: ix.value(c)})
+		es = append(es, sortEntry{key: k, ki: ki, isInt: isInt, child: c, value: ix.value(c)})
 	}
-	slices.SortFunc(es, func(a, b entry) int {
-		if ix.kind != byKey {
-			if c := CompareValues(a.value, b.value); c != 0 {
-				return c
-			}
+	return es
+}
+
+// compareEntries is Compare on entries. The order is total (ties go to the key), so a sort by
+// it needs no stability.
+func (ix Index) compareEntries(a, b sortEntry) int {
+	if ix.kind != byKey {
+		if c := CompareValues(a.value, b.value); c != 0 {
+			return c
 		}
-		return compareParsedKeys(a.key, a.ki, a.isInt, b.key, b.ki, b.isInt)
-	})
+	}
+	return compareParsedKeys(a.key, a.ki, a.isInt, b.key, b.ki, b.isInt)
+}
+
+func entryKeys(es []sortEntry) []string {
+	if es == nil {
+		return nil
+	}
 	keys := make([]string, len(es))
 	for i, e := range es {
 		keys[i] = e.key
 	}
 	return keys
+}
+
+// smallest returns the k smallest of es by cmp, in order, in O(len(es) log k) rather than the
+// O(len(es) log len(es)) of a full sort. It reorders es.
+func smallest[E any](es []E, k int, cmp func(a, b E) int) []E {
+	if k >= len(es) {
+		slices.SortFunc(es, cmp)
+		return es
+	}
+	if k <= 0 {
+		return es[:0]
+	}
+	// es[:k] is a max-heap of the k smallest so far: each later element that is smaller than
+	// its top replaces the top.
+	h := es[:k]
+	down := func(i int) {
+		for {
+			l := 2*i + 1
+			if l >= len(h) {
+				return
+			}
+			m := l
+			if r := l + 1; r < len(h) && cmp(h[r], h[l]) > 0 {
+				m = r
+			}
+			if cmp(h[m], h[i]) <= 0 {
+				return
+			}
+			h[i], h[m] = h[m], h[i]
+			i = m
+		}
+	}
+	for i := len(h)/2 - 1; i >= 0; i-- {
+		down(i)
+	}
+	for _, e := range es[k:] {
+		if cmp(e, h[0]) < 0 {
+			h[0] = e
+			down(0)
+		}
+	}
+	slices.SortFunc(h, cmp)
+	return h
 }
