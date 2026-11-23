@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -103,12 +104,23 @@ const UnavailableMessage = "The service is currently unavailable."
 
 // IsUnavailable reports whether err says the database could not be reached or went away
 // (connection refused or reset, a failed connect, a server shutting down or out of
-// connections), as opposed to a bug or a rejected statement. Such a failure is UNAVAILABLE
-// (503), which SDKs retry, not INTERNAL (500), which they do not. It reads the error through
-// interfaces, so this package does not import the Postgres driver.
+// connections, no answer within the database timeout), as opposed to a bug or a rejected
+// statement. Such a failure is UNAVAILABLE (503), which SDKs retry, not INTERNAL (500), which
+// they do not. It reads the error through interfaces, so this package does not import the
+// Postgres driver.
 func IsUnavailable(err error) bool {
 	if err == nil {
 		return false
+	}
+	// A call the database did not answer within the server's database_timeout (store.ErrTimeout).
+	var dt interface{ DatabaseTimeout() bool }
+	if errors.As(err, &dt) && dt.DatabaseTimeout() {
+		return true
+	}
+	// A connection the pool could not open: the pool opens them on a context of its own, so a
+	// timeout in there is the connection's own (connect_timeout), not the caller's.
+	if strings.Contains(err.Error(), "failed to connect to") && !errors.Is(err, context.Canceled) {
+		return true
 	}
 	// A request the caller gave up on, or one that ran out of its own time, says nothing about
 	// the database: the driver reports it as safe to retry too, so it is ruled out first.
@@ -128,7 +140,12 @@ func IsUnavailable(err error) bool {
 	if errors.As(err, &ne) {
 		return true
 	}
-	return strings.Contains(err.Error(), "failed to connect to") || strings.Contains(err.Error(), "closed pool")
+	// The connection ended in the middle of an answer: Postgres was killed, or a proxy or the
+	// network dropped it. The driver reports it bare.
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	return strings.Contains(err.Error(), "closed pool")
 }
 
 // WithDetails returns a copy of e carrying extra google.rpc detail messages.

@@ -25,6 +25,10 @@ import (
 type Config struct {
 	// DatabaseURL is the Postgres connection string. Required.
 	DatabaseURL log.Secret `yaml:"database_url"`
+	// DatabaseTimeout bounds how long a request waits for the database: for a connection from
+	// the pool, and then for each statement's answer. Past it the request fails with
+	// UNAVAILABLE (503), which clients retry, instead of hanging while Postgres is frozen.
+	DatabaseTimeout time.Duration `yaml:"database_timeout"`
 	// PublicURL is the address developers and SDKs reach the server at. Required.
 	PublicURL string `yaml:"public_url"`
 	// MasterKey is 32 random bytes, base64-encoded, used to derive HMAC and encryption keys. Required.
@@ -146,9 +150,10 @@ type RTDBLimits struct {
 // Defaults returns a configuration with every optional field set.
 func Defaults() Config {
 	return Config{
-		Listen:        ":8080",
-		MetricsListen: "127.0.0.1:9464",
-		LogLevel:      "info",
+		DatabaseTimeout: 15 * time.Second, // store.DefaultTimeout, which config may not import
+		Listen:          ":8080",
+		MetricsListen:   "127.0.0.1:9464",
+		LogLevel:        "info",
 		Session: Session{
 			IdleTimeout:     30 * time.Minute,
 			AbsoluteTimeout: 8 * time.Hour,
@@ -568,6 +573,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	}
 
 	secret("ARUMA_DATABASE_URL", &c.DatabaseURL)
+	duration("ARUMA_DATABASE_TIMEOUT", &c.DatabaseTimeout)
 	str("ARUMA_PUBLIC_URL", &c.PublicURL)
 	secret("ARUMA_MASTER_KEY", &c.MasterKey)
 	str("ARUMA_LISTEN", &c.Listen)
@@ -749,6 +755,9 @@ func (c *Config) validate() error {
 	var errs []error
 	if c.DatabaseURL == "" {
 		errs = append(errs, errors.New("database_url (ARUMA_DATABASE_URL) is required"))
+	}
+	if c.DatabaseTimeout < time.Second || c.DatabaseTimeout > 10*time.Minute {
+		errs = append(errs, fmt.Errorf("database_timeout %v must be between 1s and 10m", c.DatabaseTimeout))
 	}
 
 	if c.PublicURL == "" {

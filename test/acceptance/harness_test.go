@@ -123,12 +123,6 @@ func (l linkListener) Accept() (net.Conn, error) {
 func serveOn(t *testing.T, dbURL, poolURL string, link func(net.Conn) net.Conn, env map[string]string, opts ...app.Option) *Env {
 	t.Helper()
 	ctx := context.Background()
-	pool, err := store.Open(ctx, poolURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -146,6 +140,12 @@ func serveOn(t *testing.T, dbURL, poolURL string, link func(net.Conn) net.Conn, 
 	if err != nil {
 		t.Fatal(err)
 	}
+	// As aruma serve opens it.
+	pool, err := store.Open(ctx, poolURL, store.Timeout(cfg.DatabaseTimeout))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
 	logs := &syncBuffer{}
 	a, err := app.New(cfg, log.New(logs, "debug"), "test", pool, append([]app.Option{app.WithArgon2(fastArgon2)}, opts...)...)
 	if err != nil {

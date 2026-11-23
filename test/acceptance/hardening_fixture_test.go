@@ -10,6 +10,7 @@ import (
 
 	documents "github.com/arumadev/aruma/internal/services/documents/core"
 	storage "github.com/arumadev/aruma/internal/services/storage/core"
+	"github.com/arumadev/aruma/internal/store/storetest"
 )
 
 // hardProject is one project of the hardening fixture, seen as each kind of caller.
@@ -41,6 +42,13 @@ type hardEnv struct {
 
 func newHardEnv(t *testing.T, extra map[string]string) *hardEnv {
 	t.Helper()
+	return newHardEnvOn(t, extra, nil)
+}
+
+// newHardEnvOn is newHardEnv with the server's pool opened on poolURL(database URL), when
+// poolURL is not nil.
+func newHardEnvOn(t *testing.T, extra map[string]string, poolURL func(string) string) *hardEnv {
+	t.Helper()
 	vars := map[string]string{
 		"ARUMA_RTDB_ENABLED":           "true",
 		"ARUMA_STORAGE_ENABLED":        "true",
@@ -52,7 +60,13 @@ func newHardEnv(t *testing.T, extra map[string]string) *hardEnv {
 	for k, v := range extra {
 		vars[k] = v
 	}
-	e := newEnv(t, vars)
+	var e *Env
+	if poolURL == nil {
+		e = newEnv(t, vars)
+	} else {
+		dbURL := storetest.NewDB(t)
+		e = serveOn(t, dbURL, poolURL(dbURL), nil, vars)
+	}
 	if err := e.App.Documents.Boot(t.Context(), documents.InstanceOptions{}); err != nil {
 		t.Fatal(err)
 	}

@@ -13,6 +13,7 @@ aruma config check
 | Variable | Required | Default | Meaning |
 |---|---|---|---|
 | `ARUMA_DATABASE_URL` | yes | | PostgreSQL connection URL. `pool_max_conns` in it sizes the connection pool; without it the pool holds at most max(16, 4 × CPUs) connections, up to 64, opened on demand. The server logs the size at startup and warns when Postgres's `max_connections` is too low for it, see the [operator guide](../guides/operations.md#6-capacity-descriptors-and-the-database-pool) |
+| `ARUMA_DATABASE_TIMEOUT` | | `15s` | How long a request waits for Postgres, 1s to 10m: for a connection from the pool, then for each statement's answer. Past it the request answers 503 `UNAVAILABLE`, see [Database timeout](#database-timeout) |
 | `ARUMA_PUBLIC_URL` | yes | | The address your SDKs reach, for example `https://aruma.example.com` |
 | `ARUMA_MASTER_KEY` | yes | | 32 random bytes in base64 (`openssl rand -base64 32`). Every other key is derived from it |
 | `ARUMA_LISTEN` | | `:8080` | The single public entry point |
@@ -48,6 +49,12 @@ The public listener's HTTP timeouts, under `server` in the file. They bound ordi
 | `read_timeout` | `ARUMA_SERVER_READ_TIMEOUT` | `60s` | 10s to 1h | Reading a whole request, body included |
 | `write_timeout` | `ARUMA_SERVER_WRITE_TIMEOUT` | `60s` | 30s to 1h | Writing a response, counted from the end of the request's headers |
 | `idle_timeout` | `ARUMA_SERVER_IDLE_TIMEOUT` | `120s` | 5s to 1h | A keep-alive connection with no request is closed |
+
+## Database timeout
+
+`database_timeout` (`ARUMA_DATABASE_TIMEOUT`, default `15s`, 1s to 10m) bounds every call the server makes on its connection pool: the wait for a free connection (and the opening of a new one, unless `connect_timeout` in `database_url` says otherwise), then each statement until its result is read. A Postgres that is frozen rather than down (a paused container, a stalled disk, a network partition that keeps TCP open) answers nothing and closes nothing, so without the bound every request would wait for as long as the freeze lasts. Past it the call fails, its connection is closed, and the request answers what a stopped Postgres gets: 503 `UNAVAILABLE` on Auth, the Document Database (REST and gRPC), the Realtime Database and Storage, which the SDKs retry. The connections that timed out are replaced once Postgres answers again, so the server serves again at once, without a restart. The server also sets `client_connection_check_interval` to 5 seconds on its connections, so that Postgres stops a statement whose caller gave up instead of running it to its end.
+
+The default sits above the longest statement a request runs on a live server (a Document Database commit bounds its statements at 10 seconds and its lock waits at 5) and well below the 30 seconds after which the SDKs give up on a request themselves. Raise it only if requests fail with 503 while Postgres is up but slow to answer. What runs longer is not bounded by it: Realtime Database WebSockets and Document Database Listen and Write streams last as long as the client stays (each statement they run is bounded), uploads and downloads move bytes on the disk, not through Postgres, maintenance (index builds, retention, housekeeping) works in batches of one short statement each, and the single-instance locks hold their own connections with their own deadlines. `aruma migrate` and `aruma backup` do not use it: their statements take as long as they need.
 
 ## Auth rate limits
 

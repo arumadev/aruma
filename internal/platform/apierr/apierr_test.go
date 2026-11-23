@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -88,7 +89,19 @@ type connectErr struct{}
 func (connectErr) Error() string     { return "failed to connect to `host=127.0.0.1`: connection refused" }
 func (connectErr) SafeToRetry() bool { return true }
 
+// doneErr is pgconn's error for a query whose context had ended before it was sent.
+type doneErr struct{}
+
+func (doneErr) Error() string     { return "context already done" }
+func (doneErr) SafeToRetry() bool { return true }
+
 // A database that is down is UNAVAILABLE (503, which SDKs retry), not INTERNAL (500).
+// dbTimeoutErr is store.ErrTimeout as apierr sees it, through its interface.
+type dbTimeoutErr struct{}
+
+func (dbTimeoutErr) Error() string         { return "the database did not answer in time" }
+func (dbTimeoutErr) DatabaseTimeout() bool { return true }
+
 func TestDatabaseOutageIsUnavailable(t *testing.T) {
 	for name, cause := range map[string]error{
 		"connect failed":    connectErr{},
@@ -98,6 +111,13 @@ func TestDatabaseOutageIsUnavailable(t *testing.T) {
 		"too many conns":    sqlStateErr("53300"),
 		"connection failed": sqlStateErr("08006"),
 		"net error":         &net.OpError{Op: "read", Err: errors.New("connection reset by peer")},
+		// A pooled connection Postgres (or the network) closed without a word: a killed
+		// server, a restarted proxy.
+		"connection closed": fmt.Errorf("query: %w", io.ErrUnexpectedEOF),
+		// The pool's connect_timeout, on the pool's own context.
+		"connect timed out":  fmt.Errorf("failed to connect to `user=aruma`: %w", errors.Join(errors.New("timeout"), context.DeadlineExceeded)),
+		"database timeout":   dbTimeoutErr{},
+		"wrapped db timeout": fmt.Errorf("begin: %w", dbTimeoutErr{}),
 	} {
 		if got := CodeOf(Wrap(cause, Internal, "Internal error encountered.")); got != Unavailable {
 			t.Errorf("%s: Wrap code = %v, want UNAVAILABLE", name, got)
@@ -113,8 +133,10 @@ func TestDatabaseOutageIsUnavailable(t *testing.T) {
 		"unique violation": sqlStateErr("23505"),
 		"plain":            errors.New("boom"),
 		// The driver marks a query whose context had already ended as safe to retry.
-		"caller gave up":  fmt.Errorf("query: %w", errors.Join(connectErr{}, context.Canceled)),
-		"caller deadline": fmt.Errorf("query: %w", errors.Join(connectErr{}, context.DeadlineExceeded)),
+		"caller gave up":  fmt.Errorf("query: %w", errors.Join(doneErr{}, context.Canceled)),
+		"caller deadline": fmt.Errorf("query: %w", errors.Join(doneErr{}, context.DeadlineExceeded)),
+		// A connect the caller gave up on (the pool's own connects are not the caller's).
+		"caller gave up connecting": fmt.Errorf("query: %w", errors.Join(connectErr{}, context.Canceled)),
 	} {
 		if got := CodeOf(Wrap(cause, Internal, "x")); got != Internal {
 			t.Errorf("%s: code = %v, want INTERNAL", name, got)

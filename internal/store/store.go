@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -13,7 +14,11 @@ import (
 
 // Open connects a pool and verifies the connection. The pool holds DefaultMaxConns
 // connections at most, unless the URL sets pool_max_conns.
-func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+func Open(ctx context.Context, databaseURL string, opts ...Option) (*pgxpool.Pool, error) {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("database url: %w", err)
@@ -22,6 +27,7 @@ func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	if !setsMaxConns(databaseURL) {
 		cfg.MaxConns = DefaultMaxConns()
 	}
+	applyTimeout(cfg, o.timeout)
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
@@ -31,6 +37,19 @@ func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("connect: %w", err)
 	}
 	return pool, nil
+}
+
+// Option adjusts the pool Open opens.
+type Option func(*options)
+
+type options struct{ timeout time.Duration }
+
+// Timeout bounds every database call on the pool by d (database_timeout): the wait for a
+// connection, and each statement's answer. A call past it fails with ErrTimeout, which the APIs
+// answer UNAVAILABLE. The server's pool has it; the operator commands (migrate, backup), whose
+// statements run as long as they need, do not. d <= 0 leaves the calls unbounded.
+func Timeout(d time.Duration) Option {
+	return func(o *options) { o.timeout = d }
 }
 
 // Beginner starts transactions; *pgxpool.Pool satisfies it.
