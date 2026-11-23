@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function member(team) {
+      return signedIn() && exists(/databases/$(database)/documents/teams/$(team)/members/$(request.auth.uid));
+    }
+    function owner(team) {
+      return signedIn() && get(/databases/$(database)/documents/teams/$(team)).data.owner == request.auth.uid;
+    }
+
+    // A profile is public to signed-in users and written by its owner only.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if request.auth.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40;
+    }
+
+    // A team is read by its members. Anyone signed in may create one they own.
+    match /teams/{team} {
+      allow get: if signedIn();   // the join screen looks a team up by its code (its id)
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60;
+      allow update: if owner(team) && request.resource.data.owner == resource.data.owner;
+      allow delete: if false;
+
+      // A user joins by writing their own member document; the owner may remove a member.
+      // The team's owner writes theirs in the batch that creates the team, so the team is read as
+      // it will be after the write (getAfter).
+      match /members/{uid} {
+        allow read: if member(team);
+        allow create: if request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.role ==
+             (getAfter(/databases/$(database)/documents/teams/$(team)).data.owner == uid ? 'owner' : 'member');
+        allow delete: if request.auth.uid == uid || owner(team);
+      }
+
+      match /tasks/{task} {
+        allow read: if member(team);
+        allow create: if member(team)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200
+          && request.resource.data.done == false
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+        allow update: if member(team)
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200;
+        allow delete: if member(team) && (resource.data.createdBy == request.auth.uid || owner(team));
+      }
+    }
+
+    // The teams a user belongs to, across all teams (a collection group query on members
+    // filtered by the document's uid field).
+    match /{path=**}/members/{uid} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+  }
+}

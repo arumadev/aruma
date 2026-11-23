@@ -169,7 +169,7 @@ Flutter needs no Aruma Dart package for Auth, Realtime Database or Firestore. Th
 
 - **Android:** add `aruma-redirect` and `ArumaURL` in `android/app/build.gradle(.kts)` and `android/app/src/main/AndroidManifest.xml`, with `mavenLocal()` in the repositories of `android/build.gradle(.kts)`. For Storage, add the `dev.aruma.storage` plugin in `android/settings.gradle(.kts)` and `android/app/build.gradle(.kts)`.
 - **iOS:** add `pod 'ArumaRedirect', :path => '<aruma>/sdk/ios/ArumaRedirect'` to `ios/Podfile`, and `ArumaURL` to `ios/Runner/Info.plist`. For Storage, turn on Swift Package Manager (`enable-swift-package-manager`) and put the mirror in `ios/Runner.xcworkspace/xcshareddata/swiftpm/configuration/mirrors.json`.
-- **Web:** use `@aruma/web`, as in [auth-web.md](auth-web.md).
+- **Web:** run `npx aruma-web flutter-web --url <url> --products storage,firestore` once (see [Cloud Storage](storage.md) and [Firestore](firestore.md)). That step rewrites Storage and Firestore only. For Auth, load `@aruma/web`'s `install()` in `web/index.html` before the `flutter_bootstrap.js` block, as in [auth-web.md](auth-web.md); there is no bundler on this path, so copy `src/index.js` and `src/nodeguard.js` of the package next to `index.html`. `examples/flutter/tool/web.sh` does both.
 
 Keep the official `firebase_auth` and `firebase_storage` in Dart, with no `useAuthEmulator` and no `useStorageEmulator`.
 

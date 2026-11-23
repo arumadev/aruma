@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // A profile picture: anyone signed in may see it; its owner alone writes it.
+    match /avatars/{uid}/{file} {
+      allow get: if request.auth != null;
+      allow write: if request.auth.uid == uid
+        && (request.resource == null
+            || (request.resource.size < 2 * 1024 * 1024 && request.resource.contentType.matches('image/.*')));
+    }
+    // A task's attachments: the team's members only (membership is read from Firestore).
+    match /teams/{team}/tasks/{task}/{file} {
+      allow read: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/teams/$(team)/members/$(request.auth.uid));
+      allow write: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/teams/$(team)/members/$(request.auth.uid))
+        && (request.resource == null || request.resource.size < 10 * 1024 * 1024);
+    }
+  }
+}
