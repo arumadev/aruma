@@ -98,6 +98,7 @@ Rules for reading the recordings:
 - **Linearizability (Document Database).** `test/linearizability/documents` runs concurrent clients against a live server and checks the recorded history with [Porcupine](https://github.com/anishathalye/porcupine). It also checks that commit order is strict and that commit times rise with it. A short run is part of `make test`. `make linearizability` runs it longer (60 seconds by default, set `LIN_DURATION`).
 - **Contention.** `test/contention/documents` tests phantom reads under concurrent transactions.
 - **Kill-and-restart durability (Realtime Database).** `tools/rtdb-chaos` kills the server with SIGKILL while clients write, restarts it, and checks that no acknowledged write is missing and none ran twice. The results are in [benchmarks](benchmarks.md#durability).
+- **Backup, restore and upgrade.** `test/ops` runs the `aruma` binary as an operator does. It fills two projects through the public APIs (users with passwords, anonymous, custom claims and disabled; Realtime Database data and rules; documents, indexes and rules; objects small and large, and an upload left half done; API keys, service accounts and a CLI token), backs them up while clients write, restores into a new database and directory, and compares everything the APIs serve, byte for byte. It also restores under another master key, over a running server and without the Storage archive, upgrades from the previous release (`aruma migrate up`, then `aruma serve`), and starts a second process beside a running one. `test/ops/run.sh` builds the previous release from its tag and runs it all.
 - **Fault injection and load for the Document Database** have not been run yet.
 
 ## The network guard: no request reaches Google
@@ -133,6 +134,7 @@ export ARUMA_TEST_DATABASE_URL='postgres://postgres@127.0.0.1:5432/postgres?sslm
 | Firebase's Storage suites | `test/compat/storage/run.sh` |
 | Firebase's Firestore suites | `test/compat/documents/run.sh` |
 | Durability under kill | `go run ./tools/rtdb-chaos -seed 101 -runs 6 -cycles 6` |
+| Backup, restore, upgrade and a second process | `test/ops/run.sh` (about four minutes; needs the PostgreSQL 18 client tools) |
 
 Tests that call firebase-tools or the Google Cloud Storage SDKs only run when you ask for them: set `ARUMA_FIREBASE_CLI=1` or `ARUMA_GCS_SDK=1`. The egress guard changes your firewall and is for CI runners only. On a laptop, the suites' own guards are enough.
 

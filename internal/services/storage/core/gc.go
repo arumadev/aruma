@@ -19,28 +19,43 @@ const gcBatch = 500
 
 // collectGarbage deletes the files blob_gc has held for gc_grace, then their rows. The grace
 // covers a reader between an object's row and its file; a file a reader holds open stays
-// readable on POSIX, and on Windows its delete fails and is tried again later.
+// readable on POSIX, and on Windows its delete fails and is tried again later. While a backup
+// holds storage.backup (backup.go) nothing is deleted: the files wait for the next round.
 func (s *Service) collectGarbage(ctx context.Context) (int, error) {
-	due, err := s.reads.ListDueBlobGC(ctx, queries.ListDueBlobGCParams{Before: s.now().Add(-s.gcGrace), N: gcBatch})
-	if err != nil {
-		return 0, fmt.Errorf("%w: list blob_gc: %w", ErrUnavailable, err)
-	}
-	var deleted []string
-	for _, d := range due {
-		if err := s.store.Delete(d.BlobKey); err != nil {
-			s.log.Warn("storage: gc: delete a file; it is tried again later", "key", d.BlobKey, "error", err)
-			continue
+	n := 0
+	err := s.inTx(ctx, func(q *queries.Queries) error {
+		free, err := q.TryLockFilesAgainstBackup(ctx)
+		if err != nil {
+			return fmt.Errorf("check for a backup: %w", err)
 		}
-		deleted = append(deleted, d.BlobKey)
+		if !free {
+			s.log.Info("storage: gc: a backup is copying the data directory; files are deleted once it ends")
+			return nil
+		}
+		due, err := q.ListDueBlobGC(ctx, queries.ListDueBlobGCParams{Before: s.now().Add(-s.gcGrace), N: gcBatch})
+		if err != nil {
+			return fmt.Errorf("list blob_gc: %w", err)
+		}
+		var deleted []string
+		for _, d := range due {
+			if err := s.store.Delete(d.BlobKey); err != nil {
+				s.log.Warn("storage: gc: delete a file; it is tried again later", "key", d.BlobKey, "error", err)
+				continue
+			}
+			deleted = append(deleted, d.BlobKey)
+		}
+		if len(deleted) == 0 {
+			return nil
+		}
+		n = len(deleted)
+		// Should the commit fail, the files are gone and the rows go on the next round:
+		// deleting a file twice is nothing.
+		return q.DeleteBlobGC(ctx, deleted)
+	})
+	if err != nil {
+		return 0, fmt.Errorf("%w: gc: %w", ErrUnavailable, err)
 	}
-	if len(deleted) == 0 {
-		return 0, nil
-	}
-	if err := s.inTx(ctx, func(q *queries.Queries) error { return q.DeleteBlobGC(ctx, deleted) }); err != nil {
-		// The files are gone; the rows go on the next round, and deleting a file twice is nothing.
-		return 0, fmt.Errorf("%w: clear blob_gc: %w", ErrUnavailable, err)
-	}
-	return len(deleted), nil
+	return n, nil
 }
 
 // expireSessions ends the sessions whose expires_at has passed: an empty session after

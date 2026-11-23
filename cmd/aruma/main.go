@@ -29,14 +29,17 @@ commands:
   accounts create --email E       create a project owner account (password from the terminal or stdin)
   accounts disable|enable --email E
   accounts reset-password --email E
-  backup --out FILE               dump the database with pg_dump
+  backup --out FILE [--storage-out FILE]
+                                  dump the database with pg_dump; with Storage, write its
+                                  data directory's files that the dump names to a tar.gz
   restore --in FILE --yes         replace the database with a backup (stop the server first)
   config check                    validate the configuration and exit
   version                         print the version
 
 The configuration is an optional YAML file (--config or ARUMA_CONFIG), overridden by
-ARUMA_* environment variables. See aruma.example.yaml. backup and restore use pg_dump and
-pg_restore from PATH, or from ARUMA_PG_BIN.
+ARUMA_* environment variables. See aruma.example.yaml. migrate, backup and restore need only
+database_url (and backup storage.data_dir). backup and restore use pg_dump and pg_restore from
+PATH, or from ARUMA_PG_BIN.
 `
 
 func main() {
@@ -66,6 +69,7 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return errors.New("missing command")
 	}
 	load := func() (*config.Config, error) { return config.Load(*configPath, os.Getenv) }
+	loadOperator := func() (*config.Config, error) { return config.LoadForOperator(*configPath, os.Getenv) }
 
 	switch args[0] {
 	case "version":
@@ -78,7 +82,11 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		}
 		return app.Serve(ctx, cfg, log.New(stdout, cfg.LogLevel), version)
 	case "migrate":
-		return migrate(ctx, args[1:], stdout)
+		cfg, err := loadOperator()
+		if err != nil {
+			return err
+		}
+		return migrate(ctx, cfg.DatabaseURL.Reveal(), args[1:], stdout)
 	case "accounts":
 		cfg, err := load()
 		if err != nil {
@@ -86,9 +94,17 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		}
 		return accounts(ctx, cfg, args[1:], stdin, stdout, stderr)
 	case "backup":
-		return backup(ctx, args[1:], stdout, stderr)
+		cfg, err := loadOperator()
+		if err != nil {
+			return err
+		}
+		return backup(ctx, cfg, args[1:], stdout, stderr)
 	case "restore":
-		return restore(ctx, args[1:], stdout, stderr)
+		cfg, err := loadOperator()
+		if err != nil {
+			return err
+		}
+		return restore(ctx, cfg.DatabaseURL.Reveal(), args[1:], stdout, stderr)
 	case "config":
 		if len(args) != 2 || args[1] != "check" {
 			return errors.New("usage: aruma config check")
@@ -105,11 +121,7 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 }
 
 // migrate needs only the database URL, so it works before the rest of the configuration exists.
-func migrate(ctx context.Context, args []string, stdout io.Writer) error {
-	url := os.Getenv("ARUMA_DATABASE_URL")
-	if url == "" {
-		return errors.New("ARUMA_DATABASE_URL is not set")
-	}
+func migrate(ctx context.Context, url string, args []string, stdout io.Writer) error {
 	if len(args) != 1 {
 		return errors.New("usage: aruma migrate up|status")
 	}

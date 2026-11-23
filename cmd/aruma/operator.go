@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/term"
@@ -15,6 +16,7 @@ import (
 	"github.com/arumadev/aruma/internal/app"
 	"github.com/arumadev/aruma/internal/config"
 	"github.com/arumadev/aruma/internal/platform/log"
+	storage "github.com/arumadev/aruma/internal/services/storage/core"
 	"github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
@@ -111,29 +113,55 @@ func readPassword(stdin io.Reader, stderr io.Writer, confirm bool) (string, erro
 	return strings.TrimRight(line, "\r\n"), nil
 }
 
-// backup and restore wrap pg_dump and pg_restore; they need only the database URL.
-func backup(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+// backup and restore wrap pg_dump and pg_restore; they need only the database URL, and backup
+// the Storage data directory.
+func backup(ctx context.Context, cfg *config.Config, args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	out := fs.String("out", "", "file to write the backup to (required)")
+	out := fs.String("out", "", "file to write the database dump to (required)")
+	storageOut := fs.String("storage-out", "", "file to write the Storage files the dump names to, a tar.gz")
+	storageDir := fs.String("storage-dir", cfg.Storage.DataDir, "the Storage data directory (default storage.data_dir)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if *out == "" {
-		return errors.New("usage: aruma backup --out <file>")
+		return errors.New("usage: aruma backup --out <file> [--storage-out <file>]")
 	}
-	url, err := databaseURL()
+	url := cfg.DatabaseURL.Reveal()
+	tools := store.PGTools{Dir: os.Getenv("ARUMA_PG_BIN")}
+	if *storageOut == "" {
+		if err := store.Backup(ctx, tools, url, *out); err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "backup written to %s\n", *out)
+		if cfg.Storage.Enabled {
+			fmt.Fprintln(stderr, "aruma: Storage is on and its files are not in this backup: pass --storage-out to write them with the dump")
+		}
+		return nil
+	}
+	if *storageDir == "" || !filepath.IsAbs(*storageDir) {
+		return errors.New("--storage-out needs the absolute path of the Storage data directory: storage.data_dir (ARUMA_STORAGE_DATA_DIR) or --storage-dir")
+	}
+	pool, err := store.Open(ctx, url)
 	if err != nil {
 		return err
 	}
-	if err := store.Backup(ctx, store.PGTools{Dir: os.Getenv("ARUMA_PG_BIN")}, url, *out); err != nil {
+	defer pool.Close()
+	rep, err := storage.Backup(ctx, pool, *storageDir, *storageOut, func(ctx context.Context, snapshot string) error {
+		return store.BackupSnapshot(ctx, tools, url, *out, snapshot)
+	})
+	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stdout, "backup written to %s\n", *out)
+	fmt.Fprintf(stdout, "backup written to %s, and %d Storage files (%d bytes) to %s\n", *out, rep.Files, rep.Bytes, *storageOut)
+	if len(rep.Missing) > 0 {
+		fmt.Fprintf(stderr, "aruma: %d files the database names were not in %s (first: %s); the restored database names them too, without their bytes\n",
+			len(rep.Missing), *storageDir, rep.Missing[0])
+	}
 	return nil
 }
 
-func restore(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func restore(ctx context.Context, url string, args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("restore", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	in := fs.String("in", "", "backup file to restore (required)")
@@ -147,21 +175,9 @@ func restore(ctx context.Context, args []string, stdout, stderr io.Writer) error
 	if !*yes {
 		return errors.New("restore replaces the database's current contents; stop the server and pass --yes to confirm")
 	}
-	url, err := databaseURL()
-	if err != nil {
-		return err
-	}
 	if err := store.Restore(ctx, store.PGTools{Dir: os.Getenv("ARUMA_PG_BIN")}, url, *in); err != nil {
 		return err
 	}
 	fmt.Fprintf(stdout, "restored %s\n", *in)
 	return nil
-}
-
-func databaseURL() (string, error) {
-	url := os.Getenv("ARUMA_DATABASE_URL")
-	if url == "" {
-		return "", errors.New("ARUMA_DATABASE_URL is not set")
-	}
-	return url, nil
 }

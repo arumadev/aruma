@@ -69,7 +69,7 @@ Storage is off by default. Turn it on with `storage.enabled: true` and give it `
 > **`data_dir` warning.** The directory holds the bytes, and the database only what points to them, so the two belong together:
 > - Use a local file system. NFS and other shared file systems are not supported: one server owns the directory under an exclusive lock.
 > - Mount the disk before Aruma starts (systemd `RequiresMountsFor=<data_dir>`). Aruma refuses to start on an empty directory when its database expects files there, so an unmounted disk stops the server instead of losing uploads.
-> - The directory is bound to one database. `aruma backup` copies only the database: back up the directory with it, and restore both together.
+> - The directory is bound to one database. Back up both with one command, `aruma backup --out aruma.dump --storage-out aruma-storage.tar.gz`, while the server runs, and restore both together (the [operations guide](../guides/operations.md#docker) shows how). A copy of the directory made some other way while the server runs can miss files the dump names: files of overwritten and deleted objects are deleted `gc_grace` later.
 > - Replace a running server by stopping it first. In Kubernetes use `strategy: Recreate`; a rolling update waits on the lock.
 > - Off loopback, serve Storage over https. Aruma logs a warning at startup when it runs on plain http.
 
@@ -235,7 +235,10 @@ aruma migrate up|status                       # the server never runs DDL and re
 aruma serve
 aruma accounts create --email you@example.com # password from the terminal without echo, or from stdin
 aruma accounts disable|enable|reset-password --email you@example.com
-aruma backup --out aruma.dump                 # pg_dump, custom format
-aruma restore --in aruma.dump --yes           # with the server stopped, in a single transaction
+aruma backup --out aruma.dump [--storage-out aruma-storage.tar.gz]
+                                              # pg_dump, custom format; with Storage, the files the dump names
+aruma restore --in aruma.dump --yes           # with the server stopped (it refuses otherwise), in a single transaction
 aruma config check
 ```
+
+`migrate`, `backup` and `restore` need only `database_url` (and `backup --storage-out` the Storage `data_dir`), from the file given with `--config` or from the environment, so they run before the rest of the configuration is complete. `pool_max_conns` and pgx's other pool settings in the URL are left to the server.

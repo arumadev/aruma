@@ -101,6 +101,13 @@ var keyPattern = regexp.MustCompile(`^(p|s)/[0-9]+/[0-9a-f-]{36}$`)
 // ValidKey reports whether key is an object or staging key the store accepts.
 func ValidKey(key string) bool { return keyPattern.MatchString(key) }
 
+// KeyFile returns the path of key's file below the data directory, with slashes: what a
+// backup of the directory names it by (Disk keeps p/<n>/<uuid> at p/<n>/<uuid[:2]>/<uuid>).
+func KeyFile(key string) (string, error) {
+	_, name, err := keyPath(key, "ps")
+	return name, err
+}
+
 // ObjectKey returns a fresh key for an object generation's file in project.
 func ObjectKey(project int64) string { return fmt.Sprintf("p/%d/%s", project, newUUID()) }
 

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,6 +117,20 @@ func TestPGEnvKeepsTLSSettings(t *testing.T) {
 	}
 	if _, err := store.PGEnvForTest("postgres://u@h/db?target_session_attrs=read-write"); err == nil {
 		t.Error("unsupported parameter accepted")
+	}
+}
+
+// The pool settings the operations guide suggests (pool_max_conns) belong to the server's pool:
+// backup and restore leave them out instead of refusing the URL.
+func TestPGEnvSkipsPoolSettings(t *testing.T) {
+	env, err := store.PGEnvForTest("postgres://u:p@h:5432/aruma?sslmode=disable&pool_max_conns=32&pool_max_conn_idle_time=5m")
+	if err != nil {
+		t.Fatalf("a URL with pool settings is refused: %v", err)
+	}
+	for _, v := range env {
+		if strings.Contains(v, "pool_") || strings.Contains(v, "POOL") {
+			t.Errorf("a pool setting reached pg_dump: %s", v)
+		}
 	}
 }
 

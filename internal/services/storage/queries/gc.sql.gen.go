@@ -39,6 +39,19 @@ func (q *Queries) DeleteBlobGC(ctx context.Context, blobKeys []string) error {
 	return err
 }
 
+const exportSnapshot = `-- name: ExportSnapshot :one
+SELECT pg_export_snapshot()::text AS snapshot
+`
+
+// scope: global — the snapshot pg_dump takes (--snapshot), so the files a backup copies are the
+// ones its dump names.
+func (q *Queries) ExportSnapshot(ctx context.Context) (string, error) {
+	row := q.db.QueryRow(ctx, exportSnapshot)
+	var snapshot string
+	err := row.Scan(&snapshot)
+	return snapshot, err
+}
+
 const getInstance = `-- name: GetInstance :one
 
 SELECT id, one_row, created_at FROM storage.instance
@@ -55,6 +68,29 @@ func (q *Queries) GetInstance(ctx context.Context) (StorageInstance, error) {
 	return i, err
 }
 
+const getPromotedKey = `-- name: GetPromotedKey :one
+SELECT blob_key FROM storage.upload_sessions WHERE staging_key = $1::text AND blob_key IS NOT NULL
+`
+
+// scope: global — where a staging file went: the object key its session moved it to.
+func (q *Queries) GetPromotedKey(ctx context.Context, stagingKey string) (*string, error) {
+	row := q.db.QueryRow(ctx, getPromotedKey, stagingKey)
+	var blob_key *string
+	err := row.Scan(&blob_key)
+	return blob_key, err
+}
+
+const holdFilesForBackup = `-- name: HoldFilesForBackup :exec
+SELECT pg_advisory_lock_shared(hashtext('storage.backup'), 0)
+`
+
+// scope: global — a backup holds storage.backup, shared, on its own session from before its
+// dump until its archive is written: no file is deleted meanwhile.
+func (q *Queries) HoldFilesForBackup(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, holdFilesForBackup)
+	return err
+}
+
 const insertInstance = `-- name: InsertInstance :exec
 INSERT INTO storage.instance (id) VALUES ($1)
 `
@@ -63,6 +99,37 @@ INSERT INTO storage.instance (id) VALUES ($1)
 func (q *Queries) InsertInstance(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, insertInstance, id)
 	return err
+}
+
+const listBackupKeys = `-- name: ListBackupKeys :many
+SELECT blob_key AS key FROM storage.objects
+UNION
+SELECT staging_key FROM storage.upload_sessions WHERE state = 'active'
+UNION
+SELECT blob_key FROM storage.upload_sessions WHERE state = 'active' AND blob_key IS NOT NULL
+ORDER BY 1
+`
+
+// scope: global — every file the database names, of every project: the objects' files, and the
+// staging and object files of live upload sessions. A backup copies these and nothing else.
+func (q *Queries) ListBackupKeys(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listBackupKeys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		items = append(items, key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listDueBlobGC = `-- name: ListDueBlobGC :many
@@ -216,6 +283,20 @@ type QueueUnreferencedBlobParams struct {
 func (q *Queries) QueueUnreferencedBlob(ctx context.Context, arg QueueUnreferencedBlobParams) error {
 	_, err := q.db.Exec(ctx, queueUnreferencedBlob, arg.BlobKey, arg.ProjectNumber)
 	return err
+}
+
+const tryLockFilesAgainstBackup = `-- name: TryLockFilesAgainstBackup :one
+SELECT pg_try_advisory_xact_lock(hashtext('storage.backup'), 0) AS free
+`
+
+// scope: global — a deletion of files (the blob_gc worker, a purge) runs only while no backup
+// holds storage.backup (HoldFilesForBackup), and holds the lock to its commit, so a backup never
+// waits on a deletion halfway and never misses a file its dump names.
+func (q *Queries) TryLockFilesAgainstBackup(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, tryLockFilesAgainstBackup)
+	var free bool
+	err := row.Scan(&free)
+	return free, err
 }
 
 const unreferencedKeys = `-- name: UnreferencedKeys :many

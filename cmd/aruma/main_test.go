@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -95,5 +97,26 @@ func TestCommandValidation(t *testing.T) {
 	}
 	if out, err := aruma(t, "", "version"); err != nil || strings.TrimSpace(out) != "dev" {
 		t.Fatalf("version: %q %v", out, err)
+	}
+}
+
+// The operator commands read database_url from the configuration file as serve does: a
+// deployment configured by a file alone (the minimal production example) migrates and backs up
+// without ARUMA_DATABASE_URL.
+func TestOperatorCommandsReadTheConfigFile(t *testing.T) {
+	url := storetest.NewDB(t)
+	t.Setenv("ARUMA_DATABASE_URL", "")
+	file := filepath.Join(t.TempDir(), "aruma.yaml")
+	if err := os.WriteFile(file, []byte("database_url: "+url+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := aruma(t, "", "--config", file, "migrate", "up"); err != nil || !strings.Contains(out, "up to date") {
+		t.Fatalf("migrate up from the file: %v %s", err, out)
+	}
+	if out, err := aruma(t, "", "--config", file, "migrate", "status"); err != nil || strings.Contains(out, "pending") {
+		t.Fatalf("migrate status from the file: %v %s", err, out)
+	}
+	if _, err := aruma(t, "", "migrate", "status"); err == nil || !strings.Contains(err.Error(), "database_url") {
+		t.Fatalf("migrate without a database URL: %v", err)
 	}
 }

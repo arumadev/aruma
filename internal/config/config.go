@@ -480,6 +480,32 @@ type RulesLimits struct {
 // Load reads the YAML file at path (skipped when empty), applies environment overrides from
 // getenv, and validates the result.
 func Load(path string, getenv func(string) string) (*Config, error) {
+	c, err := read(path, getenv)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// LoadForOperator reads the configuration as Load does, without validating it: the operator
+// commands (migrate, backup, restore) need the database URL and the Storage directory only, and
+// must work before the rest of the configuration exists, from the file as from the environment.
+// A database URL that is missing is an error.
+func LoadForOperator(path string, getenv func(string) string) (*Config, error) {
+	c, err := read(path, getenv)
+	if err != nil {
+		return nil, err
+	}
+	if c.DatabaseURL == "" {
+		return nil, errors.New("database_url (ARUMA_DATABASE_URL) is not set")
+	}
+	return c, nil
+}
+
+func read(path string, getenv func(string) string) (*Config, error) {
 	c := Defaults()
 	if path != "" {
 		b, err := os.ReadFile(path)
@@ -493,9 +519,6 @@ func Load(path string, getenv func(string) string) (*Config, error) {
 		}
 	}
 	if err := c.applyEnv(getenv); err != nil {
-		return nil, err
-	}
-	if err := c.validate(); err != nil {
 		return nil, err
 	}
 	return &c, nil
