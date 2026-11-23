@@ -278,6 +278,7 @@ With Auth on Aruma, `@aruma/web` refuses requests to Google's Firestore host so 
 ### Verified by
 
 - Web end-to-end tests: 21 of 21 on Chromium, Firefox and WebKit (Firebase 13).
+- Firebase's own Firestore integration tests (firebase-js-sdk 13.0.0, `packages/firestore`, in Node over gRPC), unmodified, compared with the Firestore emulator 1.22.0 (`test/compat/documents`, the `documents-compat` CI job). Integration: 544 of 919 pass (emulator 545). With the IndexedDB-backed cache as well (`USE_MOCK_PERSISTENCE`): 1,169 of 1,907 (emulator 1,171). Lite: 197 of 444 (emulator 198). The rest are skipped upstream on the emulator, or fail on both because they call Google's Auth servers. The 4 tests that pass on the emulator and not on Aruma are documented differences: named databases (3) and one aggregation that production refuses without a composite index (1).
 - Replay of a 65-file corpus recorded on a real Firebase project, in every test run.
 - firebase-tools against the Document Database under a network guard: passes.
 - Admin SDK smoke tests (Go, Node over gRPC and REST, JS lite): pass.

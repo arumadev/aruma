@@ -30,6 +30,7 @@ Every pull request and every push to `main` runs the jobs in `.github/workflows/
 | `web-storage-flutter` | Storage in a Flutter web app. |
 | `storage-sdks` | `@google-cloud/storage`, `cloud.google.com/go/storage` and firebase-tools against Storage. |
 | `storage-compat` | Firebase's own Storage tests, in Node and in Chromium, plus firebase-tools' Storage conformance tests. Every difference from the emulator is classified. |
+| `documents-compat` | Firebase's own Firestore integration tests (integration, persistence and lite, in Node). Every difference from the emulator is classified. |
 | `browser-matrix` | Aruma's download replies in Chromium, Firefox and WebKit, from pages on other origins and on the dashboard's own. |
 | `dashboard` | Lint, unit tests (including colour contrast), the static build, and end-to-end, visual and accessibility tests in Arabic (right to left) and English. |
 
@@ -72,7 +73,7 @@ Firebase publishes integration tests with its open-source SDKs. They were writte
 - **Auth** (`test/compat/firebase-js/run.sh`): Firebase JS 13.0.0 in Node and in Chrome, and firebase-admin-node 14.5.0. This run is not part of CI, because it needs Chrome and clones the upstream repositories. In the last run, 180 tests passed, 98 failed and 83 were skipped. Every failing test is classified in [compatibility](reference/compatibility.md#auth). They fall into four groups: features Aruma does not offer yet (phone sign-in, email-link sign-in, multi-tenancy, importing users), tests that depend on the emulator's fake identity provider, ID tokens whose issuer is not `securetoken.google.com` (a deliberate choice that the Aruma admin libraries handle), and test environment limits.
 - **Realtime Database** (`test/compat/firebase-js/run.sh rtdb`): the database-compat and database suites of firebase-js-sdk, run against the real Firebase emulator first as a baseline, then against Aruma. 326 compat tests (308 run) and 28 modern-SDK tests.
 - **Storage** (`test/compat/storage/run.sh`, and the `storage-compat` CI job): the Firebase JS Storage integration tests in Node and in Chromium (13 tests each), the compat package (8) and firebase-tools' conformance tests (123).
-- **Document Database:** the official clients are exercised through the `documents-smoke` and `web-documents` jobs. The official Android Firestore suite has not been run yet. The official iOS Firestore suite (`test/e2e/ios-firestore`) has been added; its first run is pending.
+- **Document Database** (`test/compat/documents/run.sh`, and the `documents-compat` CI job): the Firestore integration tests of firebase-js-sdk 13.0.0 in Node over gRPC, run against the Firestore emulator 1.22.0 once as a baseline, then against Aruma: integration (919 tests), the same with the IndexedDB-backed cache (1,907) and lite (444). In the last run Aruma passed 544, 1,169 and 197, the emulator 545, 1,171 and 198. The 4 differences are classified in `test/compat/documents/classified.json`: named databases, which Aruma does not serve, and an aggregation that needs a composite index the test cannot create. The official clients are also exercised through the `documents-smoke` and `web-documents` jobs. The official Android Firestore suite has not been run yet. The official iOS Firestore suite (`test/e2e/ios-firestore`) has been added; its first run is pending.
 
 ## Recorded behaviour
 
@@ -130,6 +131,7 @@ export ARUMA_TEST_DATABASE_URL='postgres://postgres@127.0.0.1:5432/postgres?sslm
 | Firebase's Auth suites | `test/compat/firebase-js/run.sh` |
 | Firebase's Realtime Database suites | `test/compat/firebase-js/run.sh rtdb --target aruma --mode production` |
 | Firebase's Storage suites | `test/compat/storage/run.sh` |
+| Firebase's Firestore suites | `test/compat/documents/run.sh` |
 | Durability under kill | `go run ./tools/rtdb-chaos -seed 101 -runs 6 -cycles 6` |
 
 Tests that call firebase-tools or the Google Cloud Storage SDKs only run when you ask for them: set `ARUMA_FIREBASE_CLI=1` or `ARUMA_GCS_SDK=1`. The egress guard changes your firewall and is for CI runners only. On a laptop, the suites' own guards are enough.

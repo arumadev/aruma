@@ -598,6 +598,67 @@ jobs:
           include-hidden-files: true
           path: .cache/upstream/storage/results
 
+  # Firebase's own Firestore integration tests (firebase-js-sdk packages/firestore, integration,
+  # persistence and lite, in Node over gRPC), unmodified, against the Document Database. Every
+  # test that passes on the emulator (test/compat/documents/baseline-emulator.json) must pass, or
+  # be listed with its reason in test/compat/documents/classified.json; a listed test that passes
+  # fails the job too. Installs first, then the suites under test/ci/egress-guard.sh.
+  documents-compat:
+    name: Document Database compat (Firebase's own Firestore tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ARUMA_CACHE_DIR: ${{ github.workspace }}/.cache
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+      - name: Caches where the runner keeps them
+        id: paths
+        run: |
+          {
+            echo "GOCACHE=$(go env GOCACHE)"
+            echo "GOMODCACHE=$(go env GOMODCACHE)"
+            echo "npm_config_cache=$HOME/.npm"
+          } >>"$GITHUB_ENV"
+          echo "upstream=$(grep -E '^(JS_SDK_TAG|YARN)=' test/compat/documents/run.sh | sha256sum | cut -c1-16)" >>"$GITHUB_OUTPUT"
+      # The clone and its yarn install and build (about 1.5 GB), keyed on the pinned tag and yarn
+      # (run.sh's stamp installs again on a change).
+      - uses: actions/cache@v6
+        with:
+          path: .cache/upstream/firebase-js-sdk
+          key: documents-compat-${{ runner.os }}-${{ steps.paths.outputs.upstream }}
+      - name: Install (Go modules, firebase-js-sdk at the pinned tag and its install)
+        run: |
+          go mod download
+          go build -o /dev/null ./test/smoke/genconfig
+          test/compat/documents/run.sh --prepare
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: integration, persistence and lite; every difference from the emulator classified
+        run: test/ci/egress-guard.sh run test/compat/documents/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documents-compat-results
+          include-hidden-files: true
+          path: .cache/upstream/results/documents
+
   web-storage-flutter:
     name: Web Storage measured (Flutter web)
     runs-on: ubuntu-latest

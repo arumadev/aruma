@@ -1,0 +1,37 @@
+{
+  "about": "Tests that fail on Aruma, pass on the emulator and are not bugs in Aruma: the expected differences. summarize.mjs prints the class next to such a failure and does not count it as unexplained; a listed test that no longer fails, or is no longer run, fails the run too, so the entry gets removed. An entry matches by suite, file and full test name (a date in a name is replaced by <date>).",
+  "classes": {
+    "unsupported-feature": "The test needs a feature Aruma does not offer, listed in docs/reference/known-differences.md and compatibility.md.",
+    "index-rule": "The test sends a query that production refuses without a composite index the test cannot create, and Aruma answers as production does. The emulator serves every query; upstream runs these tests against the emulator only."
+  },
+  "tests": [
+    {
+      "suite": "integration",
+      "file": "test/integration/api/database.test.ts",
+      "title": "(Persistence=memory_lru_gc) Database can keep docs separate with multi-db when online",
+      "class": "unsupported-feature",
+      "why": "withNamedTestDbsOrSkipUnlessUsingEmulator (test/integration/util/helpers.ts) opens the databases db1 and db2, which the emulator creates on first use. Aruma serves the (default) database only and answers NOT_FOUND for any other (docs/reference/known-differences.md, Document Database, 'Databases'), as production does for a database that does not exist (test/oracle/documents/corpus/f0-missing-database.json). Upstream skips the test unless the target is the emulator."
+    },
+    {
+      "suite": "persistence",
+      "file": "test/integration/api/database.test.ts",
+      "title": "(Persistence=memory_lru_gc) Database can keep docs separate with multi-db when online",
+      "class": "unsupported-feature",
+      "why": "withNamedTestDbsOrSkipUnlessUsingEmulator (test/integration/util/helpers.ts) opens the databases db1 and db2, which the emulator creates on first use. Aruma serves the (default) database only and answers NOT_FOUND for any other (docs/reference/known-differences.md, Document Database, 'Databases'), as production does for a database that does not exist (test/oracle/documents/corpus/f0-missing-database.json). Upstream skips the test unless the target is the emulator."
+    },
+    {
+      "suite": "persistence",
+      "file": "test/integration/api/database.test.ts",
+      "title": "(Persistence=indexeddb) Database can keep docs separate with multi-db when online",
+      "class": "unsupported-feature",
+      "why": "withNamedTestDbsOrSkipUnlessUsingEmulator (test/integration/util/helpers.ts) opens the databases db1 and db2, which the emulator creates on first use. Aruma serves the (default) database only and answers NOT_FOUND for any other (docs/reference/known-differences.md, Document Database, 'Databases'), as production does for a database that does not exist (test/oracle/documents/corpus/f0-missing-database.json). Upstream skips the test unless the target is the emulator."
+    },
+    {
+      "suite": "lite",
+      "file": "test/lite/integration.test.ts",
+      "title": "Aggregate queries - sum / average (Persistence=memory_lru_gc) queries requiring indexes performs aggregations on documents with all aggregated fields using getAggregationFromServer",
+      "class": "index-rule",
+      "why": "Upstream runs this describe block only against the emulator (USE_EMULATOR ? apiDescribe : apiDescribe.skip), 'because we don't have a way to dynamically create the indexes'. sum('pages'), average('pages') and average('year') over a collection named by a random id need a composite index on pages and year; production refuses such an aggregation without one (test/oracle/documents/corpus/indexes-105.json, sum2_all and multi_agg: FAILED_PRECONDITION), and Aruma answers the same with the index link."
+    }
+  ]
+}
