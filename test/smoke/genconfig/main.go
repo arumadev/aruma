@@ -22,6 +22,10 @@
 // -switch <addr> serves an off switch for the server on addr, for the offline scenarios of the
 // Realtime Database end-to-end tests (switch.go): POST /down closes the listening socket and every
 // open connection, POST /up listens again. With -serve its URL is printed as ARUMA_SWITCH_URL.
+// -db-switch <addr> is the same switch between the server and Postgres, for the outage scenarios
+// of the web Auth end-to-end tests: POST /down drops every connection of the server's pool and
+// refuses new ones, as a stopped Postgres does; POST /up lets them through again. With -serve its
+// URL is printed as ARUMA_DB_SWITCH_URL.
 //
 // -storage serves Cloud Storage, its blobs in storage/ under -out. -public-host <name> makes the
 // server's public URL https://<name> and trusts 127.0.0.1 as a proxy; with -serve, -public-tls
@@ -117,6 +121,7 @@ func main() {
 	flag.StringVar(&r.domain, "rtdb-domain", "", "rtdb.domain, e.g. rtdb.aruma.test (implies -rtdb)")
 	flag.StringVar(&r.tlsAddr, "rtdb-tls", "", "with -serve and -rtdb-domain: address of a TLS front for the database hosts")
 	switchAddr := flag.String("switch", "", "with -serve: address of the server's off switch (POST /down, POST /up)")
+	dbSwitchAddr := flag.String("db-switch", "", "with -serve: address of the switch between the server and Postgres (POST /down, POST /up)")
 	var p publicOptions
 	flag.BoolVar(&p.storage, "storage", false, "serve Cloud Storage")
 	flag.StringVar(&p.host, "public-host", "", "public URL https://<name>, e.g. storage.aruma.test, behind a proxy on 127.0.0.1")
@@ -139,6 +144,9 @@ func main() {
 	if *switchAddr != "" && !*serve {
 		log.Fatal("-switch needs -serve")
 	}
+	if *dbSwitchAddr != "" && !*serve {
+		log.Fatal("-db-switch needs -serve")
+	}
 	if p.tlsAddr != "" && (p.host == "" || !*serve) {
 		log.Fatal("-public-tls needs -public-host and -serve")
 	}
@@ -150,7 +158,7 @@ func main() {
 		}
 		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
 	}
-	if err := run(*out, *addr, *dbPrefix, *switchAddr, *serve, *anonymous, r, p, d, logger); err != nil {
+	if err := run(*out, *addr, *dbPrefix, *switchAddr, *dbSwitchAddr, *serve, *anonymous, r, p, d, logger); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -172,7 +180,7 @@ type publicOptions struct {
 	host, tlsAddr string
 }
 
-func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtdbOptions, pub publicOptions, docs documentsOptions, logger *slog.Logger) error {
+func run(out, addr, dbPrefix, switchAddr, dbSwitchAddr string, serve, anonymous bool, rtdb rtdbOptions, pub publicOptions, docs documentsOptions, logger *slog.Logger) error {
 	ctx := context.Background()
 	// The name goes into CREATE DATABASE unquoted.
 	if !regexp.MustCompile(`^[a-z_][a-z0-9_]*$`).MatchString(dbPrefix) {
@@ -196,7 +204,19 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 	if err := store.Migrate(ctx, dbURL); err != nil {
 		return err
 	}
-	pool, err := store.Open(ctx, dbURL)
+	poolURL := dbURL
+	var dbsw *switchListener
+	if dbSwitchAddr != "" {
+		if dbsw, err = newSwitchListener("127.0.0.1:0"); err != nil {
+			return err
+		}
+		defer dbsw.Close()
+		go forward(dbsw, u.Host)
+		pu := *u
+		pu.Host = dbsw.Addr().String()
+		poolURL = pu.String()
+	}
+	pool, err := store.Open(ctx, poolURL)
 	if err != nil {
 		return err
 	}
@@ -412,6 +432,14 @@ func run(out, addr, dbPrefix, switchAddr string, serve, anonymous bool, rtdb rtd
 			}
 			defer stop()
 			fmt.Printf("export ARUMA_SWITCH_URL=%s\n", u)
+		}
+		if dbsw != nil {
+			u, stop, err := serveSwitch(dbSwitchAddr, dbsw)
+			if err != nil {
+				return err
+			}
+			defer stop()
+			fmt.Printf("export ARUMA_DB_SWITCH_URL=%s\n", u)
 		}
 		// Readers wait for this line: it comes last.
 		fmt.Printf("export ARUMA_CLI_TOKEN=%s\n", tok.Plaintext)

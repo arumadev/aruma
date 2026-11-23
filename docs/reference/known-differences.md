@@ -28,6 +28,7 @@ For each difference you get what Firebase does, what Aruma does, and what it mea
 | Admin SDK methods | The full Admin Auth API | Supported: `verifyIdToken`, `verifySessionCookie`, `createSessionCookie`, `createUser`, `getUser`, `getUserByEmail`, `getUsers`, `updateUser`, `deleteUser`, `deleteUsers`, `listUsers`, `setCustomUserClaims`, `revokeRefreshTokens`. Not built: phone numbers, `importUsers`, project config, tenants, SAML and OIDC config, and the email action links such as `generatePasswordResetLink` | Calls outside the supported list fail |
 | Password hashes | `listUsers` can return the password hash and salt | The hash is never returned. The field holds `REDACTED` | Do not export password hashes through the Admin SDK |
 | `signInWithRedirect` across sites | Documented limit in browsers that partition third-party storage | Same limit. It applies when the app and Aruma (or `authDomain`) are on different sites | Serve Aruma on the app's own site, or use `signInWithPopup` |
+| A database outage | Not applicable. An outage of Google's reaches the SDKs as a failed request or an HTML 503 | While Aruma cannot reach PostgreSQL, the SDK endpoints (Identity Toolkit and Secure Token) answer 503 with a plain-text body and `Retry-After: 5`, not an Identity Toolkit error in JSON. The Admin API answers 503 `UNAVAILABLE` in JSON | The web SDK reports `auth/network-request-failed`, keeps the signed-in user and retries the token refresh. A JSON error would sign the user out at the next app start |
 
 ## Realtime Database
 
