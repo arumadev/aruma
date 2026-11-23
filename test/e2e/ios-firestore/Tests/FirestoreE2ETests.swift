@@ -657,22 +657,31 @@ final class FirestoreE2ETests: XCTestCase {
     try await eventually("synced") { r.ids == ["n0"] && (r.last.map { !$0.contains("cache") && !$0.contains("pending") } ?? false) }
 
     let done = Completion()
-    try await server("down")
+    // The server closes every connection it has, the SDK's gRPC channel among them, and refuses
+    // new ones.
+    let down = try await server("down")
+    print("ARUMA_E2E offline: \(down)")
+    XCTAssertTrue(Self.matches(down, #"down, [1-9]\d* connections closed"#), down)
     do {
-      // The SDK notices the server is gone and says its results are from the cache.
-      try await eventually("offline", timeout: 30) { r.last?.hasSuffix(" cache") ?? false }
+      // The app writes at once, as an app does that does not know the server went away. The SDK
+      // learns it from the connection: a channel whose socket the server closed while it was
+      // idle is not always noticed until it is used (the first run noticed within a second, the
+      // second not in 30 s), and this write is its next use.
       items.document("n1").setData(["v": 1, "by": uid, "at": FieldValue.serverTimestamp()]) { error in done.finish(error) }
       try await eventually("the local event", timeout: 5) { r.ids == ["n0", "n1"] }
       XCTAssertTrue(r.changes.contains { $0.id == "n1" && $0.kind == "ADDED" && $0.pending && $0.data == "{at=null, by=\(uid), v=1}" },
                     "\(r.changes)")
+      // The SDK says its results are from the cache: it knows it is offline.
+      try await eventually("offline", timeout: 30) { r.last?.hasSuffix(" cache") ?? false }
       try await Task.sleep(nanoseconds: 3_000_000_000)
       XCTAssertFalse(done.finished, "the write completed with the server down")
     } catch {
-      try await server("up")
+      print("ARUMA_E2E offline: the listener saw \(r.events)")
+      _ = try await server("up")
       throw error
     }
     let up = Date().timeIntervalSince1970 * 1000
-    try await server("up")
+    _ = try await server("up")
     let t0 = Date()
     // The SDK reconnects by itself (gRPC's backoff and Firestore's) and sends the queued write.
     try await eventually("the write landed", timeout: 120) { done.finished }
@@ -1075,11 +1084,13 @@ final class FirestoreE2ETests: XCTestCase {
     XCTAssertEqual(r.status, 200, String(decoding: r.body, as: UTF8.self))
   }
 
-  /// Takes the whole server down (every connection closed, new ones refused) or up again.
-  private func server(_ state: String) async throws {
+  /// Takes the whole server down (every connection closed, new ones refused) or up again. Returns
+  /// the switch's answer, e.g. "down, 3 connections closed".
+  private func server(_ state: String) async throws -> String {
     var req = URLRequest(url: try XCTUnwrap(URL(string: "\(Self.env["ARUMA_SWITCH_URL"] ?? "")/\(state)")))
     req.httpMethod = "POST"
-    let (_, response) = try await URLSession.shared.data(for: req)
+    let (data, response) = try await URLSession.shared.data(for: req)
     XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+    return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
