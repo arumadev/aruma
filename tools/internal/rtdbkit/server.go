@@ -398,6 +398,11 @@ func (s *Server) signIn(ctx context.Context) error {
 // Console calls the console API as the dashboard does, signed in as the server's owner
 // account, which is created on first use.
 func (s *Server) Console(ctx context.Context, method, path string, body any) error {
+	return s.ConsoleJSON(ctx, method, path, body, nil)
+}
+
+// ConsoleJSON is Console that also decodes the reply's JSON body into out, when out is not nil.
+func (s *Server) ConsoleJSON(ctx context.Context, method, path string, body, out any) error {
 	if err := s.signIn(ctx); err != nil {
 		return err
 	}
@@ -414,6 +419,9 @@ func (s *Server) Console(ctx context.Context, method, path string, body any) err
 	resp.Body.Close()
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("%s %s: %s: %s", method, path, resp.Status, b)
+	}
+	if out != nil {
+		return json.Unmarshal(b, out)
 	}
 	return nil
 }

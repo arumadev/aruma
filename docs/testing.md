@@ -101,7 +101,10 @@ Rules for reading the recordings:
 - **Contention.** `test/contention/documents` tests phantom reads under concurrent transactions.
 - **Kill-and-restart durability (Realtime Database).** `tools/rtdb-chaos` kills the server with SIGKILL while clients write, restarts it, and checks that no acknowledged write is missing and none ran twice. The results are in [benchmarks](benchmarks.md#durability).
 - **Backup, restore and upgrade.** `test/ops` runs the `aruma` binary as an operator does. It fills two projects through the public APIs (users with passwords, anonymous, custom claims and disabled; Realtime Database data and rules; documents, indexes and rules; objects small and large, and an upload left half done; API keys, service accounts and a CLI token), backs them up while clients write, restores into a new database and directory, and compares everything the APIs serve, byte for byte. It also restores under another master key, over a running server and without the Storage archive, upgrades from the previous release (`aruma migrate up`, then `aruma serve`), and starts a second process beside a running one. `test/ops/run.sh` builds the previous release from its tag and runs it all.
-- **Fault injection and load for the Document Database** have not been run yet.
+- **Kill-and-restart durability (Document Database).** `tools/docs-chaos` does the same with commits, batched writes, BatchWrite and read-write transactions (pessimistic for admin clients, optimistic for end users), over gRPC and REST, while Listen streams resume across the restarts with their tokens. It checks that no acknowledged write is missing and no refused one is there, that a commit's documents and the counters it increments change together (so every increment ran exactly once), that transactional counters hold 1..n with no gap or repeat, that seqs are contiguous and commit times rise strictly with them and in real time across restarts, and that a resumed Listen stream gets exactly what it missed. The results are in [benchmarks](benchmarks.md#document-database).
+- **Kill-and-restart durability (Storage).** `tools/storage-chaos` kills the server while clients make simple, multipart and resumable uploads of up to 12 MB, deletes and metadata updates. Every object's bytes name their version and size, so a download that is cut short or of the wrong version is caught. It checks every acknowledged change, the resumable upload offsets the server reports after a restart, that every object row has its whole file while the server is down, and that the orphan files a kill leaves are deleted by the sweep at the next boot and replaced files by the GC. The results are in [benchmarks](benchmarks.md#storage).
+- **Load for the Document Database and Storage.** `tools/dsbench` measures both through their public APIs. The numbers are in [benchmarks](benchmarks.md).
+- **Soak.** `tools/soak` runs a mixed workload on all four services for as long as you ask (72 hours on your own server, for instance) and fails if acknowledged writes are missing, errors pass 0.1%, or memory, goroutines, open files, Postgres connections or table sizes keep growing.
 
 ## The network guard: no request reaches Google
 
@@ -135,7 +138,9 @@ export ARUMA_TEST_DATABASE_URL='postgres://postgres@127.0.0.1:5432/postgres?sslm
 | Firebase's Realtime Database suites | `test/compat/firebase-js/run.sh rtdb --target aruma --mode production` |
 | Firebase's Storage suites | `test/compat/storage/run.sh` |
 | Firebase's Firestore suites | `test/compat/documents/run.sh` |
-| Durability under kill | `go run ./tools/rtdb-chaos -seed 101 -runs 6 -cycles 6` |
+| Durability under kill | `go run ./tools/rtdb-chaos -seed 101 -runs 6 -cycles 6`, `go run ./tools/docs-chaos -seed 301 -runs 3 -cycles 10`, `go run ./tools/storage-chaos -seed 401 -runs 3 -cycles 10` |
+| Document Database and Storage load | `go run ./tools/dsbench -start -scenarios all` |
+| Soak, on your own server | `go run ./tools/soak -bin /path/to/aruma -d 72h -out soak.csv` |
 | Backup, restore, upgrade and a second process | `test/ops/run.sh` (about four minutes; needs the PostgreSQL 18 client tools) |
 
 Tests that call firebase-tools or the Google Cloud Storage SDKs only run when you ask for them: set `ARUMA_FIREBASE_CLI=1` or `ARUMA_GCS_SDK=1`. The egress guard changes your firewall and is for CI runners only. On a laptop, the suites' own guards are enough.
@@ -144,7 +149,7 @@ The first run of a compat or end-to-end suite downloads packages and the upstrea
 
 ## What is not verified yet
 
-- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, the conformance suite against a live server in CI, and fault injection and load have not been run. See the [changelog](CHANGELOG.md#v040).
+- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI have not been run. See the [changelog](CHANGELOG.md#v040).
 - **Android and iOS Storage suites** run by hand, not on a schedule.
 - **Rules are not part of the load tests.** The performance figures in [benchmarks](benchmarks.md) used open rules for the Realtime Database.
 - **Test counts per job** are not published here. Where a job's result is a count, the release notes for that version give it. The Document Database release candidate v0.4.0-rc.1 recorded 21 of 21 web tests passing on each of Chromium, Firefox and WebKit, and 1,665 dashboard unit tests and 226 end-to-end tests passing.
