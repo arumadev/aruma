@@ -128,9 +128,10 @@ type RTDBLimits struct {
 	StringBytes int64 `yaml:"string_bytes"`
 	// WriteBytesPerMinute caps the bytes written to one database per minute.
 	WriteBytesPerMinute int64 `yaml:"write_bytes_per_minute"`
-	// ConnectionsPerProject caps the connections to one project's databases. A connection
-	// counts once it has signed in or done its first permitted operation, so anonymous sockets
-	// cannot take a project's slots.
+	// ConnectionsPerProject caps the connections to one project's databases: WebSockets and
+	// long polls. A connection counts once it has signed in or done its first permitted
+	// operation, so anonymous sockets cannot take a project's slots. REST requests do not
+	// count, as in Firebase, so a database full of listeners can still be written to.
 	ConnectionsPerProject int `yaml:"connections_per_project"`
 	// ConnectionsPerIP caps the open connections from one client address (resolved through
 	// trusted_proxies), counted from the handshake.

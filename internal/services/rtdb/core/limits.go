@@ -22,7 +22,8 @@ type Limits struct {
 	StringBytes int64
 	// WriteBytesPerMinute caps the bytes written to one database per minute.
 	WriteBytesPerMinute int64
-	// ConnectionsPerProject caps the open connections to one project's databases.
+	// ConnectionsPerProject caps the open connections (WebSockets, long polls) to one
+	// project's databases; REST requests do not count.
 	ConnectionsPerProject int
 	// OutboxBytes caps the data waiting to be sent on one connection.
 	OutboxBytes int64

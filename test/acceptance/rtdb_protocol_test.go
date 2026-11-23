@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -531,6 +532,39 @@ func TestRTDBAnonymousClientsAreBounded(t *testing.T) {
 	second := e.dial(ns, dialOpts{})
 	if r := second.call("gauth", map[string]any{"cred": sat}); r.Status != "unavailable" {
 		t.Errorf("second admin past the limit: %+v", r)
+	}
+}
+
+// connections_per_project counts the connections that stay (WebSockets, long polls), not REST
+// requests, as Firebase counts simultaneous connections: with the listeners at the limit, a
+// backend still writes over REST and the listeners get its data, while one more connection is
+// still refused.
+func TestRTDBRESTAtTheConnectionLimit(t *testing.T) {
+	e := rtdbEnv(t, true, map[string]string{"ARUMA_RTDB_CONNECTIONS_PER_PROJECT": "1"})
+	owner := e.owner()
+	ns := owner.projectNS("chat-app")
+	_, key := owner.serviceAccountKey("chat-app", "backend")
+	sat, _, err := exchange(t, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listener := e.dial(ns, dialOpts{})
+	listener.call("gauth", map[string]any{"cred": sat}).mustOK(t)
+	listener.call("q", map[string]any{"p": "/feed", "h": ""}).mustOK(t)
+	for i := range 3 {
+		if r := restAs(t, e, "PUT", "/feed/n.json?ns="+ns, strconv.Itoa(i), sat, nil); r.status != 200 {
+			t.Fatalf("REST write %d with the project at its limit: %d %s", i, r.status, r.body)
+		}
+		if m := listener.next(); !strings.Contains(m, `"p":"feed/n"`) || !strings.Contains(m, `"d":`+strconv.Itoa(i)) {
+			t.Errorf("listener after REST write %d: %s", i, m)
+		}
+		if r := restAs(t, e, "GET", "/feed/n.json?ns="+ns, "", sat, nil); r.status != 200 || r.body != strconv.Itoa(i) {
+			t.Errorf("REST read %d with the project at its limit: %d %s", i, r.status, r.body)
+		}
+	}
+	second := e.dial(ns, dialOpts{})
+	if r := second.call("gauth", map[string]any{"cred": sat}); r.Status != "unavailable" {
+		t.Errorf("a second connection past the limit: %+v", r)
 	}
 }
 
