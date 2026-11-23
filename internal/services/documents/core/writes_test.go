@@ -119,6 +119,41 @@ func TestPlanPreconditions(t *testing.T) {
 	}
 }
 
+// A write that updates a document under a precondition after a delete of it in the same commit
+// is INVALID_ARGUMENT, as the emulator answers (cloud-firestore-emulator v1.22.0) and
+// firebase-js-sdk's transactions.test.ts expects. A write of the document in between, or an
+// update without a precondition or with exists: false, may follow the delete.
+func TestCheckDeleteThenUpdate(t *testing.T) {
+	p, q := ParsePath("c/d"), ParsePath("c/e")
+	del := Write{Kind: WriteDelete, Path: p}
+	upd := func(path Path, pre Precondition) Write {
+		return Write{Kind: WriteUpdate, Path: path, Fields: value.Map(), Masked: true, Precondition: pre}
+	}
+	exists, missing, at := Precondition{Exists: new(true)}, Precondition{Exists: new(false)}, Precondition{UpdateTime: time.UnixMicro(1)}
+	for _, c := range []struct {
+		name   string
+		writes []Write
+		bad    bool
+	}{
+		{"delete, update exists", []Write{del, upd(p, exists)}, true},
+		{"delete, update update_time", []Write{del, upd(p, at)}, true},
+		{"update, delete, update exists", []Write{upd(p, exists), del, upd(p, exists)}, true},
+		{"delete exists, update exists", []Write{{Kind: WriteDelete, Path: p, Precondition: exists}, upd(p, exists)}, true},
+		{"another document's update first", []Write{upd(q, exists), del, upd(p, exists)}, true},
+		{"delete, set", []Write{del, upd(p, Precondition{})}, false},
+		{"delete, set, update exists", []Write{del, upd(p, Precondition{}), upd(p, exists)}, false},
+		{"delete, create, update exists", []Write{del, upd(p, missing), upd(p, exists)}, false},
+		{"delete, delete", []Write{del, del}, false},
+		{"delete, another document's update", []Write{del, upd(q, exists)}, false},
+		{"update, delete", []Write{upd(p, exists), del}, false},
+	} {
+		err := checkDeleteThenUpdate(c.writes)
+		if c.bad != (err == errDeleteThenUpdate) || !c.bad && err != nil {
+			t.Errorf("%s: %v, want refused %v", c.name, err, c.bad)
+		}
+	}
+}
+
 func TestPlanMasksAndResults(t *testing.T) {
 	p := ParsePath("c/d")
 	prev := time.UnixMicro(1_000_000)

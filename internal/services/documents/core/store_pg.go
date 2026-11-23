@@ -99,6 +99,9 @@ func (s *PGStore) commit(ctx context.Context, db DB, writes []Write, c *commitTx
 	if err := s.serving(); err != nil {
 		return CommitResult{}, err
 	}
+	if err := checkDeleteThenUpdate(writes); err != nil {
+		return CommitResult{}, err
+	}
 	p := newPlan(writes)
 	release, err := s.lockCommit(ctx, db, p, c)
 	if err != nil {
