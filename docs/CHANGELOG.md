@@ -1,6 +1,338 @@
 # Changelog
 
-One section per release, newest first. Each release has an upgrade section when its steps are not obvious. Releases: [v0.4.0](#v040), [v0.4.0-rc.1](#v040-rc1), [v0.3.0](#v030), [v0.2.0](#v020), [v0.1.0](#v010).
+One section per release, newest first. Each release has an upgrade section when its steps are not obvious. Releases: [v0.5.0](#v050), [v0.4.0](#v040), [v0.4.0-rc.1](#v040-rc1), [v0.3.0](#v030), [v0.2.0](#v020), [v0.1.0](#v010).
+
+## v0.5.0
+
+Released YYYY-MM-DD.
+
+v0.5.0 is for production on one server, for small and medium projects. It adds no new service. It
+fixes what a release-wide review, Firebase's own Firestore tests, crash and outage tests and two
+example apps found. It also makes Storage backups consistent, deletes rows that outlived their use,
+and lets you set Auth's limits, the server's timeouts and the database pool for a real server. The
+Android and iOS end-to-end suites of the Document Database now pass.
+
+Read [Upgrading from v0.4.0](#upgrading-from-v040) before you upgrade. It runs three migrations, and
+the old process must stop before the new one starts.
+
+### Security
+
+- **Cloud Storage: a list without the `/` delimiter showed names in folders the caller may not
+  list.** The SDKs always send `/`. A raw `/v0` list without it, or with another delimiter,
+  returned every name below the listed folder: an anonymous list of `shared/` showed
+  `shared/sales/hr/salary-review.txt` although a list of `shared/sales/hr/` was denied. File
+  contents stayed protected. Now each deeper folder is decided by the rules on its own, and a name
+  in a folder the caller may not list is left out. Rules that allow every depth list as before.
+  Service accounts are not governed by rules and see every name. See
+  [known differences](reference/known-differences.md#cloud-storage).
+- **Dashboard: the page after sign-in could be another site.** `/login/?next=` refused `//` but not
+  a tab or line break inside it, such as `/%09/evil.example`. Browsers drop those characters, so
+  after a successful sign-in the browser went to the other site. Control characters are now
+  refused, and the destination must be on the dashboard's own origin.
+- **iOS: an Auth host written with a trailing dot went to Google.** `ArumaRedirect` did not
+  recognise `identitytoolkit.googleapis.com.`, which is the same host as without the dot, so such a
+  request reached Google with the app's credentials. It is now sent to Aruma. A Storage request to such a host still fails instead of being
+  rewritten.
+- **Flutter web: sign-up and sign-in went to Google.** A Flutter web app set up as the guides said
+  loaded Google's `firebase-auth.js`, so it sent the user's email and password to
+  `identitytoolkit.googleapis.com`: `aruma-web flutter-web` rewrote Storage and Firestore only. The
+  tool now has an `auth` product, on by default, that rewrites the pinned `firebase-auth.js` to your
+  server and loads it first. It stops the build if a Google Auth host is left in the file, or if
+  `web/index.html` loads a rewritten product from Google itself. Leaving `auth` out prints a warning
+  when the project uses `firebase_auth`. With `auth` on, the tool refuses a project whose Storage or
+  Firestore would still go to Google with the Aruma ID token. See
+  [Connecting a web app to Aruma Auth](guides/auth-web.md#flutter-web).
+- **Go 1.27.4.** `govulncheck` found GO-2026-6859, a crash in `net/http`'s HTTP/1 server, reachable
+  from `aruma` and `arumactl` built with Go 1.27.3. The binaries and the Docker image are built with
+  Go 1.27.4. The Go SDK modules move to `golang.org/x/net` 0.62.0, and the dashboard to Next.js
+  16.4.6; Next.js's advisories did not apply to the dashboard's static build. After the move,
+  `govulncheck` finds no reachable advisory and `npm audit` finds none in the four npm packages.
+- **API key restrictions, corrected in the docs.** [Security](security.md) said key restrictions
+  apply to every request. They apply to Auth and to the Document Database's WebChannel handshake.
+  The Document Database's REST and gRPC requests do not check the key, as production does not; the
+  rules and the caller's identity decide access there.
+
+The release-wide review and its scope are in [security](security.md#v05).
+
+### Fixes
+
+**Realtime Database**
+
+- **A client that left still held the database.** Listens and reads queued by a client that then
+  disconnected still ran on the database's single writer, each loading its node for nobody. Thirty
+  such listens of a 180,000-row node held every other client's writes for 27 seconds. The writer now
+  answers a closed connection's listens and reads without loading data, and still applies its
+  writes. In the same run with the fix, writes waited 1.2 seconds, for the one listen already
+  running (one run on a test server).
+- **One process per database.** A second `aruma serve` on the same Postgres database also served the
+  Realtime Database, so a write through one never reached the listeners on the other. At startup the
+  process now takes an advisory lock (`rtdb.instance`), as the Document Database does. A process
+  without it answers the Realtime Database with `UNAVAILABLE` and `/readyz` with 503. A process that
+  loses it closes its connections and takes it again. See
+  [configuration](reference/configuration.md#realtime-database-instance).
+
+**Document Database (Firestore-compatible)**
+
+- **Several writes to one document in a commit.** The rules judged them as an update when any of
+  them had a precondition. So a batch or transaction that set a missing document and then updated
+  it was denied whenever a rule read `resource.data`. The first write now says what the commit
+  asserts of the document, as in the emulator. An update first is still an update.
+- **Delete, then update with a precondition, in one commit** now fails with `INVALID_ARGUMENT`
+  "Cannot delete then update an entity in the same request.", as the emulator answers and
+  firebase-js-sdk's transaction tests expect. It failed with `NOT_FOUND`. A set after a delete still
+  commits, as production's recording has it.
+- **Equality on the document id beside another field's inequality.** A query with `==` or `in` on
+  the document id, an inequality on another field and none on the document id now fails with
+  `INVALID_ARGUMENT` "Equality on key is not allowed if there are other inequality fields and key
+  does not appear in inequalities.", as the emulator does. It was served, or refused for a missing
+  index.
+
+**Auth**
+
+- **Signed-out clients were left stuck after a month.** The refresh token of a revoked session or a
+  deleted user is kept 30 days, so that the client hears `TOKEN_EXPIRED` or `USER_NOT_FOUND` and
+  signs out. The 30 days were counted from the token's creation, so a session older than a month
+  lost its token within the hour of the revocation, and the client was stuck on
+  `INVALID_REFRESH_TOKEN`. They are now counted from the revocation or the deletion. A live refresh
+  token is never deleted.
+- **A purged project's Auth data stayed.** When a deleted project's 30 days ended, its users (with
+  their password hashes), refresh tokens, audit rows, signing keys and settings, and its change log
+  rows, were kept. They are now deleted with the rest of the project.
+- **A flood of sign-ins slowed everyone.** With 100,000 entries in a rate-limit table, each new
+  entry scanned the whole table twice under one lock, about 17 ms each time in a unit test on a busy
+  machine. The sign-in delay is kept per email typed, so many distinct emails slowed every sign-in.
+  Adding and evicting an entry now takes constant time.
+
+**Every service**
+
+- **503 instead of 500 or 400 during database trouble.** With Postgres down or a connection cut,
+  Auth, the console and the Management API answered 500 `INTERNAL`, and an API key lookup answered
+  400 `API key not valid`, which the SDKs report as a bad key and do not retry. The Document Database
+  answered `INTERNAL` when Postgres ended a connection, and Storage 500 when that happened inside a
+  transaction. All of them now answer 503 `UNAVAILABLE`, which clients retry. A request whose own
+  client went away is not counted as an outage. In 10 Postgres outages (stops, pauses and cut
+  connections) with clients writing, the Document Database answered `INTERNAL` 15 times before the
+  fix, and never in 10 more after it.
+- **Readiness waits for the Document Database.** After a restart, `/readyz` answered 200 about 2
+  seconds in, while the Document Database still refused for about 30 seconds, until its lock was
+  free. `/readyz` now answers 503 (`documents-instance`) until it is served. The two instance locks
+  are taken at the same time, so a second process opens its port after 30 seconds instead of 60.
+- **Back within seconds of Postgres.** The Realtime Database and the Document Database retried their
+  instance lock with a backoff of up to 30 seconds, so after Postgres came back they stayed down up
+  to 30 seconds longer than the other services. The backoff now stops at 5 seconds. After four
+  15-second Postgres stops, both served again 2.0 to 2.8 seconds after Postgres started, against 16
+  seconds before.
+
+**Dashboard**
+
+- A long app nickname no longer overflows its card on the project overview (it made a 360-pixel
+  page 1,576 pixels wide).
+- The Document Database's root breadcrumb no longer breaks an accessibility rule (`aria-label` on an
+  element with no role), the only violation the accessibility check found across the dashboard.
+
+**SDK packages**
+
+- `@aruma/admin-auth`: errors carry firebase-admin's own messages, such as "The email address is
+  already in use by another account.", not "Aruma Auth answered EMAIL_EXISTS.". The codes were
+  already the same. A detail from the server still comes first.
+- `adminauth` (Go): a verification no longer waits past its own context while another call loads the
+  signing keys.
+- `@aruma/web`: the web guide now says that on mobile browsers and in Safari `getAuth()` loads a
+  script from `apis.google.com` whatever the sign-in method, and that `authStateReady` waits for it
+  where that host is blocked. It shows `initializeAuth` without the popup helper for apps that do
+  not need it. See [the guide](guides/auth-web.md#mobile-browsers-and-safari-the-apisgooglecom-script).
+
+### Outage handling
+
+- **A frozen database no longer hangs every request.** A Postgres that is paused, stalled on its
+  disk or cut off by a partition that keeps TCP open answers nothing. Database calls had no
+  deadline, so in a 40-second pause Auth, the Document Database, the Realtime Database and Storage
+  gave no answer at all, and the pool filled with waiting requests. The server now bounds the wait
+  for a connection and each statement by the new `database_timeout` (`ARUMA_DATABASE_TIMEOUT`, 15
+  seconds by default), and answers 503 `UNAVAILABLE` past it. In the same pause with the fix, every
+  service answered 503 after 15.0 seconds and served again half a second after Postgres resumed.
+  Streams stay long-lived; only the database calls inside them are bounded. `migrate`, `backup` and
+  `restore` are not bounded. See
+  [database timeout](reference/configuration.md#database-timeout).
+- **Two more 500s are 503 now.** A pooled connection that ended in the middle of an answer gave 500
+  "unexpected EOF", and a connection that timed out while opening gave 500 on Storage and the
+  Document Database and 499 `CANCELLED` on Auth.
+- **Web users stay signed in through an outage.** Auth answered its SDK endpoints with 503 as an
+  Identity Toolkit error in JSON. The web SDK signs the user out at the next app start on any error
+  but a network failure, so a page reloaded during an outage came back signed out. Those endpoints
+  now answer 503 with a plain-text body and `Retry-After: 5`, which the SDK reports as
+  `auth/network-request-failed`: it keeps the user and retries the token refresh. Tested in Chromium
+  with Firebase JS 11, 12 and 13. The Admin API keeps its JSON `UNAVAILABLE`. Android and iOS were
+  not run against the new answer; by their source they sign a user out only when the server says the
+  user or the token is gone. See [known differences](reference/known-differences.md#authentication).
+- **Realtime Database REST requests do not count as connections.** At
+  `rtdb.limits.connections_per_project`, every REST read and write was refused with 429, so a
+  backend could not write to a database its own clients filled with listeners. Only WebSockets and
+  long polls count now, as in Firebase. The limits are listed in
+  [Realtime Database limits](reference/configuration.md#realtime-database-limits).
+
+### Operations
+
+- **Storage backups, from one snapshot.** The documented procedure took the database dump and then
+  copied the Storage directory. Aruma deletes the file of an overwritten or deleted object a minute
+  later, and a finished upload moves its file, so a copy that ended after the dump could miss files
+  the dump names. The restored objects then answered 503. `aruma backup --storage-out FILE` now
+  writes the dump and an archive of exactly the files that dump names, from one snapshot, while the
+  server runs. Storage holds its file deletions while a backup runs. In a test that backs up while
+  clients write, then restores, the old procedure left objects without their file in 2 of 4 runs;
+  `--storage-out` in 0 of 6. The [operations guide](guides/operations.md#docker) has the backup and
+  restore steps for Docker and for the binary.
+- **`aruma restore` refuses to run while a server is connected** to the database.
+- **`backup`, `restore` and `migrate` read `--config`**, and `backup` and `restore` accept a database
+  URL with `pool_max_conns`, as the guide recommends. Before, they read only the environment and
+  refused that URL.
+- **`aruma migrate up` can run twice at once.** Two runs on an empty database raced and one failed
+  (2 of 6 concurrent runs in a test). Migrate now holds an advisory lock: a second run waits, finds
+  nothing to do and succeeds.
+- **Housekeeping deletes what outlived its use**, every hour: the sign-in audit (`auth.audit`) and
+  the administrative audit log (`control.audit_log`) after 90 days, the change log
+  (`events.changes`) after 30, expired console sessions and CLI tokens, and the refresh tokens above.
+  The new `retention.auth_audit_days`, `retention.control_audit_days` and `retention.events_days`
+  set the three periods, and `0` keeps a table forever. Rows go in batches, at most 50,000 per table
+  per hour. The audit log still refuses any change, and any deletion of a row younger than seven
+  days. Each pass logs a `housekeeping` line and counts in `aruma_housekeeping_purged_rows_total`.
+  See [retention](reference/configuration.md#retention).
+- **Auth limits and server timeouts are settings.** `auth.limits.*` set the per-address limits
+  (300 requests a minute with a burst of 100; sign-ups 100, then 2 a minute), and `server.*_timeout`
+  the public listener's timeouts (10 seconds for headers, 60 to read and to write a request, 120
+  idle). The defaults are unchanged. See
+  [Auth rate limits](reference/configuration.md#auth-rate-limits) and
+  [server timeouts](reference/configuration.md#server-timeouts).
+- **A larger database pool by default.** It was pgx's max(4, CPUs) for all services and projects
+  together. It is now max(16, 4 × CPUs), at most 64, opened on demand; `pool_max_conns` in the URL
+  still decides. In one run with one busy project among four on 4 CPUs, a pool of 32 gave the busy
+  project 43% more Document Database writes and halved its effect on the others. The
+  server logs the size at startup, and warns when Postgres's `max_connections` is too low for it.
+- **Docker:** where Docker's own open-file limit is below 65536, lower `nofile` in `compose.yaml`; the
+  [operations guide](guides/operations.md#docker) says how.
+
+### For developers
+
+- **Two example apps:** [examples/web](../examples/web) (React, TypeScript and the `firebase`
+  package) and [examples/flutter](../examples/flutter) (FlutterFire), the same Team Board app on one
+  data model and one set of rules. They use Auth, the Document Database, the Realtime Database and
+  Storage. CI drives each against a real server as two users and a guest. The web example's run
+  passed 18 of 18 times on Aruma and 9 of 9 on the Firebase emulators with no code change; the
+  Flutter example's web build passed 5 of 5, and 3 of 3 after it moved to the `auth` product; its
+  19 widget tests pass. See
+  [examples](../examples/README.md).
+- **An iOS suite for the Document Database:** `test/e2e/ios-firestore` runs the official
+  FirebaseFirestore and FirebaseAuth 12 against a real server under released rules: the Android
+  suite's scenarios, and rules with `get()` and `exists()`, two apps seeing each other's writes,
+  queries and cursors, collection groups, aggregations, concurrent transactions, an offline write
+  that lands when the server returns, a persistent cache, and a disabled user losing its listeners.
+  It runs on GitHub's macOS runners (`ios-firestore.yml`) and on Codemagic by hand.
+- **Firebase's own Firestore tests in CI:** `test/compat/documents/run.sh` and the `documents-compat`
+  job run firebase-js-sdk 13.0.0's Firestore integration, persistence and lite suites in Node against
+  a fresh server, and fail on any difference from the Firestore emulator 1.22.0 that is not
+  classified. Aruma passes 544 of 919, 1,169 of 1,907 and 197 of 444, the emulator 545, 1,171 and
+  198. The four differences are named databases (three tests) and one aggregation that production
+  also refuses without an index.
+- **`test/ops`** runs the `aruma` binary as an operator does: backup and restore while clients write,
+  compared byte for byte; restore under another master key, over a running server and without the
+  Storage archive; the upgrade from a populated v0.4.0; and a second process beside a running one.
+  The `ops` CI job runs it (15 tests).
+- **Crash, load and soak tools:** `tools/docs-chaos` and `tools/storage-chaos` kill the server while
+  clients write and check every acknowledged change; `tools/dsbench` measures the Document Database
+  and Storage; `tools/soak` runs all four services for as long as you ask and gives a pass or fail.
+  Their numbers are in [benchmarks](benchmarks.md#document-database).
+- **Access-control tests:** twenty acceptance tests walk every console and Management API route
+  that names a project, across two projects, put forged and foreign tokens to every data service, cut access on disable,
+  delete, revoke and password change (open WebSockets included), try 35 spellings of a protected
+  path on each service, and look for issued credentials in a dump of every schema and in the log.
+- **A supply-chain workflow:** `supply-chain.yml` runs `govulncheck` on the built binaries and
+  `npm audit` on the npm packages and the dashboard, on pull requests, on `main` and every Monday.
+
+### Evidence
+
+Measured on the code of this release:
+
+| Check | How | Result |
+|---|---|---|
+| Firebase's Firestore tests (firebase-js-sdk 13.0.0, Node, gRPC) | `test/compat/documents/run.sh` | 544/919, 1,169/1,907 and 197/444 (emulator 545, 1,171 and 198); every difference classified |
+| Firebase's Realtime Database tests | `test/compat/firebase-js/run.sh rtdb`, run again | 332 passed in production mode, 336 in emulator mode, no regression |
+| Android end-to-end: Auth, Realtime Database, Document Database (official SDKs, BoM 35) | `devices.yml`, on GitHub's Android emulator, 23 November 2026 | passed |
+| iOS end-to-end: Document Database (FirebaseFirestore 12) | `ios-firestore.yml`, in a simulator on GitHub's macOS runners | 17 of 17 in three runs; an earlier run failed on one test's timing, and the test was fixed |
+| Crash durability | `tools/docs-chaos`, `tools/storage-chaos`, `tools/rtdb-chaos` | No acknowledged change lost or applied twice: Document Database 100 SIGKILLs in 10 runs, Storage 70 in 7, Realtime Database 108 in 18 (151,415 acknowledged writes) |
+| Backup and restore while clients write | `test/ops` | 6 of 6 runs with `--storage-out`, no object without its file |
+| Postgres outages | 20 outages (stop, pause, cut connections), Go clients and Firebase JS 13 on every service | No acknowledged write lost. See [Outage handling](#outage-handling) |
+| Soak | `tools/soak`, 90 minutes, all four services | 361,759 operations; memory, goroutines, open files and connections flat |
+| Load | `tools/dsbench`, one run per scenario on a shared 4-vCPU VM | [Benchmarks](benchmarks.md#document-database) |
+| Flutter web Auth and Storage | `test/e2e/web-storage/measure.sh flutter` | 6 of 6 runs; no request to Google's Auth hosts |
+| Supply chain | `govulncheck` (binary mode), `npm audit` | No reachable advisory; no npm advisory |
+
+### Upgrading from v0.4.0
+
+1. **Back up with the server stopped.** v0.4.0's `aruma backup` has no `--storage-out`. Stop the
+   server, run `aruma backup --out aruma.dump`, and copy the Storage `data_dir` (with Docker, the
+   `storage` volume) while it is still stopped. From v0.5.0 on, back up with `--storage-out` while the server runs.
+2. **Stop the v0.4.0 process before you start v0.5.0.** v0.4.0 takes no Realtime Database lock, so
+   with both running, both serve the Realtime Database, and listeners on one miss the writes made on
+   the other. `docker compose up -d --build` stops the old container before it starts the new one.
+3. **Run `aruma migrate up` with the v0.5.0 binary.** Three migrations: Auth 00004 (`ended_at` on
+   refresh tokens, set by triggers, and indexes for housekeeping), control 00004 (indexes, and an
+   audit log that allows deleting rows older than seven days) and events 00002 (an index). The
+   Docker image runs them before the server starts. v0.5.0 refuses to start on the old schema, and
+   v0.4.0 refuses the new one: to go back, restore the backup.
+4. **Decide on the audit tables before the first start.** Housekeeping now deletes
+   `control.audit_log` and `auth.audit` rows older than 90 days, and `events.changes` rows older than
+   30, starting at the first start and at most 50,000 rows per table per hour. To keep a table, set
+   its `retention.*` key to `0` (for the audit log, `retention.control_audit_days: 0`), or export
+   it first.
+5. **Check Postgres's `max_connections`.** The pool now defaults to max(16, 4 × CPUs), at most 64,
+   per process. Postgres must accept it and two more connections, and twice that while a second
+   process starts or `aruma migrate` runs. The server warns at startup when it cannot. To keep the
+   old size, put `pool_max_conns` in `database_url`.
+6. **A second process now waits.** Another process on the same database answers the Realtime
+   Database and the Document Database with `UNAVAILABLE`, and `/readyz` with 503, until the first
+   stops. In Kubernetes use `strategy: Recreate`.
+7. **Storage rules that differ by folder:** a list without the `/` delimiter no longer shows names in
+   folders the caller may not list. The SDKs always send `/` and are not affected.
+8. **The Document Database refuses two requests with `INVALID_ARGUMENT`:** a query with `==` or `in`
+   on the document id beside an inequality on another field (it was served, or refused for an
+   index), and a commit that deletes a document and then updates it with a precondition (it failed
+   with `NOT_FOUND`).
+9. **Flutter web:** run `npx aruma-web flutter-web` again. It now includes `auth` by default. List
+   every product the app uses (`--products auth,storage,firestore`): with `auth` on, the tool fails if
+   the app uses Storage or Firestore and that product is not listed. For an app whose Auth stays at
+   Google, pass a list without `auth`.
+10. **`@aruma/admin-auth`:** code that matches `error.message` sees firebase-admin's messages. Match
+    `error.code` instead.
+11. **A database call that takes longer than 15 seconds now fails** with 503 `UNAVAILABLE` instead
+    of finishing slowly. If your Postgres is slow under load and requests begin to fail with 503,
+    raise `database_timeout`.
+12. **Auth during a database outage:** the SDK endpoints answer 503 with a plain-text body, not
+    JSON. Code of your own that calls those endpoints and parses the error body must accept it.
+13. Building from source needs Go 1.27.4 (the `toolchain` line in `go.mod`).
+
+### Not verified yet
+
+- **A 72-hour soak.** The soak ran 90 minutes. Memory, goroutines, open files and connections were
+  flat, but the database grew all the way through, partly by design. Whether that growth stops
+  needs a run longer than every retention window.
+- **Production Firebase beyond the recordings.** Behaviour is compared with the recorded corpus,
+  the emulators and Firebase's own tests. Nothing new was recorded against production for this
+  release.
+- **The Flutter example on Android and iOS.** Its Android build did not complete and its iOS build
+  was not tried. Only its web build is tested.
+- **Firefox and WebKit for the example apps.** They run in Chromium only.
+- **Popup and redirect, email-link and phone sign-in on Flutter web.** The Flutter web test covers
+  email and password, anonymous sign-in, token refresh, profile and delete.
+- **The Android, iOS and Flutter helper packages in the security review.** The review read the web
+  package's host handling; `aruma-redirect`, `ArumaRedirect`, the Gradle plugin and `aruma_storage`
+  were not reviewed.
+- **More than one server, and failover.** Aruma runs on one server. Several servers on one
+  database, and a Postgres failover to a replica, were not tested.
+- **Remaining Document Database checks:** Firebase's own Android and iOS Firestore test suites, the
+  Firebase JS 11 and 12 variants of the web suites, black-box conformance cases for 19 requirements
+  and the conformance suite against a live server in CI. The Android and iOS end-to-end suites
+  connect in cleartext on loopback, so TLS from a phone is not tested, and Flutter on Android and
+  iOS is not tested separately.
 
 ## v0.4.0
 

@@ -10,8 +10,9 @@ This page explains what runs, where it runs, and how to run the main suites your
 2. **Official SDKs** talking to a real Aruma server: web, Node, Go, Android, iOS and Flutter. Where a platform needs an Aruma helper package, the suite uses it.
 3. **Firebase's own test suites,** written for the Firebase emulators, run against Aruma. Every failure is classified.
 4. **Recorded behaviour.** Answers recorded from real Firebase are replayed against Aruma.
-5. **Concurrency checks.** Linearizability for the Document Database. Kill-and-restart durability for the Realtime Database.
-6. **A network guard** that proves no request goes to Google.
+5. **Concurrency, durability and load.** Linearizability for the Document Database. Kill-and-restart durability for the Realtime Database, the Document Database and Storage. Load tools and a soak.
+6. **Operations.** Backup and restore while clients write, the upgrade from the previous release, and a second process beside a running one, with the `aruma` binary as an operator runs it.
+7. **A network guard** that proves no request goes to Google.
 
 ## CI jobs
 
@@ -24,6 +25,8 @@ Every pull request and every push to `main` runs the jobs in `.github/workflows/
 | `documents-smoke` | The Document Database with its official clients: Admin Go, Admin Node over gRPC and REST, Firestore lite for Firebase 11, 12 and 13, and firebase-tools 15.34.0. |
 | `web-auth` | The Firebase web SDK 11, 12 and 13 in a browser: Auth in emulator mode and in production mode through `@aruma/web`. Also the `@aruma/web` unit tests. |
 | `web-rtdb` | The Firebase web SDK 11, 12 and 13 with the Realtime Database in production mode, under real security rules. |
+| `example-web` | The web example app ([examples/web](../examples/web)) against a real server with all four services and the example's rules, driven in Chromium as two users and a guest. |
+| `example-flutter` | The Flutter example app ([examples/flutter](../examples/flutter)): `flutter analyze`, the widget tests, and its web build against a real server, driven in Chromium as two users and a guest. Its Android and iOS builds are not part of the job. |
 | `web-documents` | The full Firestore web SDK over WebChannel and the lite SDK over REST, with rules and `@aruma/web`, in Chromium, Firefox and WebKit. |
 | `web-storage` | The Storage web SDK built with Vite, webpack, esbuild, Rollup, Rspack and SvelteKit. |
 | `web-storage-measure` | Storage in apps built with Vite 5 to 8, Next.js and Expo, each built, served and driven in a browser. |
@@ -32,17 +35,18 @@ Every pull request and every push to `main` runs the jobs in `.github/workflows/
 | `storage-compat` | Firebase's own Storage tests, in Node and in Chromium, plus firebase-tools' Storage conformance tests. Every difference from the emulator is classified. |
 | `documents-compat` | Firebase's own Firestore integration tests (integration, persistence and lite, in Node). Every difference from the emulator is classified. |
 | `browser-matrix` | Aruma's download replies in Chromium, Firefox and WebKit, from pages on other origins and on the dashboard's own. |
+| `docker` | The Docker image and `compose.yaml`: build, migrate, healthy, the setup code, a backup with the image's `pg_dump`, and a restart. |
 | `dashboard` | Lint, unit tests (including colour contrast), the static build, and end-to-end, visual and accessibility tests in Arabic (right to left) and English. |
 | `ops` | Backup and restore while clients write, the upgrade from the previous release, and a second process beside a running one (`test/ops/run.sh`). |
 
-Two more workflows run outside the main pipeline:
+Four more workflows run outside the main pipeline:
 
 | Workflow | What it checks | When |
 |---|---|---|
 | `devices.yml` | Android emulator end-to-end suites for Auth, Realtime Database and the Document Database, with the official Firebase Android SDKs. | Every Monday, and by hand. An emulator run costs about as many minutes as the whole main pipeline. |
 | `ios-storage.yml` | The Storage iOS suite (Swift and Flutter) in a simulator. | On changes to the paths it lists, and by hand. |
 | `supply-chain.yml` | Known vulnerabilities: `govulncheck` on `aruma`, `arumactl` and the Go SDKs (`test/ci/vulncheck.sh`), and `npm audit` on the dashboard and the npm packages (`test/ci/npm-audit.sh`): any advisory in what ships fails, and in build tools from high severity up. | On pull requests, pushes to `main`, and every Monday. |
-| `ios-firestore.yml` | The Document Database iOS suite (`test/e2e/ios-firestore`) in a simulator. Added; its first run is pending. | On pull requests that change the paths it lists, and by hand. |
+| `ios-firestore.yml` | The Document Database iOS suite (`test/e2e/ios-firestore`) in a simulator. | On pull requests that change the paths it lists, and by hand. |
 
 iOS suites run on Codemagic (`codemagic.yaml`), on macOS machines: an iOS smoke test every night, the Auth end-to-end suite twice a week, and the Realtime Database, Document Database and Storage suites by hand.
 
@@ -62,9 +66,11 @@ The end-to-end suites in `test/e2e` use the official Firebase SDKs, with the Aru
 |---|---|---|
 | Web | `firebase` 11, 12 and 13 (Auth, Realtime Database, Firestore, Storage) in Chromium, Firefox and WebKit | Every pull request |
 | Android | `firebase-auth`, `firebase-database`, `firebase-firestore` (BoM 35), `firebase-storage`, as instrumented tests | Auth, Realtime Database and Document Database: weekly, on an emulator. Storage: by hand |
-| iOS | `FirebaseAuth`, `FirebaseDatabase` and `FirebaseFirestore` 12, `FirebaseStorage` 12.19.3, as XCTest | Codemagic (see above) and by hand; Document Database also on GitHub's macOS runners (added, first run pending) |
-| Flutter | Storage on iOS and on the web, and the smoke tests | Web: every pull request. iOS: Codemagic |
+| iOS | `FirebaseAuth`, `FirebaseDatabase` and `FirebaseFirestore` 12, `FirebaseStorage` 12.19.3, as XCTest | Codemagic (see above) and by hand; Document Database also on GitHub's macOS runners |
+| Flutter | Storage on iOS; Auth and Storage on the web; the Flutter example on the web (Auth, Document Database, Realtime Database, Storage); the smoke tests | Web: every pull request. iOS: Codemagic |
 | Node and Go | Admin SDKs: Auth, Realtime Database, Storage, Document Database | Every pull request |
+
+On 23 November 2026 the Android suites for Auth, the Realtime Database and the Document Database passed on GitHub's Android emulator. The iOS Document Database suite (17 tests) has passed in a simulator on GitHub's macOS runners; one earlier run failed because a test expected the SDK to notice a closed connection on its own, and that test now writes while the server is down, as an app does.
 
 The scenarios are the ones an app uses: sign-up, sign-in, wrong password, anonymous users, token refresh, password reset, security rules that allow and deny, two clients seeing each other's writes in order, queries, transactions, presence (`onDisconnect`), offline writes that land when the server returns, and a disabled user losing their listeners within seconds.
 
@@ -75,7 +81,7 @@ Firebase publishes integration tests with its open-source SDKs. They were writte
 - **Auth** (`test/compat/firebase-js/run.sh`): Firebase JS 13.0.0 in Node and in Chrome, and firebase-admin-node 14.5.0. This run is not part of CI, because it needs Chrome and clones the upstream repositories. In the last run, 180 tests passed, 98 failed and 83 were skipped. Every failing test is classified in [compatibility](reference/compatibility.md#auth). They fall into four groups: features Aruma does not offer yet (phone sign-in, email-link sign-in, multi-tenancy, importing users), tests that depend on the emulator's fake identity provider, ID tokens whose issuer is not `securetoken.google.com` (a deliberate choice that the Aruma admin libraries handle), and test environment limits.
 - **Realtime Database** (`test/compat/firebase-js/run.sh rtdb`): the database-compat and database suites of firebase-js-sdk, run against the real Firebase emulator first as a baseline, then against Aruma. 326 compat tests (308 run) and 28 modern-SDK tests.
 - **Storage** (`test/compat/storage/run.sh`, and the `storage-compat` CI job): the Firebase JS Storage integration tests in Node and in Chromium (13 tests each), the compat package (8) and firebase-tools' conformance tests (123).
-- **Document Database** (`test/compat/documents/run.sh`, and the `documents-compat` CI job): the Firestore integration tests of firebase-js-sdk 13.0.0 in Node over gRPC, run against the Firestore emulator 1.22.0 once as a baseline, then against Aruma: integration (919 tests), the same with the IndexedDB-backed cache (1,907) and lite (444). In the last run Aruma passed 544, 1,169 and 197, the emulator 545, 1,171 and 198. The 4 differences are classified in `test/compat/documents/classified.json`: named databases, which Aruma does not serve, and an aggregation that needs a composite index the test cannot create. The official clients are also exercised through the `documents-smoke` and `web-documents` jobs. The official Android Firestore suite has not been run yet. The official iOS Firestore suite (`test/e2e/ios-firestore`) has been added; its first run is pending.
+- **Document Database** (`test/compat/documents/run.sh`, and the `documents-compat` CI job): the Firestore integration tests of firebase-js-sdk 13.0.0 in Node over gRPC, run against the Firestore emulator 1.22.0 once as a baseline, then against Aruma: integration (919 tests), the same with the IndexedDB-backed cache (1,907) and lite (444). In the last run Aruma passed 544, 1,169 and 197, the emulator 545, 1,171 and 198. The 4 differences are classified in `test/compat/documents/classified.json`: named databases, which Aruma does not serve, and an aggregation that needs a composite index the test cannot create. The official clients are also exercised through the `documents-smoke` and `web-documents` jobs, and on Android and iOS by the end-to-end suites above. Firebase's own Android and iOS Firestore tests have not been run against Aruma.
 
 ## Recorded behaviour
 
@@ -142,6 +148,7 @@ export ARUMA_TEST_DATABASE_URL='postgres://postgres@127.0.0.1:5432/postgres?sslm
 | Document Database and Storage load | `go run ./tools/dsbench -start -scenarios all` |
 | Soak, on your own server | `go run ./tools/soak -bin /path/to/aruma -d 72h -out soak.csv` |
 | Backup, restore, upgrade and a second process | `test/ops/run.sh` (about four minutes; needs the PostgreSQL 18 client tools) |
+| The example apps | `examples/web/e2e/run.sh`, `examples/flutter/e2e/run.sh` |
 
 Tests that call firebase-tools or the Google Cloud Storage SDKs only run when you ask for them: set `ARUMA_FIREBASE_CLI=1` or `ARUMA_GCS_SDK=1`. The egress guard changes your firewall and is for CI runners only. On a laptop, the suites' own guards are enough.
 
@@ -149,7 +156,13 @@ The first run of a compat or end-to-end suite downloads packages and the upstrea
 
 ## What is not verified yet
 
-- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI have not been run. See the [changelog](CHANGELOG.md#v040).
+- **Part of the Document Database's verification has not run.** Firebase's own Android and iOS Firestore tests, the Firebase JS 11 and 12 variants of its web suites, black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI. The Android and iOS end-to-end suites connect in cleartext on loopback, so TLS from a phone is not tested, and Flutter on Android and iOS is not tested separately.
 - **Android and iOS Storage suites** run by hand, not on a schedule.
-- **Rules are not part of the load tests.** The performance figures in [benchmarks](benchmarks.md) used open rules for the Realtime Database.
+- **Rules are not part of the load tests.** The performance figures in [benchmarks](benchmarks.md) used open rules.
+- **A 72-hour soak.** The soak ran 90 minutes. Whether the database's growth stops needs a run longer than every retention window (see [benchmarks](benchmarks.md#soak)).
+- **Production Firebase beyond the recordings.** Behaviour is judged against the recorded corpus, the emulators and Firebase's own tests.
+- **The example apps** run in Chromium only, not in Firefox or WebKit. The Flutter example is tested on the web: its Android build did not complete and its iOS build was not tried.
+- **Flutter web sign-in** is tested with email and password, anonymous sign-in and token refresh. Popup and redirect, email-link and phone sign-in are not.
+- **The Android, iOS and Flutter helper packages** were not part of the v0.5 security review ([security](security.md#v05)). `ArumaRedirect`'s own unit tests run in `ios-firestore.yml`.
+- **More than one server, and failover.** Aruma runs on one server. Several servers on one database, and a Postgres failover to a replica, are not tested.
 - **Test counts per job** are not published here. Where a job's result is a count, the release notes for that version give it. The Document Database release candidate v0.4.0-rc.1 recorded 21 of 21 web tests passing on each of Chromium, Firefox and WebKit, and 1,665 dashboard unit tests and 226 end-to-end tests passing.

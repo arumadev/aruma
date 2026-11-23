@@ -2,7 +2,7 @@
 
 These are measured numbers for Aruma, with the machine, the method and the command to repeat each one. Read the limits at the end before you compare them with anything else.
 
-All numbers come from one laptop that was also running other work. They show what the code does on modest hardware. They are not a promise for your server. Run the tools below on your own hardware before you size a deployment.
+The Auth, Realtime Database and platform numbers come from one laptop, and the Document Database, Storage and soak numbers from a cloud VM. Both machines were also running other work. They show what the code does on modest hardware. They are not a promise for your server. Run the tools below on your own hardware before you size a deployment.
 
 ## What was measured
 
@@ -231,7 +231,7 @@ What to know:
 - **Create the composite index your query needs.** Without it the query is about 16 times slower here (209 ms against 13 ms at the median), and it grows with the collection: the reference path reads every document of the collection. With the default `index_enforcement: enforce` such a query is refused with the console link to create the index, as in production.
 - **Fan-out to 500 listeners** of one document adds about 12 ms at the median.
 
-The noisy-neighbour scenario (`.qa` tooling, one hot project among four, pool of 16) gave the quiet projects a p50 of 5 to 8 ms (baseline 5 ms) while the hot project wrote 1,522 RTDB sets/s or 508 Document Database commits/s, and 18 to 20 ms (p99 270 ms) while it read a 50,000-child RTDB node in a loop (load1 1.9 at start).
+A noisy-neighbour run with a tool that is not in the repository (one hot project among four, pool of 16) gave the quiet projects a p50 of 5 to 8 ms (baseline 5 ms) while the hot project wrote 1,522 RTDB sets/s or 508 Document Database commits/s, and 18 to 20 ms (p99 270 ms) while it read a 50,000-child RTDB node in a loop (load1 1.9 at start).
 
 ## Storage
 

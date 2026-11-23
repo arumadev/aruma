@@ -18,7 +18,7 @@ machine, fails the run.
 | [android-rtdb](android-rtdb) | `firebase-database` and `firebase-auth` (BoM 35), instrumented tests | production; Auth through `aruma-redirect` | `android-rtdb/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
 | [android-firestore](android-firestore) | `firebase-firestore` and `firebase-auth` (BoM 35), instrumented tests | production host set in code; Auth through `aruma-redirect`; the server under the cloud.firestore ruleset of `firestore.rules`, released through the firebaserules API (`ARUMA_E2E_RULES=open` opts in to `documents.dev_open_rules`) | `android-firestore/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
-| [ios-firestore](ios-firestore) | `FirebaseFirestore` and `FirebaseAuth` 12, XCTest in an empty host app | production, host set in `FirestoreSettings` (cleartext on loopback); Auth through `ArumaRedirect`; the server under the cloud.firestore ruleset of `ios-firestore/firestore.rules`, released through the firebaserules API | `ios-firestore/run.sh` | GitHub Actions macOS runner, pull requests that touch it and by hand (`ios-firestore.yml`); Codemagic, by hand (`codemagic.yaml`, `ios-firestore`). Added; first run pending |
+| [ios-firestore](ios-firestore) | `FirebaseFirestore` and `FirebaseAuth` 12, XCTest in an empty host app | production, host set in `FirestoreSettings` (cleartext on loopback); Auth through `ArumaRedirect`; the server under the cloud.firestore ruleset of `ios-firestore/firestore.rules`, released through the firebaserules API | `ios-firestore/run.sh` | GitHub Actions macOS runner, pull requests that touch it and by hand (`ios-firestore.yml`); Codemagic, by hand (`codemagic.yaml`, `ios-firestore`) |
 
 The Auth device suites cover the Auth P0 list ([docs/reference/compatibility.md](../../docs/reference/compatibility.md)):
 sign-up, duplicate email, weak password, invalid email, sign-in, wrong password, anonymous,
@@ -62,7 +62,7 @@ far end is not loopback.
 
 ## Document Database (`ios-firestore`)
 
-Added; its first run is pending, so nothing below has been seen to pass on iOS yet. The scenarios
+Its 17 tests pass in a simulator on GitHub's macOS runners. The scenarios
 are android-firestore's (marked A) and the rest of what an app uses. The server runs with the
 Document Database and the rules of [ios-firestore/firestore.rules](ios-firestore/firestore.rules),
 released by the runner through the firebaserules API, never `dev_open_rules`. The SDK knows the

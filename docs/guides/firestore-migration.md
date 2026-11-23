@@ -12,7 +12,7 @@ In Aruma the service is called the **Document Database**, described as "Firestor
 |---|---|
 | Web (`firebase` 11, 12 and 13): full (WebChannel) and lite (REST) | Supported, with `@aruma/web` (below). Firebase 13 verified (21/21 on Chromium, Firefox and WebKit); 11 and 12 not verified yet |
 | Admin Node (`firebase-admin`) and Admin Go (`cloud.google.com/go/firestore`) | Supported over gRPC and REST (`preferRest`). See `test/smoke/admin-node` and `test/smoke/admin-go/documents` |
-| Android, iOS and Flutter | The transport is tried on Android 27.0.1 and iOS 12.19.3 (ADR-027). **Their full test suites are not finished, so this is not verified yet.** Flutter uses the same native SDKs |
+| Android, iOS and Flutter | Supported. Aruma's end-to-end suites pass with `firebase-firestore` (BoM 35) on an Android emulator and FirebaseFirestore 12 in an iOS simulator, in cleartext on loopback. **Not verified:** TLS from a phone, and Flutter on Android and iOS, which uses the same native SDKs |
 | The `firebase` tool | `deploy --only firestore:indexes` and `firestore:rules`, `firestore:indexes`, `firestore:databases:list` and `get`, and `firestore:delete -r`. `TestDocumentsWithTheFirebaseCLI` proves them with firebase-tools 15.34.0 under the network guard |
 | Composite indexes, single-field exemptions, and TTL | Supported. They are exported and deployed with no loss (same test) |
 | Rules (`service cloud.firestore`) | Supported. See [compatibility](../reference/compatibility.md) |
@@ -41,7 +41,7 @@ const db = initializeFirestore(app, arumaFirestoreSettings('https://aruma.exampl
 
 Next.js, webpack, Metro and Flutter web have equivalents in the package README. Do not use `connectFirestoreEmulator`.
 
-**Android, iOS and Flutter** (not verified in their test suites. The names come from the SDK documentation): `google-services.json` and `GoogleService-Info.plist` do not carry the Firestore host, so set it in code before first use:
+**Android, iOS and Flutter** (the Android and iOS lines are what Aruma's end-to-end suites do, with TLS off on loopback; the Flutter line is **not verified**): `google-services.json` and `GoogleService-Info.plist` do not carry the Firestore host, so set it in code before first use:
 
 ```kotlin
 // Android

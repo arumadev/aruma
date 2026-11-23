@@ -33,7 +33,7 @@ Behavior is checked against real Firebase and the official emulators, and the of
 
 ## Status
 
-Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). Part of the Document Database's verification has not run yet; the [changelog](docs/CHANGELOG.md#v040) lists it.
+Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). What is not verified yet is listed in [testing](docs/testing.md#what-is-not-verified-yet).
 
 | Service | Status | Details |
 |---|---|---|
@@ -42,7 +42,7 @@ Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). Part o
 | Realtime Database | Released in v0.2.0, off by default (`ARUMA_RTDB_ENABLED`) | [Compatibility](docs/reference/compatibility.md#realtime-database), [guide](docs/guides/realtime-database.md) |
 | Security Rules | Released in v0.3.0 | [Compatibility](docs/reference/compatibility.md#security-rules), [guide](docs/guides/security-rules.md) |
 | Cloud Storage | Released in v0.3.0, off by default (`ARUMA_STORAGE_ENABLED`) | [Compatibility](docs/reference/compatibility.md#cloud-storage), [guide](docs/guides/storage.md) |
-| Document Database (Firestore-compatible) | Released in v0.4.0, off by default (`ARUMA_DOCUMENTS_ENABLED`); official mobile suites not run yet | [Compatibility](docs/reference/compatibility.md#firestore), [guide](docs/guides/firestore.md), [migration guide](docs/guides/firestore-migration.md) |
+| Document Database (Firestore-compatible) | Released in v0.4.0, off by default (`ARUMA_DOCUMENTS_ENABLED`) | [Compatibility](docs/reference/compatibility.md#firestore), [guide](docs/guides/firestore.md), [migration guide](docs/guides/firestore-migration.md) |
 | Cloud Messaging, App Check, Remote Config, Functions | Planned | |
 
 ## Quick start

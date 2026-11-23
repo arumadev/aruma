@@ -116,4 +116,4 @@ The plugin accepts `http` only for `localhost` and other loopback addresses. For
 - Verify users on your server: [Verifying users on your server](guides/auth-admin.md).
 - Realtime Database, Cloud Storage and the Document Database are off by default. Turn them on in the configuration: see [configuration](reference/configuration.md), [Realtime Database](guides/realtime-database.md) and [Moving your app's Firestore to Aruma](guides/firestore-migration.md).
 - Put it behind your own domain and certificates: [Operations](guides/operations.md).
-- Back up with `aruma backup --out aruma.dump` and restore with `aruma restore --in aruma.dump --yes` while the server is stopped.
+- Back up with `aruma backup --out aruma.dump` (add `--storage-out aruma-storage.tar.gz` if you use Storage) and restore with `aruma restore --in aruma.dump --yes` while the server is stopped. [Operations](guides/operations.md#prebuilt-binaries) has the steps.

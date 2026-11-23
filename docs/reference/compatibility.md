@@ -14,7 +14,7 @@ Versions covered: Auth 0.1, Realtime Database 0.2, Cloud Storage and Security Ru
 | [Realtime Database](#realtime-database) | Supported, with the gaps listed |
 | [Cloud Storage](#cloud-storage) | Supported, with the gaps listed |
 | [Security Rules](#security-rules) | Supported |
-| [Firestore](#firestore) | Released in 0.4.0; official mobile suites not yet run |
+| [Firestore](#firestore) | Supported, with the gaps listed |
 
 ---
 
@@ -217,7 +217,7 @@ Aruma's rules engine is compared with three sources: rules published on real Sto
 
 ## Firestore
 
-Firestore support is released in v0.4.0. It ships in the Aruma server as the Document Database, off by default. v0.4.0 was released before part of its verification ran, and that verification has still not run. The gaps are listed under [Verification pending](#verification-pending).
+Firestore support is released in v0.4.0. It ships in the Aruma server as the Document Database, off by default. v0.4.0 was released before part of its verification ran. The Android and iOS end-to-end suites, fault injection, load and a security review have run since, on the code of v0.5.0. What has not run is listed under [Verification pending](#verification-pending).
 
 ### Features
 
@@ -268,9 +268,9 @@ Of the 24 differences from production recorded in the test corpus, 16 are delibe
 |---|---|---|
 | Web, full SDK (WebChannel) | Supported | Firebase 13: 21 of 21 tests on each of Chromium, Firefox and WebKit. Firebase 11 and 12 are pending. |
 | Web, lite SDK (REST) | Supported | Same suite. |
-| Android | Pending | gRPC transport tried with Firestore Android 27.0.1; the official suite has not run. |
-| iOS | Pending | gRPC transport tried with iOS 12.19.3. The official suite (`test/e2e/ios-firestore`, FirebaseFirestore 12) has been added; its first run is pending. It connects in cleartext on loopback, so it does not cover TLS: iOS trusts only its bundled root certificates, so TLS needs a public test domain with a certificate from a public authority. |
-| Flutter | Pending | Uses the native libraries, so it follows Android and iOS. |
+| Android | Supported | `firebase-firestore` (BoM 35): the end-to-end suite (`test/e2e/android-firestore`) passes on an emulator, with the host set in code and cleartext on loopback. |
+| iOS | Supported | FirebaseFirestore 12: the end-to-end suite (`test/e2e/ios-firestore`, 17 tests) passes in a simulator on GitHub's macOS runners. It connects in cleartext on loopback, so it does not cover TLS: iOS trusts only its bundled root certificates, so TLS needs a public test domain with a certificate from a public authority. |
+| Flutter | Supported | Uses the native Android and iOS libraries; not tested separately on them. Flutter web is tested by the Flutter example app's end-to-end run. |
 | Admin Node (gRPC and REST), Admin Go | Supported | Smoke tests pass. |
 | firebase-tools 15.34.0 | Supported | `deploy --only firestore:indexes` and `firestore:rules`, `firestore:indexes` (export), `firestore:databases:list` and `get`, `firestore:delete -r`, TTL deletion. |
 
@@ -279,6 +279,8 @@ With Auth on Aruma, `@aruma/web` refuses requests to Google's Firestore host so 
 ### Verified by
 
 - Web end-to-end tests: 21 of 21 on Chromium, Firefox and WebKit (Firebase 13).
+- Android end-to-end tests (`test/e2e/android-firestore`, 7 scenarios with rules) on GitHub's Android emulator, and iOS end-to-end tests (`test/e2e/ios-firestore`, 17 tests) in a simulator on GitHub's macOS runners: pass.
+- Kill-and-restart durability (`tools/docs-chaos`): 100 SIGKILLs in 10 runs, no acknowledged write lost or applied twice. Load numbers are in [benchmarks](../benchmarks.md#document-database).
 - Firebase's own Firestore integration tests (firebase-js-sdk 13.0.0, `packages/firestore`, in Node over gRPC), unmodified, compared with the Firestore emulator 1.22.0 (`test/compat/documents`, the `documents-compat` CI job). Integration: 544 of 919 pass (emulator 545). With the IndexedDB-backed cache as well (`USE_MOCK_PERSISTENCE`): 1,169 of 1,907 (emulator 1,171). Lite: 197 of 444 (emulator 198). The rest are skipped upstream on the emulator, or fail on both because they call Google's Auth servers. The 4 tests that pass on the emulator and not on Aruma are documented differences: named databases (3) and one aggregation that production refuses without a composite index (1).
 - Replay of a 65-file corpus recorded on a real Firebase project, in every test run.
 - firebase-tools against the Document Database under a network guard: passes.
@@ -287,10 +289,9 @@ With Auth on Aruma, `@aruma/web` refuses requests to Google's Firestore host so 
 
 ### Verification pending
 
-Final v0.4.0 depends on these. Do not treat Firestore as fully verified until they are done.
+Do not treat Firestore as fully verified until these are done.
 
-- The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), and the mobile host settings.
+- Firebase's own Android and iOS Firestore tests. Aruma's end-to-end suites with the official Android and iOS SDKs pass (above).
+- The mobile host settings over TLS: both mobile suites connect in cleartext on loopback.
 - Firebase JS 11 and 12 variants of the web suites.
 - Black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI. They are covered by unit tests and recorded replays.
-- Fault injection and load tests.
-- A security review of this release.

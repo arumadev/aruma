@@ -6,11 +6,14 @@ In Aruma the service is called the **Document Database**, described as "Firestor
 
 ## Status
 
-Firestore support is released in v0.4.0. It is off by default. v0.4.0 was released before part of its checking ran, and that checking has still not run.
+Firestore support is released in v0.4.0. It is off by default. v0.4.0 was released before part of its checking ran. Most of it has run since, on the code of v0.5.0; the rest is listed under Pending.
 
 Verified:
 
 - Web, full SDK (WebChannel) and lite SDK (REST), with Firebase 13: 21 of 21 end-to-end tests on each of Chromium, Firefox and WebKit.
+- Android (`firebase-firestore`, BoM 35) and iOS (FirebaseFirestore 12): Aruma's end-to-end suites pass on an Android emulator and in an iOS simulator, with the host set in code and cleartext on loopback.
+- Firebase's own Firestore tests for the web SDK (firebase-js-sdk 13.0.0, in Node): every difference from the emulator is explained. See [testing](../testing.md#firebases-own-suites).
+- Kill-and-restart durability and load: see [benchmarks](../benchmarks.md#document-database).
 - Admin Node (gRPC and REST) and Admin Go: smoke tests pass.
 - firebase-tools 15.34.0: `deploy --only firestore:indexes` and `firestore:rules`, `firestore:indexes` (export), `firestore:databases:list` and `get`, `firestore:delete -r`, and TTL deletion.
 - A 65-file corpus recorded on a real Firebase project is replayed against Aruma in every test run.
@@ -18,11 +21,9 @@ Verified:
 
 Pending:
 
-- The official Android and iOS Firestore suites. The gRPC transport was tried on Firestore Android 27.0.1 and iOS 12.19.3, but the suites have not run. Flutter uses the native libraries, so it follows them.
+- Firebase's own Android and iOS Firestore tests, TLS from a phone (the mobile suites use cleartext on loopback), and Flutter on Android and iOS. Flutter uses the native libraries, so it follows them.
 - Firebase JS 11 and 12 variants of the web suites.
 - Black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI. Unit tests and recorded replays cover them.
-- Fault injection and load tests.
-- A security review of this release.
 
 Do not treat Firestore as fully verified until these are done. The full table is in [compatibility](../reference/compatibility.md#firestore).
 
@@ -106,7 +107,7 @@ Call it before the first `getFirestore()`. Import `firebase/firestore` from npm:
 
 ### Android, iOS and Flutter
 
-The config files do not carry the Firestore host, so set it in code before the first use. The official Android and iOS Firestore suites have not run yet, so treat this as **not verified**. The setting names come from the SDK documentation. An Android instrumented test sets the host the same way, on an emulator, with `setHost` and `setSslEnabled`.
+The config files do not carry the Firestore host, so set it in code before the first use. Aruma's Android and iOS end-to-end suites set it this way, with TLS off on loopback: `setHost` and `setSslEnabled` on an Android emulator, `FirestoreSettings` in an iOS simulator. TLS from a phone and the Flutter line are **not verified** by a test.
 
 ```kotlin
 // Android
