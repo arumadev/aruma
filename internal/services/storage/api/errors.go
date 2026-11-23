@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/storage/core"
 	"github.com/arumadev/aruma/internal/services/storage/wire"
@@ -107,6 +108,13 @@ func (a *API) errorStatus(r *http.Request, err error) (int, string) {
 			}
 			return m.status, m.message
 		}
+	}
+	if apierr.IsUnavailable(err) {
+		// Postgres went away inside a transaction (an operator's pg_terminate_backend, a restart):
+		// core returns the driver's error as it is, and the transaction did not commit. The SDKs
+		// retry a 503 and give up on a 500.
+		a.log.Warn("storage: request failed", "method", r.Method, "path", r.URL.Path, "error", err)
+		return http.StatusServiceUnavailable, "The service is unavailable; try again."
 	}
 	a.log.Error("storage: request failed", "method", r.Method, "path", r.URL.Path, "error", err)
 	return http.StatusInternalServerError, "Internal error."

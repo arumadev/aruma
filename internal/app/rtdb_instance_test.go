@@ -75,8 +75,11 @@ func TestRTDBSingleInstance(t *testing.T) {
 	}
 
 	// The holder's Postgres session ends. It stops serving; one of the two serves afterwards.
+	// Only this test's database: advisory locks are per database, and every other Aruma on the
+	// same Postgres server (another test's, a developer's own) holds rtdb.instance too.
 	if _, err := pool.Exec(ctx, `SELECT pg_terminate_backend(pid) FROM pg_locks
-		WHERE locktype = 'advisory' AND granted AND classid = hashtext('rtdb.instance')::oid`); err != nil {
+		WHERE locktype = 'advisory' AND granted AND classid = hashtext('rtdb.instance')::oid
+		AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, "the holder to notice the loss", func() bool { return !a.RTDB.Serving() || a.rtdbLock.Held() && b.rtdbLock.Held() })

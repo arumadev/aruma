@@ -51,7 +51,8 @@ type InstanceLockOptions struct {
 	// CheckTimeout is how long a check may take before it is cancelled and counted as slow,
 	// which is not a loss: the lock is lost only when its session is. Default 10s.
 	CheckTimeout time.Duration
-	// MinBackoff and MaxBackoff bound the retries while the lock is not held. Default 1s, 30s.
+	// MinBackoff and MaxBackoff bound the retries while the lock is not held. Default 1s, and
+	// DefaultInstanceMaxBackoff.
 	MinBackoff, MaxBackoff time.Duration
 	// OnAcquired runs when the lock is taken after StartInstanceLock returned (a takeover, or
 	// a recovery after a loss); OnLost runs when it is lost. Both run on the guard's goroutine.
@@ -73,6 +74,13 @@ const (
 
 var errInstanceLockGone = errors.New("the session no longer holds the advisory lock")
 
+// DefaultInstanceMaxBackoff is the longest wait between two tries for the lock. A process that
+// lost its session (a Postgres restart, a failover, its backend terminated) serves nothing of the
+// service until it takes the lock again, so each second of backoff past Postgres' return is a
+// second of 503s: with 30 s, a 15 s restart kept the Realtime Database down 16 s longer than
+// Auth and Storage. One failed try is one connection attempt, cheap enough every few seconds.
+const DefaultInstanceMaxBackoff = 5 * time.Second
+
 // StartInstanceLock tries to take the lock for up to BootWait, then keeps it, or keeps trying
 // for it, in the background until Close. Check Held for whether it is held: when it is not, the
 // process serves the rest of Aruma and the service answers as unavailable.
@@ -81,7 +89,7 @@ func StartInstanceLock(ctx context.Context, cfg *pgx.ConnConfig, o InstanceLockO
 	o.Check = cmp.Or(o.Check, time.Second)
 	o.CheckTimeout = cmp.Or(o.CheckTimeout, 10*time.Second)
 	o.MinBackoff = cmp.Or(o.MinBackoff, time.Second)
-	o.MaxBackoff = cmp.Or(o.MaxBackoff, 30*time.Second)
+	o.MaxBackoff = cmp.Or(o.MaxBackoff, DefaultInstanceMaxBackoff)
 	o.Service = cmp.Or(o.Service, o.Name)
 	if o.Log == nil {
 		o.Log = slog.Default()

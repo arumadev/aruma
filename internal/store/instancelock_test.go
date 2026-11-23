@@ -66,7 +66,8 @@ func TestInstanceLockIsExclusiveAndRegained(t *testing.T) {
 	kill := func() {
 		var n int
 		err := pool.QueryRow(ctx, `SELECT count(pg_terminate_backend(pid)) FROM pg_locks
-			WHERE locktype = 'advisory' AND granted AND classid = hashtext('test.instance')::oid`).Scan(&n)
+			WHERE locktype = 'advisory' AND granted AND classid = hashtext('test.instance')::oid
+			AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`).Scan(&n)
 		if err != nil || n != 1 {
 			t.Fatalf("terminating the lock's session: %d, %v", n, err)
 		}

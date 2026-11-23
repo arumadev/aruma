@@ -8,6 +8,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/arumadev/aruma/internal/services/storage/core"
 )
 
@@ -124,6 +126,8 @@ func TestRetryAfter(t *testing.T) {
 	}{
 		{core.ErrUnavailable, 503, ""},
 		{fmt.Errorf("%w: the database", core.ErrUnavailable), 503, ""},
+		{&pgconn.PgError{Severity: "FATAL", Code: "57P01", Message: "terminating connection due to administrator command"}, 503, ""},
+		{errors.New("a bug"), 500, ""},
 		{core.ErrOverloaded, 503, "1"},
 		{errTooManyWrites, 429, "1"},
 		{core.ErrTooManyUploads, 429, ""},

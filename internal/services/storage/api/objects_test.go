@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/arumadev/aruma/internal/services/storage/core"
 )
@@ -115,6 +118,9 @@ func TestErrorStatuses(t *testing.T) {
 		{core.ErrOverloaded, 503, "5"}, {fmt.Errorf("evaluate: %w", core.ErrOverloaded), 503, "5"},
 		{errTooManyWrites, 503, "5"},
 		{core.ErrUnavailable, 503, ""}, {fmt.Errorf("%w: the database", core.ErrUnavailable), 503, ""},
+		// The driver's own error when Postgres ends the connection inside a transaction.
+		{&pgconn.PgError{Severity: "FATAL", Code: "57P01", Message: "terminating connection due to administrator command"}, 503, ""},
+		{errors.New("a bug"), 500, ""},
 		{&core.InvalidError{Reason: "invalid", Message: "bad"}, 400, ""},
 		{&core.OffsetError{Received: 5}, 400, ""}, {errBadRoute, 400, ""}, {errUnauthenticated, 401, ""},
 		// A session's first byte over the live sessions is both, and 402 (core's errTooManyLive).
