@@ -426,3 +426,68 @@ func TestListWithABadSeal(t *testing.T) {
 		}
 	}
 }
+
+// The rules decide a list on the children of the prefix's folder alone, so a caller they govern
+// is shown no name below those children unless the delimiter is "/": without one, or with
+// another, the names of a subfolder whose own rules were never asked would come back whole
+// (shared/{file} open to all, shared/{team}/hr/{file} to HR alone). An admin, whom no rule
+// governs, still lists every name.
+func TestListShowsNoNameBelowTheFolderItWasDecidedOn(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	for _, name := range []string{"shared/handbook.txt", "shared/sales/hr/salary-review.txt", "shared/sales/q1.txt", "shared/zeta.txt", "sharedx/y.txt"} {
+		f.put(t, name, seed{body: "x"})
+	}
+	names := func(p Principal, o ListOptions) (objects, prefixes []string) {
+		t.Helper()
+		o.Surface = SurfaceFirebase
+		for range 20 {
+			page, err := f.s.List(ctx, f.b, p, o)
+			if err != nil {
+				t.Fatalf("%+v: %v", o, err)
+			}
+			for _, obj := range page.Objects {
+				objects = append(objects, obj.Name)
+			}
+			prefixes = append(prefixes, page.Prefixes...)
+			if page.NextPageToken == "" {
+				return objects, prefixes
+			}
+			o.PageToken = page.NextPageToken
+		}
+		t.Fatalf("%+v: the list did not end", o)
+		return nil, nil
+	}
+	flat := []string{"shared/handbook.txt", "shared/zeta.txt"}
+	for _, max := range []int{0, 1, 2} {
+		objects, prefixes := names(alice, ListOptions{Prefix: "shared/", MaxResults: max})
+		if !slices.Equal(objects, flat) || len(prefixes) != 0 {
+			t.Errorf("no delimiter, maxResults %d: objects %v, prefixes %v, want %v and none", max, objects, prefixes, flat)
+		}
+	}
+	// Another delimiter folds names at it, but still shows nothing of the subfolder.
+	objects, prefixes := names(alice, ListOptions{Prefix: "shared/", Delimiter: "x"})
+	for _, n := range slices.Concat(objects, prefixes) {
+		if strings.Contains(n, "sales") {
+			t.Errorf("delimiter x: %q is below the folder", n)
+		}
+	}
+	if !slices.Equal(prefixes, []string{"shared/handbook.tx", "shared/zeta.tx"}) || len(objects) != 0 {
+		t.Errorf("delimiter x: objects %v, prefixes %v", objects, prefixes)
+	}
+	// A prefix that is not a folder lists among its folder's children.
+	objects, prefixes = names(alice, ListOptions{Prefix: "shared"})
+	if len(objects) != 0 || len(prefixes) != 0 {
+		t.Errorf("prefix shared, no delimiter: objects %v, prefixes %v, want none (every match is below the root's children)", objects, prefixes)
+	}
+	// The SDKs' list is unchanged: the subfolder is a prefix.
+	objects, prefixes = names(alice, ListOptions{Prefix: "shared/", Delimiter: "/"})
+	if !slices.Equal(objects, flat) || !slices.Equal(prefixes, []string{"shared/sales/"}) {
+		t.Errorf("delimiter /: objects %v, prefixes %v", objects, prefixes)
+	}
+	// An admin is not governed by the rules.
+	objects, _ = names(admin, ListOptions{Prefix: "shared/"})
+	if want := []string{"shared/handbook.txt", "shared/sales/hr/salary-review.txt", "shared/sales/q1.txt", "shared/zeta.txt"}; !slices.Equal(objects, want) {
+		t.Errorf("admin, no delimiter: %v, want %v", objects, want)
+	}
+}

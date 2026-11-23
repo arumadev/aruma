@@ -24,6 +24,9 @@ import (
 // at first and twice as many after each seek that found no prefix, so a folder's names past its
 // first few are not read for nothing. Prefixes and objects share the page's MaxResults in one
 // order, as GCS pages them. Objects carry no tokens on /v0, whose items are a name and a bucket.
+//
+// On /v0, a caller the rules govern sees no name below the children of the prefix's folder
+// unless the delimiter is "/", since the one rules decision covers those children only.
 func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions) (ListPage, error) {
 	for _, f := range []struct{ name, v string }{
 		{"prefix", o.Prefix}, {"delimiter", o.Delimiter}, {"startOffset", o.StartOffset}, {"endOffset", o.EndOffset},
@@ -77,11 +80,19 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 		before = min(before, o.EndOffset)
 	}
 
+	// The rules decided on the children of the prefix's folder alone (rulePaths). With "/" as
+	// the delimiter, as the SDKs list, deeper names fold into their folder's prefix. Without it,
+	// or with another delimiter, they would come back whole, from folders whose own rules were
+	// never asked: for a caller the rules govern, a name below the folder's children is left
+	// out, its subfolder skipped in one seek and counted against the page as examined.
+	shallow := firebase && p.Kind != PrincipalAdmin && o.Delimiter != "/"
+	folder := strings.LastIndexByte(o.Prefix, '/') + 1
+
 	n, batch := 0, listBatch // n: the entries examined, returned or left out
 	var last pageCursor
 	for from < before {
 		limit := size - n + 1
-		if o.Delimiter != "" {
+		if o.Delimiter != "" || shallow {
 			limit = min(limit, batch)
 		}
 		rows, err := s.reads.ListObjects(ctx, queries.ListObjectsParams{
@@ -95,6 +106,19 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 			if n == size {
 				page.NextPageToken = s.encodePageToken(b, o, last)
 				return page, nil
+			}
+			if shallow {
+				if i := strings.IndexByte(r.Name[folder:], '/'); i >= 0 {
+					sub := r.Name[:folder+i+1]
+					last = pageCursor{last: sub, prefix: true}
+					n++
+					next, ok := pastPrefix(sub)
+					if !ok {
+						return page, nil
+					}
+					from, jumped = next, true
+					break
+				}
 			}
 			if o.Delimiter != "" {
 				if i := strings.Index(r.Name[len(o.Prefix):], o.Delimiter); i >= 0 {
