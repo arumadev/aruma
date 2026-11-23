@@ -107,9 +107,15 @@ case ${1:-} in
   run)
     shift
     [[ $# -gt 0 ]] || { echo "usage: $0 run CMD [ARG…]" >&2; exit 2; }
-    exec sudo --preserve-env setpriv --reuid="$(id -u)" --regid="$group" --init-groups --no-new-privs -- \
-      env PATH="$PATH" HOME="$HOME" ARUMA_EGRESS_GUARD=1 npm_config_offline=true npm_config_yes=false \
-      npm_config_update_notifier=false "$@"
+    # The job's environment (ARUMA_TEST_DATABASE_URL and the rest) reaches the command on its
+    # standard input, not through sudo: a sudo that ignores --preserve-env (sudo-rs on newer
+    # runner images) would start the command without it, and the suites would then reach for a
+    # Postgres without its password. The command itself reads from /dev/null.
+    # shellcheck disable=SC2016
+    env -0 | sudo setpriv --reuid="$(id -u)" --regid="$group" --init-groups --no-new-privs -- \
+      bash -c 'while IFS= read -r -d "" kv; do export "$kv" 2>/dev/null || true; done
+        export ARUMA_EGRESS_GUARD=1 npm_config_offline=true npm_config_yes=false npm_config_update_notifier=false
+        exec "$@" </dev/null' _ "$@"
     ;;
   check)
     if [[ ! -f $marker ]]; then
