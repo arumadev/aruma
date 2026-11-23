@@ -24,6 +24,9 @@ const browser = {
 };
 
 export default defineConfig<Options>({
+  // On GitHub Actions Playwright would otherwise git fetch the pull request's base commit from
+  // github.com for the report's diff: the suite reaches nothing off this machine.
+  captureGitInfo: { commit: false, diff: false },
   testDir: './e2e',
   snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{testFilePath}/{arg}-{platform}{ext}',
   fullyParallel: true,
