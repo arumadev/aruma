@@ -784,3 +784,30 @@ jobs:
         with:
           name: playwright-report
           path: dashboard/playwright-report
+
+  ops:
+    name: Operations (backup and restore, upgrade from the previous release, a second process)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ARUMA_PG_BIN: /usr/lib/postgresql/18/bin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: PostgreSQL 18 client tools (pg_dump must not be older than the server)
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+      # run.sh fetches the v0.4.0 tag and builds that release for the upgrade tests.
+      - name: Backup, restore, upgrade and rolling restart
+        run: test/ops/run.sh -v

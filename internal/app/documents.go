@@ -152,6 +152,7 @@ func (d *Documents) RuleDocuments() rules.Documents { return docapi.Lookups(d.st
 // mount puts the surfaces on the entry point.
 func (d *Documents) mount(h *server.Handlers) {
 	h.Documents, h.DocumentsREST, h.DocumentsOwns = d.GRPC, d.REST, docrest.Owns
+	h.DocumentsServing = d.serving
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
@@ -235,6 +236,15 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 // Close stops the retention job and the transactions' sweep, runs the usage's last flush, closes
 // the Listen hub, and releases the lock. It runs once the server has drained its requests, so the
 // last flush has their counts.
+// serving reports whether this process holds the Document Database's single-instance lock, for
+// /readyz. Before Boot there is no lock to hold: a caller that serves the handler without Boot
+// (the tests) serves from the start.
+func (d *Documents) serving() bool {
+	d.instanceMu.Lock()
+	defer d.instanceMu.Unlock()
+	return d.instance == nil || d.instance.Held()
+}
+
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()

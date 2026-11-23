@@ -411,18 +411,26 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 			}
 		}()
 	}
+	// Before the listener opens (ADR-024 §7): the Document Database's and the Realtime
+	// Database's single-instance locks, each tried for up to 30 seconds, which a new instance
+	// waits for while the old one drains. They are taken side by side, so a newcomer beside a
+	// running instance listens after 30 seconds, not after the sum.
+	docsBooted := make(chan error, 1)
 	if a.Documents != nil {
-		// Before the listener opens (ADR-024 §7): the single-instance lock, for up to 30
-		// seconds, which a new instance waits for while the old one drains.
-		if err := a.Documents.Boot(ctx, documents.InstanceOptions{}); err != nil {
-			return fmt.Errorf("documents: %w", err)
-		}
+		go func() { docsBooted <- a.Documents.Boot(ctx, documents.InstanceOptions{}) }()
+	} else {
+		docsBooted <- nil
+	}
+	a.BootRTDB(ctx, pool, store.InstanceLockOptions{})
+	if err := <-docsBooted; err != nil {
+		return fmt.Errorf("documents: %w", err)
+	}
+	if a.Documents != nil {
 		defer a.Documents.Close()
 	}
 	if cfg.Documents.DevOpenRules {
 		logger.Warn("documents.dev_open_rules is on: every client on this machine may read and write every Document Database")
 	}
-	a.BootRTDB(ctx, pool, store.InstanceLockOptions{})
 	go a.housekeeping(ctx)
 	go a.Auth.RunMailer(ctx)
 	logger.Info("starting aruma", "version", version, "public_url", cfg.PublicBaseURL().String())

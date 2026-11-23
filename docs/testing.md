@@ -33,6 +33,7 @@ Every pull request and every push to `main` runs the jobs in `.github/workflows/
 | `documents-compat` | Firebase's own Firestore integration tests (integration, persistence and lite, in Node). Every difference from the emulator is classified. |
 | `browser-matrix` | Aruma's download replies in Chromium, Firefox and WebKit, from pages on other origins and on the dashboard's own. |
 | `dashboard` | Lint, unit tests (including colour contrast), the static build, and end-to-end, visual and accessibility tests in Arabic (right to left) and English. |
+| `ops` | Backup and restore while clients write, the upgrade from the previous release, and a second process beside a running one (`test/ops/run.sh`). |
 
 Two more workflows run outside the main pipeline:
 

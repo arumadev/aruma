@@ -43,6 +43,9 @@ type Handlers struct {
 	// answers 503 so a load balancer keeps traffic to the instance that holds it. Nil counts
 	// as serving.
 	RTDBServing func() bool
+	// DocumentsServing reports the same of the Document Database and its single-instance lock:
+	// a process that the load balancer sends traffic to must serve both. Nil counts as serving.
+	DocumentsServing func() bool
 	// Storage is Cloud Storage's Firebase REST API, under StoragePrefixes, and GCS its GCS JSON
 	// API, under GCSPrefixes (ADR-022 §1). Their bodies may be as large as an object. Nil while
 	// Storage is disabled: the paths then fall through to the rest of the entry point.
@@ -297,6 +300,10 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 	}
 	if f := s.handlers.RTDBServing; f != nil && !f() {
 		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "rtdb-instance"})
+		return
+	}
+	if f := s.handlers.DocumentsServing; f != nil && !f() {
+		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "documents-instance"})
 		return
 	}
 	// A schema newer than the binary keeps a running server ready: `aruma migrate up` runs
