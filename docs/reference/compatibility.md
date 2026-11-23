@@ -68,6 +68,7 @@ Versions covered: Auth 0.1, Realtime Database 0.2, Cloud Storage and Security Ru
 | iOS | Supported | Tested on the simulator (iOS 18.5) with the Aruma redirect library. |
 | Android | Supported | Tested on emulators (API 33, 34), debug and R8-minified release builds, with the Aruma redirect library. HTTP to a non-loopback address is allowed in debuggable builds only. |
 | Flutter | Supported | Uses the native Android and iOS libraries. Not tested separately. |
+| Flutter web | Supported | `npx aruma-web flutter-web` (the `auth` product) rewrites the `firebase-auth.js` FlutterFire loads. Tested with Flutter 3.44.2 and `firebase_auth` 7.0.1 (`test/e2e/web-storage/measure.sh flutter`): email and password, anonymous sign-in, token refresh, profile, delete. |
 | Admin Node, Admin Go | Partial | Through the Aruma Admin Auth libraries (see above). |
 | Real devices | Not tested | All mobile tests ran on emulators and simulators. |
 

@@ -52,7 +52,7 @@ const projectID = "web-storage"
 
 // storageRules are the rules the tests run under: a signed-in user owns e2e/<uid>/; public/ is
 // readable by anyone (the SSR page reads it with no user); open/ is open to anyone, for the clients
-// that sign no one in (Flutter web, which has no Auth redirect here).
+// that sign no one in (the apps' Web Worker, src/worker.js).
 const storageRules = `rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {

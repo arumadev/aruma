@@ -290,7 +290,7 @@ jobs:
             examples/web/e2e/.generated/server.log
 
   # The Flutter example (examples/flutter): analyze and widget tests, then its web build, with
-  # tool/web.sh (@aruma/web flutter-web, and install() for Auth), against a fresh server with all
+  # tool/web.sh (@aruma/web flutter-web for Auth, Storage and Firestore), against a fresh server with all
   # four services and the example's rules, driven by Playwright as two users and a guest. Its
   # Android and iOS projects are not built here. Everything is installed before the egress guard.
   example-flutter:
@@ -791,8 +791,13 @@ jobs:
           include-hidden-files: true
           path: .cache/upstream/results/documents
 
+  # A Flutter web app (test/e2e/web-storage/apps/flutter) after `aruma-web flutter-web` with its
+  # default products: firebase_auth signs up, in with a password and anonymously, refreshes the
+  # token, then firebase_storage runs the eleven operations signed in, against a real Aruma, with no
+  # request to Google's Auth hosts; and a control build without the auth product, whose sign-up is
+  # built for identitytoolkit.googleapis.com and aborted by the page's guard (measure.sh flutter).
   web-storage-flutter:
-    name: Web Storage measured (Flutter web)
+    name: Web Auth and Storage measured (Flutter web)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -839,7 +844,7 @@ jobs:
           ./measure.sh --install flutter
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
-      - name: Build and drive the Flutter web app (measure.sh flutter)
+      - name: Build and drive the Flutter web app, signed in, and the control without auth (measure.sh flutter)
         run: test/ci/egress-guard.sh run test/e2e/web-storage/measure.sh flutter
       - name: Nothing left the machine
         if: always()

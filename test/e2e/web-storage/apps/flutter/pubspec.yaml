@@ -1,5 +1,5 @@
 name: aruma_e2e_web_storage
-description: measure.sh's Flutter web app, on firebase_storage in production mode.
+description: measure.sh's Flutter web app, on firebase_auth and firebase_storage in production mode.
 publish_to: none
 version: 0.0.1
 
@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_auth: 7.0.1
   firebase_core: 5.1.0
   firebase_storage: 14.0.1
   http: ^1.6.0

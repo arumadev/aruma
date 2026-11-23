@@ -91,15 +91,14 @@ tool/web.sh                      # once, and again after you change aruma.json o
 flutter run -d chrome            # or: flutter build web --no-web-resources-cdn
 ```
 
-On the web, FlutterFire loads the Firebase JS SDK from `www.gstatic.com` at run time, so no bundler sees it. [`tool/web.sh`](tool/web.sh) does what [`@aruma/web`](../../sdk/web/aruma-web/README.md) documents for Flutter web, plus Auth:
+On the web, FlutterFire loads the Firebase JS SDK from `www.gstatic.com` at run time, so no bundler sees it. [`tool/web.sh`](tool/web.sh) does what [`@aruma/web`](../../sdk/web/aruma-web/README.md) documents for Flutter web:
 
 1. It installs `@aruma/web` from this repository and the `firebase` npm package of the exact version `firebase_core_web` loads (12.19.0, see `package.json` and the pin in `pubspec.yaml`).
-2. It runs `npx aruma-web flutter-web --url <arumaUrl> --products storage,firestore`. That writes `web/aruma/` with `firebase-storage.js` and `firebase-firestore.js` rewritten for your server, and a block in `web/index.html` that loads them in place of Google's copies.
-3. It adds a second block in `web/index.html` for **Auth**: `@aruma/web`'s `install()` (copied to `web/aruma/auth/`), which sends Firebase Auth's requests to Aruma, as in [Connecting a web app to Aruma Auth](../../docs/guides/auth-web.md). The `flutter-web` step covers Storage and Firestore only.
+2. It runs `npx aruma-web flutter-web --url <arumaUrl> --products auth,storage,firestore`. That writes `web/aruma/` with `firebase-auth.js`, `firebase-storage.js` and `firebase-firestore.js` rewritten for your server, and a block in `web/index.html` that loads them in place of Google's copies, before the app starts. Sign-up, sign-in, the guest sign-in and token refresh then go to Aruma, as do Storage and Firestore.
 
-`web/aruma/` names your server, so it is not committed. `web/index.html` is changed in place: run `tool/web.sh` again to change or remove the blocks.
+`web/aruma/` names your server, so it is not committed. `web/index.html` is changed in place: run `tool/web.sh` again to change or remove the block.
 
-`--no-web-resources-cdn` serves CanvasKit from your own site instead of Google's CDN. [`web/flutter_bootstrap.js`](web/flutter_bootstrap.js) does the same for fonts: the app bundles Noto Sans and Noto Sans Arabic, and the engine looks for its fallback fonts on your site. What still comes from Google at run time is the Firebase JS SDK itself (`firebase-app.js`, `firebase-auth.js`, `firebase-database.js` from `www.gstatic.com`), as for any FlutterFire web app.
+`--no-web-resources-cdn` serves CanvasKit from your own site instead of Google's CDN. [`web/flutter_bootstrap.js`](web/flutter_bootstrap.js) does the same for fonts: the app bundles Noto Sans and Noto Sans Arabic, and the engine looks for its fallback fonts on your site. What still comes from Google at run time is the rest of the Firebase JS SDK (`firebase-app.js` and `firebase-database.js` from `www.gstatic.com`), as for any FlutterFire web app; neither holds a user's credentials or token on its way to Google (the Realtime Database goes to the `databaseURL` of `firebase_options.dart`).
 
 Serve `build/web` from any static server. Profile pictures are shown through the browser's own `<img>` when the bucket has no CORS rule (`webHtmlElementStrategy: fallback`). An attachment opens in a new tab.
 
@@ -145,7 +144,7 @@ Set up as the guide says for Flutter on iOS:
 
 1. Run `flutterfire configure` in this folder. It writes `lib/firebase_options.dart` for your Firebase project.
 2. Set `{"useAruma": false}` in `aruma.json`.
-3. Web: run `tool/web.sh` once. It removes the two blocks from `web/index.html` and deletes `web/aruma/`.
+3. Web: run `tool/web.sh` once. It removes the block from `web/index.html` and deletes `web/aruma/`.
 4. Deploy the rules and the index to Firebase: `firebase deploy --only firestore,database,storage` (no Aruma variables), and turn on anonymous sign-in in the Firebase console.
 
 With Aruma off, the Dart code sets no Firestore host and does not convert download links; the Android build applies no Aruma plugin or library and sets no `ArumaURL`; the Podfile adds no `ArumaRedirect`; and the iOS build phase removes `ArumaURL`. A patched FirebaseStorage from a mirror behaves exactly as the official one without `ArumaURL`, or remove `mirrors.json`.
@@ -207,4 +206,4 @@ e2e/run.sh --runs 5         # the web build against a real Aruma, in Chromium
 | `tool/web.sh`: `firebase_core_web loads the Firebase JS SDK X, but ... is firebase@Y` | `firebase` in `package.json` is not the version `firebase_core_web` loads | Raise both together: the `firebase_core_web` override in `pubspec.yaml` and `firebase` in `package.json` |
 | `tool/web.sh`: `expected one <script src="flutter_bootstrap.js"> in web/index.html` | `web/index.html` was edited by hand | Put back the line `<script src="flutter_bootstrap.js" async></script>` |
 | Web console: `Font family Roboto not found (404) at assets/fonts/fallback/...` | The engine asks for its default font on your site instead of Google's (`web/flutter_bootstrap.js`) | Harmless: the app draws with its bundled fonts |
-| Requests to `firestore.googleapis.com` refused with 403 on the web | `tool/web.sh` was not run, or not since `aruma.json` changed | Run `tool/web.sh`, then build again |
+| Requests to `firestore.googleapis.com` refused with 403 on the web, or sign-in fails with `network-request-failed` | `tool/web.sh` was not run, or not since `aruma.json` changed | Run `tool/web.sh`, then build again |

@@ -98,7 +98,7 @@ v0.3 Storage suites have a job each:
 | `browser-matrix` | Chromium, Firefox and WebKit, in parallel | `test/e2e/browser-matrix/run.sh <engine>` |
 | `web-storage` | Vite 8, webpack, esbuild, Rollup, Rspack, the fallback, SvelteKit | `test/e2e/web-storage/run.sh` |
 | `web-storage-measure` | Vite 5.4.21, 6.4.5, 7.3.7, 8.3.5 (build and dev server), Next.js 16.4.3 (webpack, Turbopack, dev), Expo 58.0.19 (web export in the browser, the Android bundle) | `test/e2e/web-storage/measure.sh vite5 vite6 vite7 vite8 next expo` |
-| `web-storage-flutter` | Flutter 3.44.2 web with `firebase_storage` 14.0.1 | `test/e2e/web-storage/measure.sh flutter` |
+| `web-storage-flutter` | Flutter 3.44.2 web with `firebase_auth` 7.0.1 and `firebase_storage` 14.0.1, after `aruma-web flutter-web`; and the control build without its `auth` product | `test/e2e/web-storage/measure.sh flutter` |
 | `storage-compat` | firebase-js-sdk 13.0.0's Storage suites (Node, Chromium, compat), firebase-tools 15.34.0's conformance tests, the captures | `test/compat/storage/run.sh` |
 
 Every version is pinned: Node 24.21.0, Go from go.mod, the lockfiles, Playwright 1.64.1, the

@@ -54,11 +54,31 @@ import { install } from '@aruma/web';
 install({ url: 'https://aruma.example.com' });
 ```
 
+**Flutter web:** see [Flutter web](#flutter-web) below.
+
 **Build mode (`mode: 'build'`, Vite 8 or later):**
 - There is no run-time code. The plugin replaces the two Google URL literals inside `@firebase/auth` during the build.
 - The build fails if it cannot find them, for example when a new Firebase release changes them.
 
 **Tested:** `ARUMA_E2E_MODE=production test/e2e/web-auth/run.sh`, and `production-build` for build mode. All flows pass on firebase 11, 12 and 13 with zero requests to Google. A further test installs the package after the SDK is imported. For details and risks, see `sdk/web/aruma-web/README.md`.
+
+### Flutter web
+
+A Flutter web app has no bundler. `firebase_core_web` loads the Firebase JS SDK from `www.gstatic.com` when the app starts, so the Vite plugin and `install()` in your code never see it. Use the build step of `@aruma/web` instead, in the Flutter project:
+
+```sh
+npm install --save-dev /path/to/aruma/sdk/web/aruma-web
+npm install --no-save firebase@<version>   # the version the tool names; it reads it from firebase_core_web
+npx aruma-web flutter-web --url https://aruma.example.com
+```
+
+- It takes `firebase-auth.js` of that exact version from npm (nothing is downloaded from Google) and swaps its two Auth hosts for paths on your server, the same rewrite as build mode. It writes the file to `web/aruma/` and adds a block to `web/index.html` that loads it before the app starts. Every `firebase_auth` call then goes to Aruma: sign-up, sign-in with a password, anonymous sign-in, token refresh, profile changes and account deletion.
+- `auth` and `storage` are the default products. Add `firestore` if the app uses Cloud Firestore: `--products auth,storage,firestore`. The tool fails when Auth is on Aruma and the app uses Storage or Firestore on the web without them, because those requests would carry the user's ID token to Google.
+- Without `auth` (`--products storage`), sign-up and sign-in send the user's email and password to Google. The tool warns about this.
+- Run it again after you change the URL or upgrade `firebase_core`. A second run changes nothing; a run without a product takes it out again.
+- Keep the Dart code as it is: no `useAuthEmulator`.
+
+**Tested:** `test/e2e/web-storage/measure.sh flutter` signs up, signs in with a password and anonymously, refreshes the token and uses Storage signed in, with no request to Google's Auth hosts. Its control build without `auth` shows the sign-up going to `https://identitytoolkit.googleapis.com/v1/accounts:signUp` (stopped by the test). The Flutter example (`examples/flutter`) uses it too. See `sdk/web/aruma-web/README.md`.
 
 ## Emulator-function mode (development)
 

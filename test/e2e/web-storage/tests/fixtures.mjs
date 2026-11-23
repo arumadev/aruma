@@ -9,6 +9,8 @@ export const arumaURL = e2e.aruma;
 // Every Google host an SDK could reach.
 const google = /(^|\.)(googleapis\.com|gstatic\.com|google\.com|googleusercontent\.com|firebaseio\.com|firebasedatabase\.app|firebaseapp\.com|web\.app|recaptcha\.net|google-analytics\.com|googletagmanager\.com|doubleclick\.net|withgoogle\.com)$/;
 const local = new Set(['127.0.0.1', 'localhost']);
+// Google's two Auth hosts: sign-up and sign-in (identitytoolkit) and token refresh (securetoken).
+export const authHost = /^(identitytoolkit|securetoken)\.googleapis\.com\.?$/;
 
 // The Firebase JS SDK files Flutter web's firebase_core_web imports from www.gstatic.com: with
 // mirror set, they are answered from the firebase npm package of this suite instead (the same CDN
@@ -54,6 +56,7 @@ export const test = base.extend({
     expect(log.blocked.filter((u) => google.test(new URL(u).hostname)), 'requests to Google').toEqual([]);
     expect(log.blocked, 'requests leaving the machine').toEqual([]);
     expect(log.urls.filter((u) => new URL(u).hostname === 'firebasestorage.googleapis.com'), 'URLs on the Storage host').toEqual([]);
+    expect(log.urls.filter((u) => authHost.test(new URL(u).hostname)), 'URLs on the Auth hosts').toEqual([]);
   }, { auto: true }],
 });
 

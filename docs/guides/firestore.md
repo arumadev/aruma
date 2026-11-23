@@ -92,7 +92,7 @@ The line for other bundlers:
 | webpack, Rspack, Rollup, esbuild, Rolldown | `arumaFirestore.webpack({ url })` and so on (`@aruma/web/unplugin`) |
 | Next.js | `withArumaFirestore(config, { url })` (`@aruma/web/next`) |
 | Expo, React Native (Metro) | `withArumaFirestore(config, { url })` (`@aruma/web/metro`) |
-| Flutter web | `npx aruma-web flutter-web --url <url> --products storage,firestore` |
+| Flutter web | `npx aruma-web flutter-web --url <url> --products auth,storage,firestore` |
 
 If your app uses Aruma Auth, turn Firestore on in the plugin before you use it. Without it the build fails, and `@aruma/web` refuses requests to Google's Firestore host, so your Aruma ID token cannot reach Google. If the build-time rewrite cannot reach your build, set the host with the SDK's own settings:
 

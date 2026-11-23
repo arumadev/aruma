@@ -5,10 +5,10 @@ import { join } from 'node:path';
 export const arumaURL = process.env.ARUMA_URL;
 const firebasePkg = process.env.ARUMA_E2E_FIREBASE;
 
-// firebase_core_web imports the Firebase JS SDK from www.gstatic.com (firebase-app.js,
-// firebase-auth.js, firebase-database.js; Storage and Firestore come from the files tool/web.sh
-// wrote). Here they are answered from the firebase npm package of the same version, the same CDN
-// build, so that nothing leaves the machine. Every such answer is recorded.
+// firebase_core_web imports the Firebase JS SDK from www.gstatic.com (firebase-app.js and
+// firebase-database.js; Auth, Storage and Firestore come from the files tool/web.sh wrote). Here
+// they are answered from the firebase npm package of the same version, the same CDN build, so that
+// nothing leaves the machine. Every such answer is recorded.
 const gstaticSDK = /^https:\/\/www\.gstatic\.com\/firebasejs\/([0-9.]+)\/(firebase-[a-z-]+\.js)$/;
 const local = new Set(['127.0.0.1', 'localhost']);
 
@@ -44,8 +44,9 @@ export const test = base.extend({
     const log = { aruma: [], blocked: [], mirrored: [] };
     await use(log);
     expect(log.blocked, 'requests leaving the machine').toEqual([]);
-    expect(log.mirrored.filter((f) => f === 'firebase-storage.js' || f === 'firebase-firestore.js'),
-      'Storage or Firestore SDK from gstatic instead of the rewritten files').toEqual([]);
+    expect(log.blocked.filter((u) => /^https:\/\/(identitytoolkit|securetoken)\.googleapis\.com\//.test(u)), 'requests to Google\'s Auth hosts').toEqual([]);
+    expect(log.mirrored.filter((f) => f === 'firebase-auth.js' || f === 'firebase-storage.js' || f === 'firebase-firestore.js'),
+      'Auth, Storage or Firestore SDK from gstatic instead of the rewritten files').toEqual([]);
   }, { auto: true }],
 });
 

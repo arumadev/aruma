@@ -24,6 +24,7 @@
 // app's ID token, here Aruma's, with every request (`Authorization: Firebase <token>`), and its
 // host would stay Google's. At run time install() refuses such a request too (index.js).
 import { parseBase } from './index.js';
+import { rewriteAuthLiterals } from './auth.js';
 import { esbuildOptimizerPlugin, firestoreRewriter, rollupVerify, storageRewriter } from './build.js';
 import { isFirestoreModule } from './firestore.js';
 import { isStorageModule } from './storage.js';
@@ -32,25 +33,8 @@ const VIRTUAL = 'virtual:aruma-web/install';
 const RESOLVED = `\0${VIRTUAL}`;
 const AUTH_DIST = /[\\/]@firebase[\\/]auth[\\/]dist[\\/].*\.m?js$/;
 
-/**
- * The build-time rewrite of one @firebase/auth module. Exported for tests.
- * @returns {{ code: string, hosts: number, scheme: number }}
- */
-export function rewriteAuthLiterals(code, base) {
-  let hosts = 0;
-  let scheme = 0;
-  let out = code.replace(/(["'])(identitytoolkit|securetoken)\.googleapis\.com\1/g, (_, q, name) => {
-    hosts++;
-    return `${q}${base.host}${base.prefix}/${name}.googleapis.com${q}`;
-  });
-  if (base.protocol !== 'https') {
-    out = out.replace(/(apiScheme\s*:\s*)(["'])https\2/g, (_, key, q) => {
-      scheme++;
-      return `${key}${q}${base.protocol}${q}`;
-    });
-  }
-  return { code: out, hosts, scheme };
-}
+// The build-time rewrite of one @firebase/auth module (auth.js). Exported here for the tests.
+export { rewriteAuthLiterals };
 
 function buildModeRewriter(base, name) {
   const seen = { modules: 0, hosts: 0, scheme: 0 };

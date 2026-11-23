@@ -10,8 +10,11 @@
 #                            (Turbopack), each with its server under the netguard
 #   expo                     an Expo app's web export through Metro, in the browser, and its
 #                            Android bundle, checked for the rewritten host
-#   flutter                  a Flutter web app after `aruma-web flutter-web`, in the browser
-#                            (needs Flutter, and PUB_CACHE with firebase_storage 14.0.1)
+#   flutter                  a Flutter web app after `aruma-web flutter-web` (auth and storage),
+#                            in the browser: signed up, in with a password and anonymously, then
+#                            Storage signed in; and the control build without auth, whose sign-up
+#                            is built for Google's host and aborted by the guard (needs Flutter, and
+#                            PUB_CACHE with firebase_auth 7.0.1 and firebase_storage 14.0.1)
 #
 # Default: all. (The run-time fallback is in run.sh.) The apps are copied from apps/ and installed under ARUMA_E2E_APPS_DIR (default
 # <repo>/.cache/web-storage-apps), outside the repository. Results: one line per target and app,
@@ -404,28 +407,67 @@ flutter_app() {
   [[ -z $install_only ]] || return 0
   # Flutter is the job's toolchain (ci.yml pins 3.44.2), not measure.sh's: shown, not checked.
   note "info    flutter $(flutter --version 2>/dev/null | head -1 | cut -d' ' -f2), firebase_core_web $(grep -o 'firebase_core_web-[0-9.]*' "$dir/.dart_tool/package_config.json" | head -1 | cut -d- -f2)"
-  # The tool, twice: the second run must replace its own block, not add one.
-  local out
-  out=$(node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase")
-  node "$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase" >/dev/null
+  # The tool, twice, with its default products (auth and storage): the second run must replace its
+  # own block, not add one, and change nothing.
+  local out cli=("$sdk/src/cli.js" flutter-web --url "$ARUMA_URL" --project "$dir" --firebase "$here/node_modules/firebase")
+  out=$(node "${cli[@]}")
+  cp "$dir/web/index.html" "$gen/flutter-index-1.html"
+  node "${cli[@]}" >/dev/null
   local version blocks
   version=$(sed -n 's/.*Firebase JS SDK \([0-9.]*\),.*/\1/p' <<<"$out")
   expect_version "flutter-web tool: Firebase JS SDK" "$version" "$firebase"
   blocks=$(grep -c '<!-- @aruma/web flutter-web' "$dir/web/index.html" || true)
-  if [[ $blocks -eq 1 ]]; then
-    note "ok      flutter-web tool: run twice, one block in index.html"
+  if [[ $blocks -eq 1 ]] && cmp -s "$dir/web/index.html" "$gen/flutter-index-1.html" && grep -q "'auth', 'storage'\]" "$dir/web/index.html"; then
+    note "ok      flutter-web tool: auth and storage by default; run twice, one block in index.html, unchanged"
   else
-    note "FAILED  flutter-web tool: run twice, $blocks blocks in index.html (want 1)"
+    note "FAILED  flutter-web tool: run twice, $blocks blocks in index.html (want 1, auth and storage, unchanged by the second run)"
   fi
   rewritten "flutter-web tool: firebase-storage-$version.js" "$dir/web/aruma/firebase-storage-$version.js"
+  auth_rewritten "flutter-web tool: firebase-auth-$version.js" "$dir/web/aruma/firebase-auth-$version.js"
   if ! (cd "$dir" && flutter build web --no-web-resources-cdn --base-href /flutter/ --no-pub >"$gen/build-flutter.log" 2>&1); then
     note "FAILED  flutter: flutter build web failed (see $gen/build-flutter.log)"
     return
   fi
-  # The spec fails when firebase-storage.js comes from www.gstatic.com; it lists what did (the
-  # SDK files firebase_core_web imports, answered from npm).
-  ARUMA_E2E_MIRROR=$version ARUMA_E2E_SIGNED_OUT=1 playwright flutter "flutter=$dir/build/web" flutter
+  # The spec fails when firebase-auth.js or firebase-storage.js comes from www.gstatic.com, or when
+  # anything goes to Google's Auth hosts; it lists what did come from there (the SDK files
+  # firebase_core_web imports, answered from npm). The app signs in, so Storage carries the token.
+  ARUMA_E2E_MIRROR=$version playwright flutter "flutter=$dir/build/web" flutter
   note "info    flutter: $(grep -m1 'from www.gstatic.com' "$gen/pw-flutter.log" | sed 's/^ *//')"
+  note "info    flutter: $(grep -m1 'Auth on Aruma:' "$gen/pw-flutter.log" | sed 's/^ *//')"
+
+  # The control: the same app with Auth left out (--products storage), as before auth was a product.
+  # The tool warns, and takes its Auth file and import out again.
+  node "${cli[@]}" --products storage >/dev/null 2>"$gen/flutter-control-tool.err" || true
+  if grep -q 'warning: the project uses firebase_auth on the web' "$gen/flutter-control-tool.err" \
+    && [[ ! -e "$dir/web/aruma/firebase-auth-$version.js" ]] && ! grep -q 'firebase_auth' "$dir/web/index.html"; then
+    note "ok      flutter-web tool --products storage: warns that Auth stays on Google, auth taken out of index.html and web/aruma/"
+  else
+    note "FAILED  flutter-web tool --products storage: no warning, or auth still in index.html or web/aruma/ ($gen/flutter-control-tool.err)"
+  fi
+  if ! (cd "$dir" && flutter build web --no-web-resources-cdn --base-href /flutter-control/ --output "$dir/build/web-control" --no-pub >"$gen/build-flutter-control.log" 2>&1); then
+    note "FAILED  flutter-control: flutter build web failed (see $gen/build-flutter-control.log)"
+    return
+  fi
+  if ARUMA_E2E_CONTROL=flutter-control ARUMA_E2E_MIRROR=$version ARUMA_E2E_ROOTS="flutter-control=$dir/build/web-control" \
+    npx playwright test tests/flutter-auth-control.spec.mjs >"$gen/pw-flutter-control.log" 2>&1; then
+    note "ok      flutter-control: without auth, $(grep -m1 -o 'aborted by the guard: [^ ]*' "$gen/pw-flutter-control.log")"
+  else
+    note "FAILED  flutter-control (see $gen/pw-flutter-control.log)"
+    grep -E '✘|Error|expect\(' "$gen/pw-flutter-control.log" | head -20 | sed 's/^/          /'
+  fi
+}
+
+# auth_rewritten <name> <file>: ok when the file names neither of Google's Auth hosts as a host and
+# names both as paths on Aruma's host.
+auth_rewritten() {
+  local google aruma
+  google=$( (grep -o -a -E "[\"'](identitytoolkit|securetoken)\.googleapis\.com[\"']" "$2" 2>/dev/null || true) | wc -l | tr -d ' ')
+  aruma=$( (grep -o -a -E "[\"']${addr//./\\.}/(identitytoolkit|securetoken)\.googleapis\.com[\"']" "$2" 2>/dev/null || true) | sort -u | wc -l | tr -d ' ')
+  if [[ $google -eq 0 && $aruma -eq 2 ]]; then
+    note "ok      $1: 0 Google Auth host literals, both Auth hosts on Aruma's"
+  else
+    note "FAILED  $1: $google Google Auth host literals, $aruma of the 2 Auth hosts on Aruma's"
+  fi
 }
 
 for t in "${targets[@]}"; do

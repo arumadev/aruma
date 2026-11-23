@@ -27,7 +27,7 @@ Every pull request and every push to `main` runs the jobs in `.github/workflows/
 | `web-documents` | The full Firestore web SDK over WebChannel and the lite SDK over REST, with rules and `@aruma/web`, in Chromium, Firefox and WebKit. |
 | `web-storage` | The Storage web SDK built with Vite, webpack, esbuild, Rollup, Rspack and SvelteKit. |
 | `web-storage-measure` | Storage in apps built with Vite 5 to 8, Next.js and Expo, each built, served and driven in a browser. |
-| `web-storage-flutter` | Storage in a Flutter web app. |
+| `web-storage-flutter` | Auth (email and password, anonymous, token refresh) and Storage in a Flutter web app after `aruma-web flutter-web`, and a control build without the `auth` product. |
 | `storage-sdks` | `@google-cloud/storage`, `cloud.google.com/go/storage` and firebase-tools against Storage. |
 | `storage-compat` | Firebase's own Storage tests, in Node and in Chromium, plus firebase-tools' Storage conformance tests. Every difference from the emulator is classified. |
 | `documents-compat` | Firebase's own Firestore integration tests (integration, persistence and lite, in Node). Every difference from the emulator is classified. |
