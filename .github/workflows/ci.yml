@@ -231,6 +231,64 @@ jobs:
             test/e2e/web-rtdb/.generated/server.log
             test/e2e/web-rtdb/.generated/lp-browser.json
 
+  # The example app of examples/web (Team Board): the official firebase package in production mode
+  # through @aruma/web, against a fresh server with all four services and the app's own rules,
+  # driven by Playwright as two users. Everything is installed before the egress guard goes on.
+  example-web:
+    name: Example web app e2e (Team Board; Auth, Firestore, Realtime Database, Storage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: examples/web/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('examples/web/package-lock.json') }}
+      - name: Install (Go modules, the app)
+        working-directory: examples/web
+        run: |
+          go mod download
+          (cd ../.. && go build -o /dev/null ./test/smoke/genconfig)
+          npm ci --no-audit --no-fund
+      - name: Install Chromium and its system dependencies
+        working-directory: examples/web
+        timeout-minutes: 20
+        run: |
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" chromium
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Team Board against a real server, no request to Google
+        run: test/ci/egress-guard.sh run examples/web/e2e/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: example-web-report
+          include-hidden-files: true
+          path: |
+            examples/web/e2e/.generated/report
+            examples/web/e2e/.generated/test-results
+            examples/web/e2e/.generated/server.log
+
   # The v0.3 Storage suites. Each job installs what its suite needs first, then runs the suite
   # under test/ci/egress-guard.sh: a packet that would leave the machine is rejected and counted,
   # and the job fails on any. The suites keep their own guards as well (netguard.cjs, the

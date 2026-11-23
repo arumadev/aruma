@@ -1,0 +1,9 @@
+{
+  "projectId": "team-board",
+  "appId": "1:123456789012:web:0123456789abcdef",
+  "databaseURL": "http://localhost:8080/?ns=team-board-default-rtdb",
+  "storageBucket": "team-board.localhost",
+  "apiKey": "replace-with-the-api-key-of-your-web-app",
+  "authDomain": "localhost",
+  "messagingSenderId": "123456789012"
+}

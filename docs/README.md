@@ -6,6 +6,7 @@ Start with [Getting started](getting-started.md). All pages are in English.
 
 - [Getting started](getting-started.md): run Aruma, create a project and an app, and sign a user in from a web app.
 - [SDK packages](sdks.md): every package under `sdk/`, what it does and how to install it.
+- [Team Board, a web example](../examples/web/README.md): a Vite + React app on the official `firebase` package that uses Auth, Firestore, the Realtime Database and Storage on Aruma, and runs unchanged on Firebase.
 - [Changelog](CHANGELOG.md): what each release contains, its known limits and how to upgrade.
 
 ## Guides

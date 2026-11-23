@@ -1,0 +1,76 @@
+{
+  "en": {
+    "main": "Lina Haddad",
+    "other": "Omar Farouk",
+    "third": "Sara Kim",
+    "team": "Website launch",
+    "secondTeam": "Book club",
+    "tasks": [
+      "Write the release notes",
+      "Review the pricing page",
+      "Fix the signup email",
+      "Order team T-shirts"
+    ],
+    "done": [
+      3
+    ],
+    "otherTask": "Update the screenshots",
+    "attachTo": 1,
+    "attachment": "pricing-draft.pdf",
+    "chat": [
+      [
+        "other",
+        "Morning! The pricing page draft is attached to its task."
+      ],
+      [
+        "main",
+        "Thanks, Omar. I will review it before lunch."
+      ],
+      [
+        "other",
+        "Great. Release notes next?"
+      ],
+      [
+        "main",
+        "Yes, I am on them now."
+      ]
+    ]
+  },
+  "ar": {
+    "main": "لينا حداد",
+    "other": "عمر فاروق",
+    "third": "سارة كريم",
+    "team": "إطلاق الموقع",
+    "secondTeam": "نادي القراءة",
+    "tasks": [
+      "كتابة ملاحظات الإصدار",
+      "مراجعة صفحة الأسعار",
+      "إصلاح رسالة التسجيل",
+      "طلب قمصان الفريق"
+    ],
+    "done": [
+      3
+    ],
+    "otherTask": "تحديث لقطات الشاشة",
+    "attachTo": 1,
+    "attachment": "مسودة-الأسعار.pdf",
+    "chat": [
+      [
+        "other",
+        "صباح الخير! مسودة صفحة الأسعار مرفقة بمهمتها."
+      ],
+      [
+        "main",
+        "شكرًا يا عمر. سأراجعها قبل الغداء."
+      ],
+      [
+        "other",
+        "رائع. ملاحظات الإصدار بعدها؟"
+      ],
+      [
+        "main",
+        "نعم، أعمل عليها الآن."
+      ]
+    ]
+  }
+}

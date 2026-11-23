@@ -170,7 +170,7 @@ In `firebase.json`, only the `(default)` database is used:
 
 ## 3. Indexes
 
-Single-field indexes are automatic, as in Firebase. A query that combines fields, such as a filter on one field and an order on another, needs a **composite index**.
+Single-field indexes are automatic for queries on one collection, as in Firebase. A **collection group** query that filters or orders by a field needs a single-field index with collection group scope for that field (a `fieldOverrides` entry in `firestore.indexes.json`), as in Firebase; without it the query is refused with `FAILED_PRECONDITION`. A query that combines fields, such as a filter on one field and an order on another, needs a **composite index**. The Firebase emulator checks none of this, so a query that works there can still need an index here and on Firebase.
 
 ### Without an index
 
