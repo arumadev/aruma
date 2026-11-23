@@ -142,3 +142,7 @@ documents:                         # Document Database; see docs/reference/confi
     field_overrides: 1000          # field overrides per database, its default aside
     ttl_sweep_interval: 1h         # how often documents past their TTL policy's time are deleted
     ttl_sweep_batch: 500           # due documents read of a database at once (100 batches a pass)
+retention:                         # days housekeeping keeps these tables; 0 keeps them forever
+  auth_audit_days: 90              # auth.audit: a row per sign-in attempt
+  control_audit_days: 90           # control.audit_log, the console's audit log (0, or at least 7)
+  events_days: 30                  # events.changes, the shared change log

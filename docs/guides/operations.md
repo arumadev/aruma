@@ -32,6 +32,8 @@ git fetch --tags && git checkout v0.4.1      # the version you are moving to
 docker compose up -d --build
 ```
 
+**Retention.** The server deletes, every hour, the rows nothing reads any more: expired console sessions and CLI tokens, app users' sessions 30 days after a sign-out by revocation or account deletion, a deleted project's data when its 30 days end, and the sign-in audit, administrative audit log and change log after 90, 90 and 30 days. The `retention` settings change the three periods, and `0` keeps a table forever; [configuration](../reference/configuration.md#retention) lists every table. Each pass logs a `housekeeping` line and counts the rows in `aruma_housekeeping_purged_rows_total`. A large backlog, the first pass after an upgrade for example, is deleted 50,000 rows per table per hour. Export the audit tables first if you must keep them longer.
+
 ## Prebuilt binaries
 
 Each [release](https://github.com/arumadev/aruma/releases) has one archive per system, `aruma_<version>_<os>_<arch>`, for Linux and macOS (`.tar.gz`) and Windows (`.zip`) on amd64 and arm64. The binaries are static: they need no other library, only a PostgreSQL 18 to connect to, and the PostgreSQL 18 client tools on `PATH` (or in `ARUMA_PG_BIN`) for `aruma backup` and `aruma restore`.

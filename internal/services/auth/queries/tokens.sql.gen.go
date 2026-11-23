@@ -62,7 +62,7 @@ func (q *Queries) DeleteRefreshToken(ctx context.Context, arg DeleteRefreshToken
 }
 
 const getRefreshToken = `-- name: GetRefreshToken :one
-SELECT token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time, created_at, last_used_at FROM auth.refresh_tokens WHERE project_number = $1 AND token_hash = $2
+SELECT token_hash, project_number, tenant_id, uid, sign_in_provider, custom_claims, auth_time, created_at, last_used_at, ended_at FROM auth.refresh_tokens WHERE project_number = $1 AND token_hash = $2
 `
 
 type GetRefreshTokenParams struct {
@@ -83,6 +83,7 @@ func (q *Queries) GetRefreshToken(ctx context.Context, arg GetRefreshTokenParams
 		&i.AuthTime,
 		&i.CreatedAt,
 		&i.LastUsedAt,
+		&i.EndedAt,
 	)
 	return i, err
 }
@@ -271,17 +272,45 @@ func (q *Queries) ListSigningKeys(ctx context.Context, arg ListSigningKeysParams
 	return items, nil
 }
 
-const purgeOrphanRefreshTokens = `-- name: PurgeOrphanRefreshTokens :execrows
-DELETE FROM auth.refresh_tokens r
-WHERE r.created_at < now() - interval '30 days'
-  AND NOT EXISTS (SELECT 1 FROM auth.users u
-                  WHERE u.project_number = r.project_number AND u.tenant_id = r.tenant_id
-                    AND u.uid = r.uid AND u.tokens_valid_after <= r.created_at)
+const purgeAuthAudit = `-- name: PurgeAuthAudit :execrows
+DELETE FROM auth.audit
+WHERE id IN (
+    SELECT a.id FROM auth.audit a
+    WHERE a.at < now() - make_interval(days => $1::int)
+    ORDER BY a.at
+    LIMIT $2::int)
 `
 
-// scope: global — housekeeping across projects: tokens of deleted users, or revoked long ago.
-func (q *Queries) PurgeOrphanRefreshTokens(ctx context.Context) (int64, error) {
-	result, err := q.db.Exec(ctx, purgeOrphanRefreshTokens)
+type PurgeAuthAuditParams struct {
+	Days  int32
+	Batch int32
+}
+
+// scope: global — housekeeping across projects: one batch of the sign-in audit rows older than
+// @days days, oldest first. The age is the database's clock, which also dated the rows.
+func (q *Queries) PurgeAuthAudit(ctx context.Context, arg PurgeAuthAuditParams) (int64, error) {
+	result, err := q.db.Exec(ctx, purgeAuthAudit, arg.Days, arg.Batch)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const purgeEndedRefreshTokens = `-- name: PurgeEndedRefreshTokens :execrows
+DELETE FROM auth.refresh_tokens
+WHERE token_hash IN (
+    SELECT r.token_hash FROM auth.refresh_tokens r
+    WHERE r.ended_at < now() - interval '30 days'
+    ORDER BY r.ended_at
+    LIMIT $1::int)
+`
+
+// scope: global — housekeeping across projects: one batch of the tokens that stopped working 30
+// days ago (ended_at: their user deleted, or their session revoked; migration auth 00004). Until
+// then a refresh with one answers USER_NOT_FOUND or TOKEN_EXPIRED, which sign the client out.
+// A live token has no ended_at and is never purged: refresh tokens do not expire (ADR-004).
+func (q *Queries) PurgeEndedRefreshTokens(ctx context.Context, batch int32) (int64, error) {
+	result, err := q.db.Exec(ctx, purgeEndedRefreshTokens, batch)
 	if err != nil {
 		return 0, err
 	}

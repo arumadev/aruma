@@ -167,6 +167,32 @@ The Firestore and Storage rules engine, under `rules.limits` in the file, each w
 | `regex_bytes` | `4194304` | The estimated programs of one ruleset's literal patterns together. A file past it fails to compile ("Regular expressions are too complex to compile safely"), where Firebase may accept it |
 | `compiled_rulesets_bytes` | `134217728` | Compiled rulesets kept in memory, by estimated weight. One ruleset may weigh a quarter of it, or it fails to compile ("The rules are too large to keep compiled"). It must be at least four times `source_bytes` and `regex_cache_bytes` and five times `regex_bytes` together, so that any file within those limits compiles |
 
+## Retention
+
+Housekeeping runs at startup and then every hour. It deletes rows that nothing reads any more, in batches of 1,000 rows and at most 50 batches per table per pass, so a large backlog (after an upgrade, say) is worked off over the following hours without long locks. Each pass logs one `housekeeping` line with the rows it deleted per table, and the metric `aruma_housekeeping_purged_rows_total{table}` counts them.
+
+Three tables are kept for a configurable number of days, under `retention` in the file. `0` keeps a table forever; a negative value is refused at startup.
+
+| Key | Variable | Default | Table |
+|---|---|---|---|
+| `auth_audit_days` | `ARUMA_RETENTION_AUTH_AUDIT_DAYS` | `90` | `auth.audit`: a row per sign-in attempt (successful or denied), per email action code and per session cookie issued. Nothing in the server reads it; it is there for your own queries |
+| `control_audit_days` | `ARUMA_RETENTION_CONTROL_AUDIT_DAYS` | `90` | `control.audit_log`: administrative actions from the console and the Management API, shown on the audit log pages. At least `7`: the database itself refuses to delete a row younger than seven days, or to change any row |
+| `events_days` | `ARUMA_RETENTION_EVENTS_DAYS` | `30` | `events.changes`: the shared change log, a row per account created. Nothing in the server reads it yet |
+
+Credentials and temporary rows go a fixed time after they stop working, with no setting:
+
+| Rows | Deleted |
+|---|---|
+| Console sessions (`control.sessions`) | 1 day after their absolute expiry (`session.absolute_timeout`); revoked or idle sessions stop working at once |
+| CLI tokens (`control.access_tokens`) | 1 day after revocation, 30 days after expiry (the console lists expired tokens until then) |
+| Service account access tokens | 1 day after expiry |
+| App users' refresh tokens | 30 days after the user is deleted or the session revoked, so that a client that comes back hears `USER_NOT_FOUND` or `TOKEN_EXPIRED` and signs out. A live refresh token is never deleted: refresh tokens do not expire, as in Firebase |
+| Email action codes, Google and Apple sign-in sessions | 1 day after use or expiry |
+| Auth outbox messages | 30 days after delivery or the last failed attempt |
+| Storage upload sessions | at expiry (`storage.limits.*_ttl`) |
+| Document Database versions, change log, operations and usage | by the Document Database's own job, every minute: versions past the database's `versionRetentionPeriod`, change log rows after an hour, finished operations after 30 days, usage hours after 31 days |
+| A deleted project's data, Auth included | when its 30 days of deletion end |
+
 ## Minimal production example
 
 ```yaml

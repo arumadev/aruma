@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -19,6 +20,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
+	"github.com/arumadev/aruma/internal/platform/retention"
 	"github.com/arumadev/aruma/internal/services/auth/queries"
 	"github.com/arumadev/aruma/internal/services/auth/tokens"
 	tcore "github.com/arumadev/aruma/internal/tenancy/core"
@@ -161,21 +163,94 @@ func (s *Service) audit(ctx context.Context, q *queries.Queries, p Project, uid,
 	}
 }
 
-// Housekeep rotates and destroys signing keys on schedule and purges refresh tokens that can
-// no longer be used, spent email action codes and old outbox messages.
-func (s *Service) Housekeep(ctx context.Context) error {
+// Retention is how long Housekeep keeps the Auth tables that grow with use.
+type Retention struct {
+	// AuditDays keeps auth.audit, a row per sign-in attempt, this many days; 0 keeps it forever.
+	AuditDays int
+	// Batch is the rows one DELETE removes.
+	Batch int
+}
+
+// Housekeep rotates and destroys signing keys on schedule, and purges what nothing reads any
+// more: refresh tokens 30 days after they stopped working, spent email action codes and Google
+// or Apple sign-in sessions, old outbox messages, and audit rows past r.AuditDays. It returns
+// the rows purged by table; a purge that fails does not stop the others.
+func (s *Service) Housekeep(ctx context.Context, r Retention) (retention.Counts, error) {
+	c := retention.Counts{}
 	if err := s.tokens.Maintain(ctx); err != nil {
-		return err
+		return c, err
 	}
-	n, err := s.q.PurgeOrphanRefreshTokens(ctx)
-	if n > 0 {
-		s.log.Info("auth housekeeping", "refresh_tokens_purged", n)
+	var errs []error
+	run := func(table string, del func(context.Context, int) (int64, error)) {
+		errs = append(errs, c.Run(ctx, table, r.Batch, del))
 	}
-	if err != nil {
-		return err
+	// One statement each: their rows live minutes to days, so the tables stay small.
+	once := func(table string, del func(context.Context) (int64, error)) {
+		n, err := del(ctx)
+		c[table] += n
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", table, err))
+		}
 	}
-	if _, err := s.q.PurgeIdPSessions(ctx); err != nil {
-		return err
+	run("auth.refresh_tokens", func(ctx context.Context, n int) (int64, error) {
+		return s.q.PurgeEndedRefreshTokens(ctx, int32(n))
+	})
+	once("auth.idp_sessions", s.q.PurgeIdPSessions)
+	once("auth.oob_codes", s.q.PurgeOobCodes)
+	once("auth.email_outbox", s.q.PurgeOutbox)
+	if r.AuditDays > 0 {
+		run("auth.audit", func(ctx context.Context, n int) (int64, error) {
+			return s.q.PurgeAuthAudit(ctx, queries.PurgeAuthAuditParams{Days: int32(r.AuditDays), Batch: int32(n)})
+		})
 	}
-	return s.purgeMail(ctx)
+	return c, errors.Join(errs...)
+}
+
+// projectPurgeBatch is the rows one statement of PurgeProject deletes.
+const projectPurgeBatch = 1000
+
+// PurgeProject deletes a purged project's Auth data: its users and everything they own, its
+// sessions, codes, mail, keys, settings and audit rows. Tenancy runs it at each housekeeping
+// pass for every project whose deletion has expired (OnProjectPurged); a large project goes over
+// several passes, retention.MaxBatches batches of each table at a time, and a project with
+// nothing left costs a few small statements that delete nothing.
+func (s *Service) PurgeProject(ctx context.Context, project int64) error {
+	c := retention.Counts{}
+	q := s.q
+	batched := []struct {
+		table string
+		del   func(ctx context.Context, b int32) (int64, error)
+	}{
+		{"auth.refresh_tokens", func(ctx context.Context, b int32) (int64, error) {
+			return q.PurgeProjectRefreshTokens(ctx, queries.PurgeProjectRefreshTokensParams{ProjectNumber: project, Batch: b})
+		}},
+		{"auth.users", func(ctx context.Context, b int32) (int64, error) {
+			return q.PurgeProjectUsers(ctx, queries.PurgeProjectUsersParams{ProjectNumber: project, Batch: b})
+		}},
+		{"auth.audit", func(ctx context.Context, b int32) (int64, error) {
+			return q.PurgeProjectAuthAudit(ctx, queries.PurgeProjectAuthAuditParams{ProjectNumber: project, Batch: b})
+		}},
+		{"auth.email_outbox", func(ctx context.Context, b int32) (int64, error) {
+			return q.PurgeProjectOutbox(ctx, queries.PurgeProjectOutboxParams{ProjectNumber: project, Batch: b})
+		}},
+	}
+	for _, t := range batched {
+		if err := c.Run(ctx, t.table, projectPurgeBatch, func(ctx context.Context, n int) (int64, error) {
+			return t.del(ctx, int32(n))
+		}); err != nil {
+			return err
+		}
+	}
+	for _, del := range []func(context.Context, int64) error{
+		s.q.PurgeProjectOobCodes, s.q.PurgeProjectIdPSessions, s.q.PurgeProjectIdPConfigs,
+		s.q.PurgeProjectSigningKeys, s.q.PurgeProjectEmailTemplates, s.q.PurgeProjectAuthConfig,
+	} {
+		if err := del(ctx, project); err != nil {
+			return err
+		}
+	}
+	if n := c.Total(); n > 0 {
+		s.log.Info("purged an expired project's auth data", "project_number", project, "rows", n)
+	}
+	return nil
 }

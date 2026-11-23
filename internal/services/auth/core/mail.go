@@ -541,19 +541,6 @@ func retryDelay(attempts int) time.Duration {
 	return min(d, mailRetryMax)
 }
 
-// purgeMail removes spent codes and old messages.
-func (s *Service) purgeMail(ctx context.Context) error {
-	codes, err := s.q.PurgeOobCodes(ctx)
-	if err != nil {
-		return err
-	}
-	msgs, err := s.q.PurgeOutbox(ctx)
-	if codes+msgs > 0 {
-		s.log.Info("auth housekeeping", "oob_codes_purged", codes, "messages_purged", msgs)
-	}
-	return err
-}
-
 // RunMailer delivers queued mail until ctx is cancelled.
 func (s *Service) RunMailer(ctx context.Context) {
 	t := time.NewTicker(mailInterval)

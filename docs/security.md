@@ -97,7 +97,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Do not open a publ
 - **Back up both halves.** `aruma backup` dumps the database only. If you use Storage, back up its data directory with it and restore both together. Test a restore.
 - **Mount the Storage disk before the service starts.** Aruma refuses to boot on an empty data directory when the database expects files. Make the service wait for the mount.
 - **Set `trusted_proxies` correctly.** List only your own proxies. Make the proxy set `X-Forwarded-For` and `X-Forwarded-Proto` itself instead of passing the client's.
-- **Protect the database.** Use TLS to PostgreSQL if it is not on the same host. Where you can, run migrations with a separate role and give the server DML rights only, because the audit log is protected from deletion by a trigger that the table owner could disable.
+- **Protect the database.** Use TLS to PostgreSQL if it is not on the same host. Where you can, run migrations with a separate role and give the server DML rights only, because the audit log is protected by a trigger that the table owner could disable: no row may be changed, and none younger than seven days deleted (retention deletes older ones, `retention.control_audit_days`).
 - **Remove `localhost` from authorized domains in production.** It is allowed by default, as in Firebase.
 - **Keep API keys restricted.** Restrictions reduce misuse. They are not secrets.
 - **Run one server for now.** Rate limits and signer caches live in memory. They restart empty and are not shared between servers.

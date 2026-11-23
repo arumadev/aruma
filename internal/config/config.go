@@ -53,6 +53,7 @@ type Config struct {
 	Rules     Rules     `yaml:"rules"`
 	Storage   Storage   `yaml:"storage"`
 	Documents Documents `yaml:"documents"`
+	Retention Retention `yaml:"retention"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -212,7 +213,56 @@ func Defaults() Config {
 				ListMaxResults:             1000,
 			},
 		},
+		Retention: Retention{AuthAuditDays: 90, ControlAuditDays: 90, EventsDays: 30},
 	}
+}
+
+// Retention is how long housekeeping keeps the tables that grow with use, in days. It runs at
+// start and then hourly, deleting in bounded batches. 0 keeps a table forever; a negative value
+// is refused. Credentials that stopped working (console sessions, CLI tokens, refresh tokens,
+// email codes, upload sessions) need no setting: each goes a fixed time after it stopped
+// working, as docs/reference/configuration.md lists.
+type Retention struct {
+	// AuthAuditDays keeps auth.audit, a row per sign-in attempt, successful or not, and per
+	// email code and session cookie issued. Nothing in the server reads it; it is for an
+	// operator's queries.
+	AuthAuditDays int `yaml:"auth_audit_days"`
+	// ControlAuditDays keeps control.audit_log, the console's and Management API's record of
+	// administrative actions, which the console's audit log pages read. At least 7: the database
+	// itself refuses to delete a younger row.
+	ControlAuditDays int `yaml:"control_audit_days"`
+	// EventsDays keeps events.changes, the shared change log Auth writes a row to per account
+	// created. Nothing in the server reads it yet.
+	EventsDays int `yaml:"events_days"`
+}
+
+// Bounds of the retention settings: a century is a typo's ceiling, not a policy, and the
+// administrative audit log's floor is the database's own (control migration 00004).
+const (
+	maxRetentionDays    = 36500
+	minControlAuditDays = 7
+)
+
+// validateRetention checks the retention section.
+func (c *Config) validateRetention() []error {
+	var errs []error
+	r := c.Retention
+	for _, f := range []struct {
+		name string
+		v    int
+	}{
+		{"auth_audit_days", r.AuthAuditDays},
+		{"control_audit_days", r.ControlAuditDays},
+		{"events_days", r.EventsDays},
+	} {
+		if f.v < 0 || f.v > maxRetentionDays {
+			errs = append(errs, fmt.Errorf("retention.%s must be between 0 (keep forever) and %d days", f.name, maxRetentionDays))
+		}
+	}
+	if r.ControlAuditDays > 0 && r.ControlAuditDays < minControlAuditDays {
+		errs = append(errs, fmt.Errorf("retention.control_audit_days must be 0 (keep forever) or at least %d: the database keeps the last %d days of the audit log", minControlAuditDays, minControlAuditDays))
+	}
+	return errs
 }
 
 // Documents holds the Document Database settings (ADR-024 to ADR-029).
@@ -618,6 +668,9 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP", &sl.UploadRequestsPerIP)
 	integer("ARUMA_STORAGE_MIN_BYTES_PER_SECOND", &sl.MinBytesPerSecond)
 	count("ARUMA_STORAGE_LIST_MAX_RESULTS", &sl.ListMaxResults)
+	count("ARUMA_RETENTION_AUTH_AUDIT_DAYS", &c.Retention.AuthAuditDays)
+	count("ARUMA_RETENTION_CONTROL_AUDIT_DAYS", &c.Retention.ControlAuditDays)
+	count("ARUMA_RETENTION_EVENTS_DAYS", &c.Retention.EventsDays)
 	return errors.Join(errs...)
 }
 
@@ -704,6 +757,7 @@ func (c *Config) validate() error {
 	errs = append(errs, c.validateRules()...)
 	errs = append(errs, c.validateStorage()...)
 	errs = append(errs, c.validateDocuments()...)
+	errs = append(errs, c.validateRetention()...)
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))

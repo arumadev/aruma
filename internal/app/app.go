@@ -5,12 +5,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/arumadev/aruma/internal/admin/console"
 	"github.com/arumadev/aruma/internal/admin/mgmt"
@@ -23,6 +27,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
 	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/platform/retention"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
@@ -80,6 +85,9 @@ type App struct {
 	Console *console.API
 	Mgmt    *mgmt.API
 	log     *slog.Logger
+
+	// purged counts the rows housekeeping deleted, by table.
+	purged *prometheus.CounterVec
 }
 
 // Option adjusts wiring, mainly for tests.
@@ -270,12 +278,19 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if docs != nil {
 		docs.mount(&handlers)
 	}
+	// A purged project's users, sessions, keys and Auth settings go with it.
+	svc.OnProjectPurged(authSvc.PurgeProject)
+	purged := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "aruma_housekeeping_purged_rows_total",
+		Help: "Rows housekeeping deleted because they stopped working or outlived their retention, by table.",
+	}, []string{"table"})
+	m.Registry.MustRegister(purged)
 
 	srv := server.New(cfg, logger, pool, m, handlers)
 	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs, rtdbAPI: rtAPI,
 		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
-		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger, purged: purged}, nil
 }
 
 // BootRTDB takes the Realtime Database's single-instance lock, trying for up to 30 seconds so a
@@ -432,24 +447,59 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	return nil
 }
 
-// housekeepingEvery is how often expired deletions and tokens are purged.
+// housekeepingEvery is how often expired deletions, credentials that stopped working and rows
+// past their retention are purged.
 const housekeepingEvery = time.Hour
 
-// housekeeping purges what has outlived its retention, at start and then hourly.
+// housekeeping runs Housekeep at start and then hourly.
 func (a *App) housekeeping(ctx context.Context) {
 	t := time.NewTicker(housekeepingEvery)
 	defer t.Stop()
 	for {
-		if _, err := a.Service.PurgeExpired(ctx); err != nil && ctx.Err() == nil {
-			a.log.Error("housekeeping", "error", err)
-		}
-		if err := a.Auth.Housekeep(ctx); err != nil && ctx.Err() == nil {
-			a.log.Error("auth housekeeping", "error", err)
-		}
+		a.Housekeep(ctx)
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
 		}
 	}
+}
+
+// retentionBatch is the rows one DELETE of housekeeping's retention removes.
+const retentionBatch = 1000
+
+// Housekeep runs one pass of every purge: expired projects and apps, then the credentials that
+// stopped working and the rows past their retention (config retention). Each table is trimmed
+// in batches, at most retention.MaxBatches of them a pass, so a backlog is worked off over the
+// following hours; a purge that fails does not stop the others. It logs one line per pass with
+// the rows purged by table, and counts them in aruma_housekeeping_purged_rows_total.
+func (a *App) Housekeep(ctx context.Context) retention.Counts {
+	start := time.Now()
+	r := a.Config.Retention
+	c := retention.Counts{}
+	failed := func(what string, err error) {
+		if err != nil && ctx.Err() == nil {
+			a.log.Error("housekeeping", "job", what, "error", err)
+		}
+	}
+	_, err := a.Service.PurgeExpired(ctx)
+	failed("projects", err)
+	ac, err := a.Auth.Housekeep(ctx, identity.Retention{AuditDays: r.AuthAuditDays, Batch: retentionBatch})
+	maps.Copy(c, ac)
+	failed("auth", err)
+	cc, err := a.Service.Housekeep(ctx, core.Retention{AuditDays: r.ControlAuditDays, EventsDays: r.EventsDays})
+	maps.Copy(c, cc)
+	failed("control", err)
+	// One value names the tables: a key per table would be redacted when its name holds a word
+	// such as "token" (log.IsSensitiveKey).
+	var purged []string
+	for _, table := range slices.Sorted(maps.Keys(c)) {
+		if n := c[table]; n > 0 {
+			a.purged.WithLabelValues(table).Add(float64(n))
+			purged = append(purged, table+"="+strconv.FormatInt(n, 10))
+		}
+	}
+	attrs := []any{"rows", c.Total(), "purged", strings.Join(purged, " "), "elapsed", time.Since(start).Round(time.Millisecond).String()}
+	a.log.Info("housekeeping", attrs...)
+	return c
 }
