@@ -13,7 +13,7 @@ One Go binary and PostgreSQL. Your apps keep the official SDKs; a few platforms 
 <br>
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-1446D8?style=flat-square)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.27.3-0FD8C6?style=flat-square&logo=go&logoColor=white)](go.mod)
+[![Go](https://img.shields.io/badge/Go-1.27.4-0FD8C6?style=flat-square&logo=go&logoColor=white)](go.mod)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-1446D8?style=flat-square&logo=postgresql&logoColor=white)](#quick-start)
 [![Status](https://img.shields.io/badge/status-pre--1.0-0A7D73?style=flat-square)](#status)
 
@@ -58,7 +58,7 @@ docker compose logs aruma | grep code    # the one-time setup code
 
 Open <http://localhost:8080>, enter the setup code to create your first account, then create a project and an app and copy the config file. Keep `.env`: every key Aruma uses is derived from `ARUMA_MASTER_KEY`.
 
-Without Docker, download the archive for your system from [Releases](https://github.com/arumadev/aruma/releases) (Linux, macOS and Windows, amd64 and arm64) and point it at your PostgreSQL 18, or build from source with Go 1.27.3 and Node 24 (`make dashboard && make dev`).
+Without Docker, download the archive for your system from [Releases](https://github.com/arumadev/aruma/releases) (Linux, macOS and Windows, amd64 and arm64) and point it at your PostgreSQL 18, or build from source with Go 1.27.4 and Node 24 (`make dashboard && make dev`).
 
 [Getting started](docs/getting-started.md) goes on from here: the three ways to install, running on a server, creating a project and an app, and signing a user in from a web app. Settings are in [configuration](docs/reference/configuration.md).
 

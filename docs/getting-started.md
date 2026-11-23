@@ -36,7 +36,7 @@ export ARUMA_MASTER_KEY="$(openssl rand -base64 32)"   # keep it: every other ke
 
 ### From source
 
-You need Go 1.27.3 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
+You need Go 1.27.4 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
 
 ```bash
 git clone https://github.com/arumadev/aruma.git

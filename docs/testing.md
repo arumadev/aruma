@@ -41,6 +41,7 @@ Two more workflows run outside the main pipeline:
 |---|---|---|
 | `devices.yml` | Android emulator end-to-end suites for Auth, Realtime Database and the Document Database, with the official Firebase Android SDKs. | Every Monday, and by hand. An emulator run costs about as many minutes as the whole main pipeline. |
 | `ios-storage.yml` | The Storage iOS suite (Swift and Flutter) in a simulator. | On changes to the paths it lists, and by hand. |
+| `supply-chain.yml` | Known vulnerabilities: `govulncheck` on `aruma`, `arumactl` and the Go SDKs (`test/ci/vulncheck.sh`), and `npm audit` on the dashboard and the npm packages (`test/ci/npm-audit.sh`): any advisory in what ships fails, and in build tools from high severity up. | On pull requests, pushes to `main`, and every Monday. |
 | `ios-firestore.yml` | The Document Database iOS suite (`test/e2e/ios-firestore`) in a simulator. Added; its first run is pending. | On pull requests that change the paths it lists, and by hand. |
 
 iOS suites run on Codemagic (`codemagic.yaml`), on macOS machines: an iOS smoke test every night, the Auth end-to-end suite twice a week, and the Realtime Database, Document Database and Storage suites by hand.

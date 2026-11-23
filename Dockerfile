@@ -9,7 +9,7 @@ RUN npm ci --no-audit --no-fund
 COPY dashboard/ ./
 RUN npm run build
 
-FROM golang:1.27.3 AS server
+FROM golang:1.27.4 AS server
 ARG VERSION=dev
 WORKDIR /src
 COPY go.mod go.sum ./

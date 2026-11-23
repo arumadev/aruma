@@ -1,0 +1,41 @@
+name: supply-chain
+
+# Known vulnerabilities in what Aruma ships and publishes: the Go binaries and libraries
+# (govulncheck) and the npm packages (npm audit). Advisories appear without any change here, so
+# it also runs every Monday.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  govulncheck:
+    name: govulncheck (aruma, arumactl, Go SDKs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: govulncheck
+        run: test/ci/vulncheck.sh
+
+  npm-audit:
+    name: npm audit (dashboard, web and Node SDKs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: npm audit
+        run: test/ci/npm-audit.sh

@@ -10,7 +10,7 @@ Thanks for helping. Aruma aims to be a backend that official Firebase SDKs can t
 
 ## Set up
 
-Requirements: Go 1.27.3 (an older `go` downloads it unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, and Node 24 (only to build the console).
+Requirements: Go 1.27.4 (an older `go` downloads it unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, and Node 24 (only to build the console).
 
 ```bash
 make dashboard   # build the console once
