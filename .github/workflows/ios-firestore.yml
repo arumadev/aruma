@@ -48,6 +48,10 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_16.4.app
           xcodebuild -version
+      # The redirect's own unit tests (host matching, rewriting, forwarding). They need no server
+      # and no simulator, and no other workflow runs them.
+      - name: ArumaRedirect unit tests
+        run: swift test --package-path sdk/ios/ArumaRedirect
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
