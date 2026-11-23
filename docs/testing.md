@@ -39,8 +39,9 @@ Two more workflows run outside the main pipeline:
 |---|---|---|
 | `devices.yml` | Android emulator end-to-end suites for Auth, Realtime Database and the Document Database, with the official Firebase Android SDKs. | Every Monday, and by hand. An emulator run costs about as many minutes as the whole main pipeline. |
 | `ios-storage.yml` | The Storage iOS suite (Swift and Flutter) in a simulator. | On changes to the paths it lists, and by hand. |
+| `ios-firestore.yml` | The Document Database iOS suite (`test/e2e/ios-firestore`) in a simulator. Added; its first run is pending. | On pull requests that change the paths it lists, and by hand. |
 
-iOS suites run on Codemagic (`codemagic.yaml`), on macOS machines: an iOS smoke test every night, the Auth end-to-end suite twice a week, and the Realtime Database and Storage suites by hand.
+iOS suites run on Codemagic (`codemagic.yaml`), on macOS machines: an iOS smoke test every night, the Auth end-to-end suite twice a week, and the Realtime Database, Document Database and Storage suites by hand.
 
 ## Unit and acceptance tests
 
@@ -58,7 +59,7 @@ The end-to-end suites in `test/e2e` use the official Firebase SDKs, with the Aru
 |---|---|---|
 | Web | `firebase` 11, 12 and 13 (Auth, Realtime Database, Firestore, Storage) in Chromium, Firefox and WebKit | Every pull request |
 | Android | `firebase-auth`, `firebase-database`, `firebase-firestore` (BoM 35), `firebase-storage`, as instrumented tests | Auth, Realtime Database and Document Database: weekly, on an emulator. Storage: by hand |
-| iOS | `FirebaseAuth` and `FirebaseDatabase` 12, `FirebaseStorage` 12.19.3, as XCTest | Codemagic (see above) and by hand |
+| iOS | `FirebaseAuth`, `FirebaseDatabase` and `FirebaseFirestore` 12, `FirebaseStorage` 12.19.3, as XCTest | Codemagic (see above) and by hand; Document Database also on GitHub's macOS runners (added, first run pending) |
 | Flutter | Storage on iOS and on the web, and the smoke tests | Web: every pull request. iOS: Codemagic |
 | Node and Go | Admin SDKs: Auth, Realtime Database, Storage, Document Database | Every pull request |
 
@@ -71,7 +72,7 @@ Firebase publishes integration tests with its open-source SDKs. They were writte
 - **Auth** (`test/compat/firebase-js/run.sh`): Firebase JS 13.0.0 in Node and in Chrome, and firebase-admin-node 14.5.0. This run is not part of CI, because it needs Chrome and clones the upstream repositories. In the last run, 180 tests passed, 98 failed and 83 were skipped. Every failing test is classified in [compatibility](reference/compatibility.md#auth). They fall into four groups: features Aruma does not offer yet (phone sign-in, email-link sign-in, multi-tenancy, importing users), tests that depend on the emulator's fake identity provider, ID tokens whose issuer is not `securetoken.google.com` (a deliberate choice that the Aruma admin libraries handle), and test environment limits.
 - **Realtime Database** (`test/compat/firebase-js/run.sh rtdb`): the database-compat and database suites of firebase-js-sdk, run against the real Firebase emulator first as a baseline, then against Aruma. 326 compat tests (308 run) and 28 modern-SDK tests.
 - **Storage** (`test/compat/storage/run.sh`, and the `storage-compat` CI job): the Firebase JS Storage integration tests in Node and in Chromium (13 tests each), the compat package (8) and firebase-tools' conformance tests (123).
-- **Document Database:** the official clients are exercised through the `documents-smoke` and `web-documents` jobs. The official Android and iOS Firestore suites have not been run yet.
+- **Document Database:** the official clients are exercised through the `documents-smoke` and `web-documents` jobs. The official Android Firestore suite has not been run yet. The official iOS Firestore suite (`test/e2e/ios-firestore`) has been added; its first run is pending.
 
 ## Recorded behaviour
 
@@ -137,7 +138,7 @@ The first run of a compat or end-to-end suite downloads packages and the upstrea
 
 ## What is not verified yet
 
-- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android and iOS Firestore suites, the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, the conformance suite against a live server in CI, and fault injection and load have not been run. See the [changelog](CHANGELOG.md#v040).
+- **Part of the Document Database's verification has not run** (it was released in v0.4.0 before it did). The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), the Firebase JS 11 and 12 variants of its suites, black-box conformance cases for 19 requirements, the conformance suite against a live server in CI, and fault injection and load have not been run. See the [changelog](CHANGELOG.md#v040).
 - **Android and iOS Storage suites** run by hand, not on a schedule.
 - **Rules are not part of the load tests.** The performance figures in [benchmarks](benchmarks.md) used open rules for the Realtime Database.
 - **Test counts per job** are not published here. Where a job's result is a count, the release notes for that version give it. The Document Database release candidate v0.4.0-rc.1 recorded 21 of 21 web tests passing on each of Chromium, Firefox and WebKit, and 1,665 dashboard unit tests and 226 end-to-end tests passing.

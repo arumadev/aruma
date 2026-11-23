@@ -268,7 +268,7 @@ Of the 24 differences from production recorded in the test corpus, 16 are delibe
 | Web, full SDK (WebChannel) | Supported | Firebase 13: 21 of 21 tests on each of Chromium, Firefox and WebKit. Firebase 11 and 12 are pending. |
 | Web, lite SDK (REST) | Supported | Same suite. |
 | Android | Pending | gRPC transport tried with Firestore Android 27.0.1; the official suite has not run. |
-| iOS | Pending | gRPC transport tried with iOS 12.19.3; the official suite has not run. iOS trusts only its bundled root certificates, so it needs a public test domain with a certificate from a public authority. |
+| iOS | Pending | gRPC transport tried with iOS 12.19.3. The official suite (`test/e2e/ios-firestore`, FirebaseFirestore 12) has been added; its first run is pending. It connects in cleartext on loopback, so it does not cover TLS: iOS trusts only its bundled root certificates, so TLS needs a public test domain with a certificate from a public authority. |
 | Flutter | Pending | Uses the native libraries, so it follows Android and iOS. |
 | Admin Node (gRPC and REST), Admin Go | Supported | Smoke tests pass. |
 | firebase-tools 15.34.0 | Supported | `deploy --only firestore:indexes` and `firestore:rules`, `firestore:indexes` (export), `firestore:databases:list` and `get`, `firestore:delete -r`, TTL deletion. |
@@ -287,7 +287,7 @@ With Auth on Aruma, `@aruma/web` refuses requests to Google's Firestore host so 
 
 Final v0.4.0 depends on these. Do not treat Firestore as fully verified until they are done.
 
-- The official Android and iOS Firestore suites, and the mobile host settings.
+- The official Android Firestore suite, the official iOS Firestore suite (added in `test/e2e/ios-firestore`; first run pending), and the mobile host settings.
 - Firebase JS 11 and 12 variants of the web suites.
 - Black-box conformance cases for 19 requirements, and the conformance suite against a live server in CI. They are covered by unit tests and recorded replays.
 - Fault injection and load tests.

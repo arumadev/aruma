@@ -1,0 +1,70 @@
+# XcodeGen spec of FirestoreE2E.xcodeproj. The generated project is committed, so running the tests
+# needs only Xcode; after editing this file run `xcodegen generate` here and commit both.
+# FirestoreE2E.xcodeproj was first written by hand from RtdbE2E.xcodeproj (same structure and
+# build settings, its own object IDs); `xcodegen generate` replaces it with an equivalent one.
+#
+# FirestoreE2EHost is an empty app, as in ios-auth: FirebaseAuth keeps the signed-in user in the
+# keychain, which only a signed app has on the simulator. FirebaseAuth, FirebaseFirestore and
+# ArumaRedirect are linked into the test bundle alone; ArumaRedirect's +load reads ArumaURL from the
+# app's Info.plist, as in a real app. The Document Database's host is not in any config file: the
+# tests set it in FirestoreSettings, as an app does.
+name: FirestoreE2E
+options:
+  bundleIdPrefix: com.aruma
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    # 12.x, as ios-auth and ios-rtdb; the exact version is in Package.resolved.
+    majorVersion: 12.0.0
+  ArumaRedirect:
+    path: ../../../sdk/ios/ArumaRedirect
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    # Set by run.sh: the Aruma server, written into the app's Info.plist as ArumaURL.
+    ARUMA_URL: ""
+targets:
+  FirestoreE2EHost:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: [Info.plist]
+      # Written by run.sh from the server it starts (not in git).
+      - path: .generated/GoogleService-Info.plist
+        optional: true
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        # The bundle ID of the iOS app Aruma's GoogleService-Info.plist was made for.
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke
+        GENERATE_INFOPLIST_FILE: NO
+  FirestoreE2ETests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: FirestoreE2EHost
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: ArumaRedirect
+        product: ArumaRedirect
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.aruma.smoke.tests
+schemes:
+  FirestoreE2E:
+    build:
+      targets:
+        FirestoreE2EHost: all
+        FirestoreE2ETests: [test]
+    test:
+      targets: [FirestoreE2ETests]
+      gatherCoverageData: false

@@ -18,6 +18,7 @@ machine, fails the run.
 | [android-rtdb](android-rtdb) | `firebase-database` and `firebase-auth` (BoM 35), instrumented tests | production; Auth through `aruma-redirect` | `android-rtdb/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
 | [ios-rtdb](ios-rtdb) | `FirebaseDatabase` and `FirebaseAuth` 12, XCTest in an empty host app | production; Auth through `ArumaRedirect` | `ios-rtdb/run.sh` | Codemagic, by hand (`codemagic.yaml`, `ios-rtdb`) |
 | [android-firestore](android-firestore) | `firebase-firestore` and `firebase-auth` (BoM 35), instrumented tests | production host set in code; Auth through `aruma-redirect`; the server under the cloud.firestore ruleset of `firestore.rules`, released through the firebaserules API (`ARUMA_E2E_RULES=open` opts in to `documents.dev_open_rules`) | `android-firestore/run.sh` | GitHub Actions emulator, weekly and by hand (`devices.yml`) |
+| [ios-firestore](ios-firestore) | `FirebaseFirestore` and `FirebaseAuth` 12, XCTest in an empty host app | production, host set in `FirestoreSettings` (cleartext on loopback); Auth through `ArumaRedirect`; the server under the cloud.firestore ruleset of `ios-firestore/firestore.rules`, released through the firebaserules API | `ios-firestore/run.sh` | GitHub Actions macOS runner, pull requests that touch it and by hand (`ios-firestore.yml`); Codemagic, by hand (`codemagic.yaml`, `ios-firestore`). Added; first run pending |
 
 The Auth device suites cover the Auth P0 list ([docs/reference/compatibility.md](../../docs/reference/compatibility.md)):
 sign-up, duplicate email, weak password, invalid email, sign-in, wrong password, anonymous,
@@ -58,6 +59,33 @@ WebSocket is checked. On Android the iptables half covers the database's WebSock
 sockets of the app's uid). On iOS the database's WebSockets do not go through URLSession, so
 `ios-rtdb/run.sh` samples the host app's sockets with `lsof` every 200 ms and fails on one whose
 far end is not loopback.
+
+## Document Database (`ios-firestore`)
+
+Added; its first run is pending, so nothing below has been seen to pass on iOS yet. The scenarios
+are android-firestore's (marked A) and the rest of what an app uses. The server runs with the
+Document Database and the rules of [ios-firestore/firestore.rules](ios-firestore/firestore.rules),
+released by the runner through the firebaserules API, never `dev_open_rules`. The SDK knows the
+project from the generated `GoogleService-Info.plist` and the host from `FirestoreSettings`
+(`host` = `127.0.0.1:<port>`, `isSSLEnabled` = false); the code calls no emulator API. The other
+parties are a second `FirebaseApp` (its own user and cache) and the REST API with an admin
+credential (the CLI token).
+
+| # | Scenario | Checked |
+|---|---|---|
+| 1 | Sign-in and rules (A) | production mode on Aruma's host; signed out, a write, a get, a list query and both listeners `permissionDenied`; signed in, allowed under `e2e/`; refused elsewhere |
+| 2 | Rules with `get()`, `exists()`, `request.auth.uid` | a room's owner (get) writes its members; members (exists) read and write its messages; each user's own documents |
+| 3 | A new release (A) | a deny-all ruleset published through the firebaserules API ends an open listener with `permissionDenied` |
+| 4 | Field transforms (A) | `serverTimestamp` (pending `null`, then the server's time), `increment`, `arrayUnion`, `arrayRemove`, `FieldValue.delete()`, delete |
+| 5 | Two clients (A) | a query listener follows the other client's writes entering, changing and leaving it; each client's writes reach the other in order, committed, with `hasPendingWrites` and `isFromCache` as production sets them |
+| 6 | Queries | `where`/`order(by:)`/`limit`/`limit(toLast:)`, cursors on values and documents, `in`, `notIn`, `arrayContains`, `arrayContainsAny`, a limited listener window |
+| 7 | Collection groups | a group query, one bounded by `FieldPath.documentID()` cursors, as a listener, and one the rules refuse |
+| 8 | Aggregations | `count`, `sum`, `average`; refused signed out |
+| 9 | Batches (A) and transactions | a `WriteBatch` lands in one snapshot and fails whole on a rule; transactions from both clients on the same documents keep their sum |
+| 10 | Offline (A) | `disableNetwork`/`enableNetwork` resume; with the server down (genconfig `-switch`) a write is applied locally and lands when it is back, with the server's time of landing |
+| 11 | Persistent cache | a new instance on the same disk cache starts from it, then catches up |
+| 12 | Revocation | disabling the user ends its listeners with `permissionDenied` and signs it out |
+| 13 | Network guard | `LoopbackGuard` refuses `firestore.googleapis.com`; `run.sh` samples the app's sockets (Firestore's gRPC) and fails on one off loopback |
 
 ## In CI
 
@@ -101,6 +129,7 @@ alone (sandbox-exec is macOS only). Nothing in CI needs a secret or reaches Goog
 | android-auth, android-rtdb, android-firestore | an emulator run costs about as many minutes as the whole of `ci.yml`: weekly and by hand in `devices.yml` | `test/e2e/android-auth/run.sh`, `test/e2e/android-rtdb/run.sh` |
 | android-storage | the same cost, and two builds (debug and release) with bundletool; not in `devices.yml` yet | `test/e2e/android-storage/run.sh` (a `google_apis` emulator for the iptables half) |
 | ios-auth, ios-rtdb | Xcode and a simulator: macOS only; Codemagic (`codemagic.yaml`) | `test/e2e/ios-auth/run.sh`, `test/e2e/ios-rtdb/run.sh` |
+| ios-firestore | Xcode and a simulator: macOS only; GitHub's macOS runners (`ios-firestore.yml`, on pull requests that touch it and by hand) and Codemagic (`codemagic.yaml`), by hand | `test/e2e/ios-firestore/run.sh` |
 | ios-storage | Xcode, the Aruma mirror of firebase-ios-sdk; for Codemagic later | `test/e2e/ios-storage/run.sh`, `test/e2e/ios-storage/run.sh --cocoapods` |
 
 ## Running locally
@@ -113,7 +142,7 @@ All runners need Go, python3 and the local Postgres (`ARUMA_TEST_DATABASE_URL`, 
 |---|---|---|
 | `ARUMA_E2E_ADDR` | `127.0.0.1:0` | Server address; port 0 picks a free port. |
 | `ARUMA_E2E_DB_PREFIX` | `aruma_e2e_` | Prefix of the throwaway database, dropped at the end. |
-| `ARUMA_E2E_SWITCH_ADDR` | `127.0.0.1:0` | The `*-rtdb` suites: the server's off switch (genconfig `-switch`). |
+| `ARUMA_E2E_SWITCH_ADDR` | `127.0.0.1:0` | The `*-rtdb` suites and `ios-firestore`: the server's off switch (genconfig `-switch`). |
 
 The `*-rtdb` runners take the same arguments as their Auth siblings, e.g.
 `test/e2e/android-rtdb/run.sh -e class com.aruma.e2e.RtdbE2ETest#queryWindowFollowsWrites` or
@@ -157,7 +186,7 @@ test/e2e/ios-auth/run.sh -only-testing:AuthE2ETests/AuthE2ETests/testAnonymous
 - `LoopbackGuard` sits first in every URLSession. It refuses what is neither loopback nor taken by
   ArumaRedirect.
 - The project is generated from `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-  and committed. After editing `project.yml`, run `xcodegen generate` in `ios-auth` (or `ios-rtdb`)
-  and commit both.
+  and committed. After editing `project.yml`, run `xcodegen generate` in `ios-auth` (or `ios-rtdb`,
+  `ios-firestore`) and commit both.
 
 **Web:** see [web-auth/run.sh](web-auth/run.sh) (`ARUMA_E2E_MODE=emulator|production|production-build`).
