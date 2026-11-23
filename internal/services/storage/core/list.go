@@ -2,12 +2,17 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/services/storage/queries"
 )
+
+// listFolderDecisions is the most folders one page of a list without the "/" delimiter asks the
+// rules about, besides the listed one; a page that needs more ends early with a next page token.
+const listFolderDecisions = 100
 
 // List returns one page of a bucket's objects and prefixes after the rules allow a list, walking
 // the index with one seek per prefix, so a page costs at most MaxResults+1 index lookups
@@ -25,8 +30,9 @@ import (
 // first few are not read for nothing. Prefixes and objects share the page's MaxResults in one
 // order, as GCS pages them. Objects carry no tokens on /v0, whose items are a name and a bucket.
 //
-// On /v0, a caller the rules govern sees no name below the children of the prefix's folder
-// unless the delimiter is "/", since the one rules decision covers those children only.
+// On /v0, when the delimiter is not "/", a caller the rules govern sees a name in a deeper
+// folder only if the rules allow a list of that folder too: the first rules decision covers the
+// children of the prefix's folder only.
 func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions) (ListPage, error) {
 	for _, f := range []struct{ name, v string }{
 		{"prefix", o.Prefix}, {"delimiter", o.Delimiter}, {"startOffset", o.StartOffset}, {"endOffset", o.EndOffset},
@@ -82,17 +88,20 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 
 	// The rules decided on the children of the prefix's folder alone (rulePaths). With "/" as
 	// the delimiter, as the SDKs list, deeper names fold into their folder's prefix. Without it,
-	// or with another delimiter, they would come back whole, from folders whose own rules were
-	// never asked: for a caller the rules govern, a name below the folder's children is left
-	// out, its subfolder skipped in one seek and counted against the page as examined.
-	shallow := firebase && p.Kind != PrincipalAdmin && o.Delimiter != "/"
-	folder := strings.LastIndexByte(o.Prefix, '/') + 1
+	// or with another delimiter, they come back whole, from folders whose own rules were never
+	// asked. So for a caller the rules govern, a name in a deeper folder is shown only when a
+	// list of that folder is allowed too: each such folder is decided once a page, and a name
+	// the rules refuse is left out and counted against the page as examined. Rules that allow
+	// every depth (match /{all=**}) list as before.
+	governed := firebase && p.Kind != PrincipalAdmin && o.Delimiter != "/"
+	listed := o.Prefix[:strings.LastIndexByte(o.Prefix, '/')+1]
+	folders := map[string]bool{listed: true}
 
 	n, batch := 0, listBatch // n: the entries examined, returned or left out
 	var last pageCursor
 	for from < before {
 		limit := size - n + 1
-		if o.Delimiter != "" || shallow {
+		if o.Delimiter != "" {
 			limit = min(limit, batch)
 		}
 		rows, err := s.reads.ListObjects(ctx, queries.ListObjectsParams{
@@ -107,17 +116,28 @@ func (s *Service) List(ctx context.Context, b Bucket, p Principal, o ListOptions
 				page.NextPageToken = s.encodePageToken(b, o, last)
 				return page, nil
 			}
-			if shallow {
-				if i := strings.IndexByte(r.Name[folder:], '/'); i >= 0 {
-					sub := r.Name[:folder+i+1]
-					last = pageCursor{last: sub, prefix: true}
-					n++
-					next, ok := pastPrefix(sub)
-					if !ok {
+			if governed {
+				dir := r.Name[:strings.LastIndexByte(r.Name, '/')+1]
+				allowed, decided := folders[dir]
+				if !decided {
+					if len(folders) > listFolderDecisions {
+						// Enough rules decisions for one page: the next one goes on from here.
+						page.NextPageToken = s.encodePageToken(b, o, last)
 						return page, nil
 					}
-					from, jumped = next, true
-					break
+					switch err := s.authorize(ctx, b, p, ruleOp{Method: rules.MethodList, Name: dir, List: true, Surface: o.Surface}); {
+					case err == nil:
+						allowed = true
+					case !errors.Is(err, ErrPermissionDenied):
+						return ListPage{}, err
+					}
+					folders[dir] = allowed
+				}
+				if !allowed {
+					last = pageCursor{last: r.Name}
+					from = after(r.Name)
+					n++
+					continue
 				}
 			}
 			if o.Delimiter != "" {
