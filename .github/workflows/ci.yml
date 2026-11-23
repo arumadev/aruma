@@ -318,16 +318,13 @@ jobs:
           go mod download
           npm ci --no-audit --no-fund
       # `playwright install --with-deps webkit` has hung twice: each attempt is cut at 5 minutes,
-      # and there is one retry.
+      # with two retries, each after the apt-get the cut left behind has finished (see the script).
       - name: Install ${{ matrix.engine }} and its system dependencies
         working-directory: test/e2e/browser-matrix
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
-          for attempt in 1 2; do
-            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
-            echo "playwright install failed or timed out (attempt $attempt)" >&2
-          done
-          exit 1
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" ${{ matrix.engine }}
       # The runner has no sound device. Case 14 browses to the song, whose media document plays
       # it aloud, and Firefox then fails the element with MEDIA_ERR_DECODE
       # (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR, OnMediaSinkAudioError) for MP3, Opus and WAV alike:
@@ -395,16 +392,13 @@ jobs:
           go mod download
           (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
           npm ci --no-audit --no-fund
-      # See the browser matrix: the install is cut at 5 minutes per attempt, with one retry.
+      # See the browser matrix: the install is cut at 5 minutes per attempt, with two retries.
       - name: Install ${{ matrix.engine }} and its system dependencies
         working-directory: test/e2e/web-documents
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
-          for attempt in 1 2; do
-            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
-            echo "playwright install failed or timed out (attempt $attempt)" >&2
-          done
-          exit 1
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" ${{ matrix.engine }}
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
       - name: Firestore in ${{ matrix.engine }} (WebChannel, REST, rules, @aruma/web)
