@@ -1,8 +1,11 @@
 package apierr
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -72,5 +75,49 @@ func TestWrapKeepsCauseForLogs(t *testing.T) {
 	}
 	if CodeOf(err) != Unavailable {
 		t.Fatal("code lost")
+	}
+}
+
+type sqlStateErr string
+
+func (e sqlStateErr) Error() string    { return "pg: " + string(e) }
+func (e sqlStateErr) SQLState() string { return string(e) }
+
+type connectErr struct{}
+
+func (connectErr) Error() string     { return "failed to connect to `host=127.0.0.1`: connection refused" }
+func (connectErr) SafeToRetry() bool { return true }
+
+// A database that is down is UNAVAILABLE (503, which SDKs retry), not INTERNAL (500).
+func TestDatabaseOutageIsUnavailable(t *testing.T) {
+	for name, cause := range map[string]error{
+		"connect failed":    connectErr{},
+		"wrapped":           fmt.Errorf("query: %w", connectErr{}),
+		"admin shutdown":    sqlStateErr("57P01"),
+		"cannot connect":    sqlStateErr("57P03"),
+		"too many conns":    sqlStateErr("53300"),
+		"connection failed": sqlStateErr("08006"),
+		"net error":         &net.OpError{Op: "read", Err: errors.New("connection reset by peer")},
+	} {
+		if got := CodeOf(Wrap(cause, Internal, "Internal error encountered.")); got != Unavailable {
+			t.Errorf("%s: Wrap code = %v, want UNAVAILABLE", name, got)
+		}
+		if got := CodeOf(cause); got != Unavailable {
+			t.Errorf("%s: From code = %v, want UNAVAILABLE", name, got)
+		}
+		if st := From(cause).HTTPStatus(); st != http.StatusServiceUnavailable {
+			t.Errorf("%s: status = %d, want 503", name, st)
+		}
+	}
+	for name, cause := range map[string]error{
+		"unique violation": sqlStateErr("23505"),
+		"plain":            errors.New("boom"),
+		// The driver marks a query whose context had already ended as safe to retry.
+		"caller gave up":  fmt.Errorf("query: %w", errors.Join(connectErr{}, context.Canceled)),
+		"caller deadline": fmt.Errorf("query: %w", errors.Join(connectErr{}, context.DeadlineExceeded)),
+	} {
+		if got := CodeOf(Wrap(cause, Internal, "x")); got != Internal {
+			t.Errorf("%s: code = %v, want INTERNAL", name, got)
+		}
 	}
 }

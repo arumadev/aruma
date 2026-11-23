@@ -109,3 +109,33 @@ func TestResolveProjectRefusesImpossibleRefs(t *testing.T) {
 		}
 	}
 }
+
+// downDB is a database that cannot be reached.
+type downDB struct{}
+
+type connRefused struct{}
+
+func (connRefused) Error() string {
+	return "failed to connect to `host=127.0.0.1 user=postgres`: dial error: connection refused"
+}
+func (connRefused) SafeToRetry() bool { return true }
+
+func (downDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, connRefused{}
+}
+func (downDB) Query(context.Context, string, ...any) (pgx.Rows, error) { return nil, connRefused{} }
+func (downDB) QueryRow(context.Context, string, ...any) pgx.Row        { return errRow{} }
+
+type errRow struct{}
+
+func (errRow) Scan(...any) error { return connRefused{} }
+
+// With the database down, an API key is neither "not valid" (400, which Auth clients report as
+// a bad key and do not retry) nor INTERNAL: the lookup fails UNAVAILABLE.
+func TestLookupAPIKeyDatabaseDownIsUnavailable(t *testing.T) {
+	s := &Service{q: queries.New(downDB{})}
+	_, err := s.LookupAPIKey(t.Context(), "AIza"+strings.Repeat("a", 35))
+	if got := apierr.CodeOf(err); got != apierr.Unavailable {
+		t.Fatalf("LookupAPIKey with the database down = %v (%v), want UNAVAILABLE", got, err)
+	}
+}

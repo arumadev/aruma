@@ -3,10 +3,13 @@
 package apierr
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 )
 
 // Code is a canonical status code (google.rpc.Code).
@@ -89,7 +92,43 @@ func New(code Code, format string, args ...any) *Error {
 
 // Wrap attaches an internal cause that is logged but never sent to the caller.
 func Wrap(cause error, code Code, format string, args ...any) *Error {
+	if code == Internal && IsUnavailable(cause) {
+		return &Error{Code: Unavailable, Message: UnavailableMessage, cause: cause}
+	}
 	return &Error{Code: code, Message: fmt.Sprintf(format, args...), cause: cause}
+}
+
+// UnavailableMessage is what a caller is told when a dependency (the database) is unreachable.
+const UnavailableMessage = "The service is currently unavailable."
+
+// IsUnavailable reports whether err says the database could not be reached or went away
+// (connection refused or reset, a failed connect, a server shutting down or out of
+// connections), as opposed to a bug or a rejected statement. Such a failure is UNAVAILABLE
+// (503), which SDKs retry, not INTERNAL (500), which they do not. It reads the error through
+// interfaces, so this package does not import the Postgres driver.
+func IsUnavailable(err error) bool {
+	if err == nil {
+		return false
+	}
+	// A request the caller gave up on, or one that ran out of its own time, says nothing about
+	// the database: the driver reports it as safe to retry too, so it is ruled out first.
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	var sq interface{ SQLState() string }
+	if errors.As(err, &sq) {
+		c := sq.SQLState()
+		return strings.HasPrefix(c, "08") || c == "57P01" || c == "57P02" || c == "57P03" || c == "53300" || c == "53400"
+	}
+	var retry interface{ SafeToRetry() bool }
+	if errors.As(err, &retry) && retry.SafeToRetry() {
+		return true // the driver sent nothing: it never reached the server
+	}
+	var ne net.Error
+	if errors.As(err, &ne) {
+		return true
+	}
+	return strings.Contains(err.Error(), "failed to connect to") || strings.Contains(err.Error(), "closed pool")
 }
 
 // WithDetails returns a copy of e carrying extra google.rpc detail messages.
@@ -109,7 +148,7 @@ func From(err error) *Error {
 	if errors.As(err, &e) {
 		return e
 	}
-	return &Error{Code: Internal, Message: "Internal error encountered.", cause: err}
+	return Wrap(err, Internal, "Internal error encountered.")
 }
 
 // CodeOf returns the code of err, OK for nil.

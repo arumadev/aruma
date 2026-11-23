@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/crypto"
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/services/auth/queries"
@@ -77,7 +78,13 @@ func (s *Service) SessionIssuer(p Project) string { return s.publicURL + "/sessi
 func (s *Service) ProjectForKey(ctx context.Context, key string, caller tcore.KeyCaller) (Project, error) {
 	kp, err := s.control.ProjectForKey(ctx, key)
 	if err != nil {
-		return Project{}, ErrInvalidAPIKey
+		// Only a key that is unknown, disabled or of a deleted project is "not valid"; a
+		// database that is down is the server's failure, which clients retry (503), not a
+		// 400 that makes the SDK report a bad API key.
+		if apierr.CodeOf(err) == apierr.InvalidArgument {
+			return Project{}, ErrInvalidAPIKey
+		}
+		return Project{}, err
 	}
 	if blocked := kp.Key.Restrictions.Check(caller); blocked != nil {
 		md := map[string]string{"consumer": "projects/" + strconv.FormatInt(kp.Number, 10), "service": caller.Service}

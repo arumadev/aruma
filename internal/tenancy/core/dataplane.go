@@ -28,6 +28,9 @@ func (s *Service) ProjectForKey(ctx context.Context, key string) (KeyProject, er
 		return KeyProject{}, err
 	}
 	p, err := s.q.GetProject(ctx, rk.ProjectNumber)
+	if err != nil && !notFound(err) {
+		return KeyProject{}, internal(err) // the database failed: not the key's fault
+	}
 	if err != nil || p.State != "ACTIVE" {
 		return KeyProject{}, apierr.Invalid("key", "API key not valid. Please pass a valid API key.")
 	}
