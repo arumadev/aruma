@@ -256,6 +256,45 @@ func TestLimits(t *testing.T) {
 	}
 }
 
+// An equality or in on __name__ beside an inequality on another field, anywhere in the filter,
+// is refused with the emulator's text (firebase-js-sdk composite_index_query.test.ts); an
+// inequality on __name__ anywhere makes it valid. The cases are the emulator's answers
+// (cloud-firestore-emulator v1.22.0).
+func TestKeyEqualityWithInequality(t *testing.T) {
+	ref := `{"referenceValue":"` + root + `/c/b"}`
+	key := func(op string) string {
+		return `{"fieldFilter":{"field":{"fieldPath":"__name__"},"op":"` + op + `","value":` + ref + `}}`
+	}
+	keyIn := `{"fieldFilter":{"field":{"fieldPath":"__name__"},"op":"IN","value":{"arrayValue":{"values":[` + ref + `]}}}}`
+	keyNotIn := `{"fieldFilter":{"field":{"fieldPath":"__name__"},"op":"NOT_IN","value":{"arrayValue":{"values":[` + ref + `]}}}}`
+	composite := func(op string, fs ...string) string {
+		return `{"compositeFilter":{"op":"` + op + `","filters":[` + strings.Join(fs, ",") + `]}}`
+	}
+	gt := field("GREATER_THAN", `{"integerValue":"1"}`)
+	refused := wire.From(errKeyEquality).Message
+	for _, c := range []struct{ filter, want string }{
+		{composite("AND", field("NOT_EQUAL", `{"integerValue":"1"}`), key("EQUAL")), refused},
+		{composite("AND", gt, key("EQUAL")), refused},
+		{composite("AND", gt, keyIn), refused},
+		{composite("OR", key("EQUAL"), gt), refused},
+		{composite("AND", gt, key("GREATER_THAN"), key("EQUAL")), ""},
+		{composite("AND", gt, key("NOT_EQUAL"), key("EQUAL")), ""},
+		{composite("OR", key("EQUAL"), composite("AND", gt, key("GREATER_THAN"))), ""},
+		{composite("AND", gt, keyNotIn), ""},
+		{composite("AND", field("EQUAL", `{"integerValue":"1"}`), key("EQUAL")), ""},
+		{composite("AND", gt, key("GREATER_THAN")), ""},
+	} {
+		_, err := parse(t, where(c.filter))
+		got := ""
+		if err != nil {
+			got = wire.From(err).Message
+		}
+		if got != c.want {
+			t.Errorf("%.160s: %q, want %q", c.filter, got, c.want)
+		}
+	}
+}
+
 // Aggregations: a document without a sum or avg field counts toward none of them; a sum stays
 // an integer until it overflows or meets a double; avg is a double, null over nothing; count
 // stops at up_to.

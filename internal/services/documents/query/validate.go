@@ -50,6 +50,7 @@ var (
 	errNegativeOffset     = wire.InvalidArgument("offset is negative")
 	errCursorValues       = wire.InvalidArgument("Cursor has too many values.")
 	errCursorName         = wire.InvalidArgument("Cursor __key__ value is not a document reference.")
+	errKeyEquality        = wire.InvalidArgument("Equality on key is not allowed if there are other inequality fields and key does not appear in inequalities.")
 	errKindlessOrder      = wire.InvalidArgument("kind is required for all orders except __key__ ascending")
 )
 
@@ -165,6 +166,9 @@ func checkFilter(f *Filter, orders int, ancestor bool) error {
 	if paths := requestInequalityPaths(f); len(paths) > maxInequalityFields {
 		return errInequalityFields(paths)
 	}
+	if keyEqualityWithInequality(f) {
+		return errKeyEquality
+	}
 	for _, conj := range disjuncts(f) {
 		contains := 0
 		for _, l := range conj {
@@ -180,6 +184,26 @@ func checkFilter(f *Filter, orders int, ancestor bool) error {
 		}
 	}
 	return nil
+}
+
+// keyEqualityWithInequality reports a filter with an equality or in on __name__ and an
+// inequality on another field, and none on __name__, anywhere in the tree: in one disjunct or in
+// two (key == x || a > 1). The emulator's rule (cloud-firestore-emulator v1.22.0), and the text
+// firebase-js-sdk's composite_index_query.test.ts expects ("inequality query will reject if
+// document key appears only in equality filter"), which also runs against production.
+func keyEqualityWithInequality(f *Filter) bool {
+	var keyEq, keyIneq, otherIneq bool
+	walk(f, func(l *Filter) {
+		switch {
+		case l.Path.IsDocumentID() && (l.Op == index.OpEqual || l.Op == index.OpIn):
+			keyEq = true
+		case l.Path.IsDocumentID() && inequality(l.Op):
+			keyIneq = true
+		case inequality(l.Op):
+			otherIneq = true
+		}
+	})
+	return keyEq && otherIneq && !keyIneq
 }
 
 // requestInequalityPaths are the inequality fields of the tree but __name__, each once, in the
