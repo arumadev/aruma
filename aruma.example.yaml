@@ -3,6 +3,8 @@
 
 # Required.
 database_url: postgres://aruma:secret@127.0.0.1:5432/aruma?sslmode=disable
+                                   # &pool_max_conns=N sizes the connection pool (default
+                                   # max(16, 4 x CPUs), at most 64)
 public_url: https://aruma.example.com
 master_key: "<32 random bytes, base64: openssl rand -base64 32>"
 
@@ -18,6 +20,18 @@ signup_open: false                 # let anyone create an account from the conso
 session:
   idle_timeout: 30m
   absolute_timeout: 8h
+server:                            # the public listener's HTTP timeouts; long-lived streams
+                                   # (WebSockets, gRPC, uploads) lift or renew their own
+  read_header_timeout: 10s         # 1s to 1h
+  read_timeout: 60s                # a whole request, body included; 10s to 1h
+  write_timeout: 60s               # a response; 30s to 1h (a long poll is held 20s)
+  idle_timeout: 120s               # a keep-alive connection with no request; 5s to 1h
+auth:
+  limits:                          # per client address, the same for every project
+    requests_per_minute: 300       # every client call
+    request_burst: 100
+    sign_ups_per_minute: 2         # account creation
+    sign_up_burst: 100
 mail:
   # dev_mailbox: true              # keep Auth emails of projects without SMTP in the console's dev
                                    # mailbox instead of sending them; defaults to on only when

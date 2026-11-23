@@ -2,7 +2,8 @@ package api
 
 import "time"
 
-// Limits are the fixed limits on client calls. They are not configurable per project; the
+// Limits are the limits on client calls. They are the same for every project and set for the
+// instance (config auth.limits: the rates and bursts; the password backoff is fixed); the
 // console shows them read-only.
 type Limits struct {
 	// Every client call, per address: a bucket of RequestBurst refilled at RequestsPerMinute.
@@ -15,7 +16,7 @@ type Limits struct {
 	FailureWindow, BackoffBase, BackoffMax time.Duration
 }
 
-// ClientLimits are the limits every project gets.
+// ClientLimits are the default limits. config.Defaults holds the same rates and bursts.
 var ClientLimits = Limits{
 	RequestsPerMinute: 300, RequestBurst: 100,
 	SignUpsPerMinute: 2, SignUpBurst: 100, // ≈ Firebase's 100 accounts per hour per address

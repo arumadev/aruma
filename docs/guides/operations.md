@@ -183,7 +183,8 @@ and must pass WebSocket upgrades (`Upgrade` and `Connection` headers).
   ```
 - **Load balancers** (AWS ALB, Google Cloud, HAProxy `timeout tunnel`): raise the idle timeout to
   120 seconds or more.
-- Aruma's own 60-second request timeout and 1 MB body cap do not apply to database connections.
+- Aruma's own request timeouts (`server.read_timeout` and `server.write_timeout`, 60 seconds by
+  default) and 1 MB body cap do not apply to database connections.
 
 ### 6. Capacity: descriptors and the database pool
 
@@ -195,9 +196,15 @@ Measured on the reference server:
   Docker). On stock macOS `kern.maxfilesperproc` stops one process at about 10,200 connections.
 - **Each busy database holds a Postgres connection** while its writer commits a batch. When more
   databases write at once than the pool has connections, they queue for one: ten busy databases on
-  the default pool (max(4, CPUs)) wrote about 40% less than with `pool_max_conns=32`. Size the pool
-  above the number of databases that write at the same time, in `database_url`:
-  `postgres://…/aruma?pool_max_conns=32`, within Postgres's `max_connections`.
+  pgx's default pool (max(4, CPUs)) wrote about 40% less than with `pool_max_conns=32`. Aruma's
+  default is therefore max(16, 4 × CPUs) connections, at most 64; the server logs it at startup
+  (`database pool`, `max_conns`). Size the pool above the number of databases that write at the
+  same time, in `database_url`: `postgres://…/aruma?pool_max_conns=32`. A value there always wins.
+- **Postgres must accept the pool and two more connections** (the single-instance locks of the
+  Realtime Database and the Document Database), and twice that while a new instance starts beside
+  the old one or `aruma migrate` runs. Postgres's default `max_connections` is 100, less 3 reserved
+  for superusers. The server warns at startup when `max_connections` is too low for its pool; raise
+  it, or put a smaller `pool_max_conns` in `database_url`.
 
 ### 7. Check it
 

@@ -42,14 +42,15 @@ type API struct {
 	backoff     *ratelimit.Backoff // password guesses, per project and email
 }
 
-// New returns the Auth API. auth authenticates the Admin API's callers.
-func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger) *API {
+// New returns the Auth API with the given limits (ClientLimits by default). auth
+// authenticates the Admin API's callers.
+func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger, l Limits) *API {
 	return &API{
 		svc: svc, auth: auth, log: logger,
-		ipLimit:     ratelimit.NewLimiter(ClientLimits.RequestsPerMinute, ClientLimits.RequestBurst),
-		signupLimit: ratelimit.NewLimiter(ClientLimits.SignUpsPerMinute, ClientLimits.SignUpBurst),
+		ipLimit:     ratelimit.NewLimiter(l.RequestsPerMinute, l.RequestBurst),
+		signupLimit: ratelimit.NewLimiter(l.SignUpsPerMinute, l.SignUpBurst),
 		mailLimit:   ratelimit.NewHourlyLimiter(60, 20),
-		backoff:     ratelimit.NewBackoff(ClientLimits.PasswordFailures, ClientLimits.FailureWindow, ClientLimits.BackoffBase, ClientLimits.BackoffMax),
+		backoff:     ratelimit.NewBackoff(l.PasswordFailures, l.FailureWindow, l.BackoffBase, l.BackoffMax),
 	}
 }
 

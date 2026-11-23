@@ -12,7 +12,7 @@ aruma config check
 
 | Variable | Required | Default | Meaning |
 |---|---|---|---|
-| `ARUMA_DATABASE_URL` | yes | | PostgreSQL connection URL |
+| `ARUMA_DATABASE_URL` | yes | | PostgreSQL connection URL. `pool_max_conns` in it sizes the connection pool; without it the pool holds at most max(16, 4 × CPUs) connections, up to 64, opened on demand. The server logs the size at startup and warns when Postgres's `max_connections` is too low for it, see the [operator guide](../guides/operations.md#6-capacity-descriptors-and-the-database-pool) |
 | `ARUMA_PUBLIC_URL` | yes | | The address your SDKs reach, for example `https://aruma.example.com` |
 | `ARUMA_MASTER_KEY` | yes | | 32 random bytes in base64 (`openssl rand -base64 32`). Every other key is derived from it |
 | `ARUMA_LISTEN` | | `:8080` | The single public entry point |
@@ -37,6 +37,30 @@ aruma config check
 ## Realtime Database instance
 
 The Realtime Database keeps its listeners in memory, so it runs on one Aruma process per Postgres database. At startup the process takes a session advisory lock (`rtdb.instance`) on a dedicated connection, waiting up to 30 seconds so that a stop-then-start deploy takes over. A second process on the same database serves everything else, logs `rtdb: another Aruma instance serves rtdb on this Postgres database`, answers the Realtime Database with `UNAVAILABLE` and `/readyz` with 503 until the lock is free. If the process loses its Postgres session (a restart or failover), it closes its Realtime Database connections and takes the lock again; clients reconnect. In Kubernetes use `strategy: Recreate`, or a rolling update leaves the new pod unready until the old one stops. The connection must reach Postgres itself: a pooler in transaction mode does not keep the lock.
+
+## Server timeouts
+
+The public listener's HTTP timeouts, under `server` in the file. They bound ordinary requests. Long-lived connections lift or renew their own deadlines once established, so these values never cut a healthy one: Realtime Database WebSockets, Document Database gRPC and WebChannel streams (after their first message, see `stream_first_message`), and Storage uploads and downloads, which must keep moving at `min_bytes_per_second`. A Realtime Database long poll is held 20 seconds, inside the write timeout. The private metrics listener keeps fixed timeouts.
+
+| Key | Variable | Default | Range | Meaning |
+|---|---|---|---|---|
+| `read_header_timeout` | `ARUMA_SERVER_READ_HEADER_TIMEOUT` | `10s` | 1s to 1h, at most `read_timeout` | Wait for a request's headers |
+| `read_timeout` | `ARUMA_SERVER_READ_TIMEOUT` | `60s` | 10s to 1h | Reading a whole request, body included |
+| `write_timeout` | `ARUMA_SERVER_WRITE_TIMEOUT` | `60s` | 30s to 1h | Writing a response, counted from the end of the request's headers |
+| `idle_timeout` | `ARUMA_SERVER_IDLE_TIMEOUT` | `120s` | 5s to 1h | A keep-alive connection with no request is closed |
+
+## Auth rate limits
+
+Auth's limits per client address (resolved through `trusted_proxies`), the same for every project, under `auth.limits` in the file. Each is a token bucket: it holds up to its burst and refills at its rate. A call over the limit answers `TOO_MANY_ATTEMPTS_TRY_LATER`. Every value is a count from 1 to 1,000,000, checked at startup. The console shows the values in force on the Auth settings page. The growing delay after wrong passwords (10 failures per project and email in 15 minutes, then 30 seconds doubling up to 15 minutes) and the email sending limit are fixed.
+
+| Key | Variable | Default | Meaning |
+|---|---|---|---|
+| `requests_per_minute` | `ARUMA_AUTH_REQUESTS_PER_MINUTE` | `300` | Refill rate of the bucket every client call takes from |
+| `request_burst` | `ARUMA_AUTH_REQUEST_BURST` | `100` | Size of that bucket |
+| `sign_ups_per_minute` | `ARUMA_AUTH_SIGN_UPS_PER_MINUTE` | `2` | Refill rate of the bucket account creation takes from (about Firebase's 100 accounts per hour per address) |
+| `sign_up_burst` | `ARUMA_AUTH_SIGN_UP_BURST` | `100` | Size of that bucket |
+
+Behind a reverse proxy, list it in `trusted_proxies`, or every client shares the proxy's address and one budget.
 
 ## Storage
 
@@ -103,7 +127,7 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | Key | Variable | Type | Default | Meaning |
 |---|---|---|---|---|
 | `message_bytes` | `ARUMA_DOCUMENTS_MESSAGE_BYTES` | bytes | `17825792` (17 MiB) | One gRPC message, and one REST body: a 16 MiB document from a mobile client and its overhead. At least 1 MiB |
-| `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's 60-second timeouts lifted for it |
+| `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's read and write timeouts (`server.read_timeout`, `server.write_timeout`) lifted for it |
 | `stream_idle` | `ARUMA_DOCUMENTS_STREAM_IDLE` | duration | `5m` | How long a listen stream may go without a target, or a write stream without a request, before it ends with `UNAVAILABLE`; the client reopens it when it needs it |
 | `stream_write_stall` | `ARUMA_DOCUMENTS_STREAM_WRITE_STALL` | duration | `30s` | How long a streamed answer (a batch get, a query) may wait on a client that stopped reading before it is cut |
 | `server_stream_max` | `ARUMA_DOCUMENTS_SERVER_STREAM_MAX` | duration | `5m` | The longest a streamed answer may last when the client set no deadline; it then ends with `DEADLINE_EXCEEDED` |

@@ -320,29 +320,35 @@ func (s *Server) PrivateHandler() http.Handler {
 	return mux
 }
 
-// Run serves until ctx is cancelled, then shuts down gracefully.
-func (s *Server) Run(ctx context.Context) error {
+// publicServer is the public entry point's HTTP server, with the configured timeouts.
+func (s *Server) publicServer() *http.Server {
 	// HTTP/1.1 for every service, and HTTP/2 without TLS (h2c with prior knowledge), which every
 	// gRPC client speaks to the Document Database behind a TLS proxy (ADR-027 §3.3).
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
 	protocols.SetHTTP2(true)
 	protocols.SetUnencryptedHTTP2(true)
-	public := &http.Server{
+	return &http.Server{
 		Addr:      s.cfg.Listen,
 		Handler:   s.Handler(),
 		Protocols: &protocols,
 		// One connection may not open streams without bound before the per-address limits
 		// count them (ADR-027 §3.2).
-		HTTP2:             &http.HTTP2Config{MaxConcurrentStreams: maxConcurrentStreams},
-		ReadHeaderTimeout: 10 * time.Second,
+		HTTP2: &http.HTTP2Config{MaxConcurrentStreams: maxConcurrentStreams},
+		// The timeouts of ordinary requests (config server). Long-lived streams lift or renew
+		// their deadlines themselves once established, so these never cut one.
+		ReadHeaderTimeout: s.cfg.Server.ReadHeaderTimeout,
 		MaxHeaderBytes:    64 << 10,
-		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		ReadTimeout:       s.cfg.Server.ReadTimeout,
+		WriteTimeout:      s.cfg.Server.WriteTimeout,
+		IdleTimeout:       s.cfg.Server.IdleTimeout,
 		ErrorLog:          slog.NewLogLogger(s.log.Handler(), slog.LevelWarn),
 	}
-	servers := []*http.Server{public}
+}
+
+// Run serves until ctx is cancelled, then shuts down gracefully.
+func (s *Server) Run(ctx context.Context) error {
+	servers := []*http.Server{s.publicServer()}
 	if s.cfg.MetricsListen != "" {
 		servers = append(servers, &http.Server{
 			Addr:              s.cfg.MetricsListen,

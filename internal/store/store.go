@@ -11,13 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Open connects a pool and verifies the connection.
+// Open connects a pool and verifies the connection. The pool holds DefaultMaxConns
+// connections at most, unless the URL sets pool_max_conns.
 func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("database url: %w", err)
 	}
 	cfg.ConnConfig.RuntimeParams["application_name"] = "aruma"
+	if !setsMaxConns(databaseURL) {
+		cfg.MaxConns = DefaultMaxConns()
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err

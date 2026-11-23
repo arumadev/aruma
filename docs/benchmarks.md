@@ -23,7 +23,7 @@ All numbers come from one laptop that was also running other work. They show wha
 | OS | macOS 15.5 |
 | Go | 1.27.2 (darwin/arm64), `GOMAXPROCS` 8 |
 | Postgres | 18.1, local, default settings: `shared_buffers` 128 MB, `fsync` on, `synchronous_commit` on. The data directory was on an external USB disk |
-| Database pool | pgx default, 8 connections |
+| Database pool | 8 connections: pgx's default then, max(4, CPUs). Since v0.5 Aruma's default is max(16, 4 × CPUs), at most 64: 32 on this machine |
 | Network | Loopback only, plain HTTP/1.1 with keep-alive, no TLS |
 | Layout | Load generator, Aruma and Postgres on the same 8 cores |
 | Date | October 2026 (Auth and platform on 18 October, Realtime Database on 21 October) |
@@ -115,7 +115,7 @@ Median of three runs, with the range in brackets. Closed loop unless noted.
 | Writes, 1 database, 32 writers | 4,540/s (2,339 to 5,094), p50 6.8 ms, p99 12.7 ms |
 | Writes, 1 database, 128 writers | 3,248/s, p50 33 ms |
 | Writes, 32 REST writers | 3,286/s, p50 8.4 ms |
-| Writes, 10 databases, default pool (8 connections) | 4,049/s, p50 33 ms |
+| Writes, 10 databases, pool of 8 (the default then) | 4,049/s, p50 33 ms |
 | Writes, 10 databases, pool of 32 | 6,734/s, p50 15 ms |
 | Connections held by one server | 10,000 (idle, and with one listener each) |
 | Memory per connection | about 40 KiB, plus about 5 KiB per listener |
@@ -128,7 +128,7 @@ Zero failures in about 1.07 million writes. Every one of 661,200 fan-out deliver
 What to know:
 
 - **One database saturates at about 4,500 to 5,000 sets per second** on this machine. Each database has a single writer, and more than about 32 clients only adds queueing.
-- **Size the Postgres pool above the number of databases that write at once.** Ten busy databases on the default pool of 8 queue for connections. Raising `pool_max_conns` to 32 gave 66% more throughput. See the [operator guide](guides/operations.md).
+- **Size the Postgres pool above the number of databases that write at once.** Ten busy databases on a pool of 8 queue for connections. Raising `pool_max_conns` to 32 gave 66% more throughput, which is why the default is now max(16, 4 × CPUs), at most 64. See the [operator guide](guides/operations.md).
 - **The connection limit on this machine is the operating system.** macOS allows about 10,240 open files per process, so one server holds about 10,220 connections. A Linux server with a raised `LimitNOFILE` was not measured.
 - **Queries on large nodes are the weak spot.** A `limitToLast(50)` listener reads and sorts the whole node, because there is no persistent index yet. That takes about 35 ms at 10,000 children and 0.3 to 2.6 seconds at 100,000. Every write under such a listener repeats the work inside the database's single writer, so it holds up all writes to that database. Keep filtered listeners to nodes of a few thousand children.
 - **A write that takes longer than 30 seconds fails** with `503 The service is currently unavailable` and applies nothing. This happened once, on a machine that was swapping with a load average above 100.

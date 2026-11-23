@@ -46,6 +46,10 @@ type Config struct {
 	// Document Database, whose X-Forwarded-Proto: https lets a credential arrive without TLS
 	// (ADR-029 §3.7). Empty by default.
 	TrustedProxies []string `yaml:"trusted_proxies"`
+	// Server holds the HTTP timeouts of the public listener.
+	Server Server `yaml:"server"`
+	// Auth holds Auth's instance-wide rate limits.
+	Auth Auth `yaml:"auth"`
 
 	Session   Session   `yaml:"session"`
 	Mail      Mail      `yaml:"mail"`
@@ -149,6 +153,18 @@ func Defaults() Config {
 			IdleTimeout:     30 * time.Minute,
 			AbsoluteTimeout: 8 * time.Hour,
 		},
+		Server: Server{
+			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       60 * time.Second,
+			WriteTimeout:      60 * time.Second,
+			IdleTimeout:       120 * time.Second,
+		},
+		// auth/api.ClientLimits, which config may not import; a test in internal/app keeps the
+		// two equal.
+		Auth: Auth{Limits: AuthLimits{
+			RequestsPerMinute: 300, RequestBurst: 100,
+			SignUpsPerMinute: 2, SignUpBurst: 100,
+		}},
 		RTDB: RTDB{Limits: RTDBLimits{
 			MessageBytes:                16 << 20,
 			UnauthenticatedMessageBytes: 1 << 20,
@@ -543,6 +559,10 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	}
 	duration("ARUMA_SESSION_IDLE_TIMEOUT", &c.Session.IdleTimeout)
 	duration("ARUMA_SESSION_ABSOLUTE_TIMEOUT", &c.Session.AbsoluteTimeout)
+	duration("ARUMA_SERVER_READ_HEADER_TIMEOUT", &c.Server.ReadHeaderTimeout)
+	duration("ARUMA_SERVER_READ_TIMEOUT", &c.Server.ReadTimeout)
+	duration("ARUMA_SERVER_WRITE_TIMEOUT", &c.Server.WriteTimeout)
+	duration("ARUMA_SERVER_IDLE_TIMEOUT", &c.Server.IdleTimeout)
 	if v := getenv("ARUMA_MAIL_DEV_MAILBOX"); v != "" {
 		var b bool
 		boolean("ARUMA_MAIL_DEV_MAILBOX", &b)
@@ -580,6 +600,11 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 		integer(name, &n)
 		*dst = int(n)
 	}
+	al := &c.Auth.Limits
+	count("ARUMA_AUTH_REQUESTS_PER_MINUTE", &al.RequestsPerMinute)
+	count("ARUMA_AUTH_REQUEST_BURST", &al.RequestBurst)
+	count("ARUMA_AUTH_SIGN_UPS_PER_MINUTE", &al.SignUpsPerMinute)
+	count("ARUMA_AUTH_SIGN_UP_BURST", &al.SignUpBurst)
 	rl := &c.Rules.Limits
 	count("ARUMA_RULES_CALL_DEPTH", &rl.CallDepth)
 	count("ARUMA_RULES_FUNCTION_LETS", &rl.FunctionLets)
@@ -753,6 +778,8 @@ func (c *Config) validate() error {
 		c.trustedProxies = append(c.trustedProxies, prefix.Masked())
 	}
 
+	errs = append(errs, c.validateServer()...)
+	errs = append(errs, c.validateAuth()...)
 	errs = append(errs, c.validateRTDB()...)
 	errs = append(errs, c.validateRules()...)
 	errs = append(errs, c.validateStorage()...)

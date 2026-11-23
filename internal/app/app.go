@@ -116,6 +116,15 @@ func WithRTDBWriteTimeout(d time.Duration) Option {
 	return func(s *settings) { s.rtdbWriteTimeout = d }
 }
 
+// authLimits are Auth's client limits with the configured rates and bursts (config
+// auth.limits); the password backoff keeps its fixed values.
+func authLimits(cfg *config.Config) authapi.Limits {
+	l, c := authapi.ClientLimits, cfg.Auth.Limits
+	l.RequestsPerMinute, l.RequestBurst = c.RequestsPerMinute, c.RequestBurst
+	l.SignUpsPerMinute, l.SignUpBurst = c.SignUpsPerMinute, c.SignUpBurst
+	return l
+}
+
 // argon2Concurrency caps simultaneous password hashes (≈19 MiB each).
 const argon2Concurrency = 4
 
@@ -215,7 +224,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){
-			authconsole.Routes(authSvc),
+			authconsole.Routes(authSvc, authLimits(cfg)),
 			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
 			storageconsole.Routes(storageSvc, storageconsole.Options{
 				PublicURL: publicURL, ProjectDomain: cfg.ProjectDomain, Rules: svc, Audit: svc.Audit,
@@ -235,7 +244,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
-		Auth:    authapi.New(authSvc, auth, logger).Handler(),
+		Auth:    authapi.New(authSvc, auth, logger, authLimits(cfg)).Handler(),
 		Static:  dashboard,
 	}
 	if rtdbSvc != nil {
@@ -359,6 +368,7 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err := store.CheckCurrent(ctx, pool); err != nil {
 		return err
 	}
+	store.CheckPoolSize(ctx, pool, cfg.DatabaseURL.Reveal(), logger)
 	if !cfg.SecureCookies() {
 		logger.Warn("public_url is plain http on a non-loopback host: console cookies will not be Secure; put the server behind https")
 		if cfg.Storage.Enabled {
