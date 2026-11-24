@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -107,7 +108,9 @@ func newEnv(t *testing.T, enabled bool) *env {
 	}
 	audit := func(ctx context.Context, p *authn.Principal, project int64, action, target string, details map[string]any) error {
 		if e.failAudit {
-			return io.ErrUnexpectedEOF
+			// A refused insert: a connection lost on the way (unexpected EOF) would make the
+			// request UNAVAILABLE instead, as any lost database connection does.
+			return errAuditRefused
 		}
 		return docs.Tenancy.Audit(ctx, p, project, action, target, details)
 	}
@@ -413,3 +416,6 @@ func TestBadPaths(t *testing.T) {
 		}
 	}
 }
+
+// errAuditRefused is the audit log's failure under failAudit.
+var errAuditRefused = errors.New("audit: insert refused")

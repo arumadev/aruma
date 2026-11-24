@@ -1,12 +1,16 @@
 package acceptance
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 // While the server cannot reach Postgres, Auth's client calls (the SDKs' Identity Toolkit and
@@ -61,5 +65,43 @@ func TestAuthOutageLooksLikeANetworkFailureToClients(t *testing.T) {
 	}
 	if code != http.StatusServiceUnavailable || json.Unmarshal([]byte(body), &status) != nil || status.Error.Status != "UNAVAILABLE" {
 		t.Errorf("Admin API while the database is down: %d %s, want 503 UNAVAILABLE in JSON", code, body)
+	}
+}
+
+// TestCutRequestBodyIsNotAnOutage: a client that announces a body and goes away in the middle
+// of it is answered 400, not 503: its request ends with the unexpected EOF a lost database
+// connection ends with, and must not be taken for one.
+func TestCutRequestBodyIsNotAnOutage(t *testing.T) {
+	e := newEnv(t, nil)
+	p := e.authProject("chat-app")
+	u, err := url.Parse(e.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{
+		itk + "accounts:signUp?key=" + p.key,
+		"/securetoken.googleapis.com/v1/token?key=" + p.key,
+	} {
+		conn, err := net.Dial("tcp", u.Host)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body := `{"email":"u@example.com",`
+		fmt.Fprintf(conn, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+			path, u.Host, len(body)+400, body)
+		_ = conn.(*net.TCPConn).CloseWrite()
+		_ = conn.SetReadDeadline(time.Now().Add(20 * time.Second))
+		resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
+		if err != nil {
+			t.Errorf("%s: no answer: %v", path, err)
+			conn.Close()
+			continue
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		conn.Close()
+		if resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("%s with a cut body: %d %s, want 400", path, resp.StatusCode, b)
+		}
 	}
 }

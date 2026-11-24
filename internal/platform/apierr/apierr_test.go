@@ -143,3 +143,25 @@ func TestDatabaseOutageIsUnavailable(t *testing.T) {
 		}
 	}
 }
+
+// bodyErr is a failure to read a request's body, as httpx marks them.
+type bodyErr struct{ error }
+
+func (bodyErr) RequestBody() bool { return true }
+func (e bodyErr) Unwrap() error   { return e.error }
+
+// TestRequestBodyFailureIsNotAnOutage: a body the client cut ends with the errors a lost
+// database connection ends with, and is the client's failure, not UNAVAILABLE.
+func TestRequestBodyFailureIsNotAnOutage(t *testing.T) {
+	for name, cause := range map[string]error{
+		"body cut short":   fmt.Errorf("read: %w", bodyErr{io.ErrUnexpectedEOF}),
+		"connection reset": bodyErr{&net.OpError{Op: "read", Err: errors.New("connection reset by peer")}},
+	} {
+		if IsUnavailable(cause) {
+			t.Errorf("%s: taken for a database outage", name)
+		}
+		if got := CodeOf(cause); got != InvalidArgument {
+			t.Errorf("%s: From code = %v, want INVALID_ARGUMENT", name, got)
+		}
+	}
+}

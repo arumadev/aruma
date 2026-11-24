@@ -93,6 +93,9 @@ func New(code Code, format string, args ...any) *Error {
 
 // Wrap attaches an internal cause that is logged but never sent to the caller.
 func Wrap(cause error, code Code, format string, args ...any) *Error {
+	if code == Internal && isRequestBody(cause) {
+		return &Error{Code: InvalidArgument, Message: "The request body could not be read.", cause: cause}
+	}
 	if code == Internal && IsUnavailable(cause) {
 		return &Error{Code: Unavailable, Message: UnavailableMessage, cause: cause}
 	}
@@ -109,7 +112,7 @@ const UnavailableMessage = "The service is currently unavailable."
 // they do not. It reads the error through interfaces, so this package does not import the
 // Postgres driver.
 func IsUnavailable(err error) bool {
-	if err == nil {
+	if err == nil || isRequestBody(err) {
 		return false
 	}
 	// A call the database did not answer within the server's database_timeout (store.ErrTimeout).
@@ -146,6 +149,15 @@ func IsUnavailable(err error) bool {
 		return true
 	}
 	return strings.Contains(err.Error(), "closed pool")
+}
+
+// isRequestBody reports whether err is a failure to read the request's own body (httpx marks
+// them): a client that went away in the middle of its request, or sent less than it announced.
+// It ends the same way a lost database connection does (unexpected EOF, a reset), and says
+// nothing about the database.
+func isRequestBody(err error) bool {
+	var rb interface{ RequestBody() bool }
+	return errors.As(err, &rb) && rb.RequestBody()
 }
 
 // WithDetails returns a copy of e carrying extra google.rpc detail messages.

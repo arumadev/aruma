@@ -2,6 +2,8 @@ package httpx
 
 import (
 	"bytes"
+	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -129,5 +131,53 @@ func TestCommonRecoversAndLimitsBody(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest("POST", "/", strings.NewReader(big)))
 	if rec.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("oversized body: %d", rec.Code)
+	}
+}
+
+// cutBody is a request body whose client went away after a few bytes.
+type cutBody struct{ sent bool }
+
+func (b *cutBody) Read(p []byte) (int, error) {
+	if !b.sent {
+		b.sent = true
+		return copy(p, `{"email":`), nil
+	}
+	return 0, io.ErrUnexpectedEOF
+}
+func (*cutBody) Close() error { return nil }
+
+// TestCommonMarksBodyReadFailures: a body the client cut reaches the handler as a BodyError,
+// which apierr answers INVALID_ARGUMENT and never takes for a lost database connection (it ends
+// with the same unexpected EOF). The body's end and the body cap keep their own errors.
+func TestCommonMarksBodyReadFailures(t *testing.T) {
+	var got error
+	h := Common(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, got = io.ReadAll(r.Body)
+		if got != nil {
+			WriteError(w, r, slog.New(slog.NewTextHandler(io.Discard, nil)), got)
+		}
+	}), slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/", &cutBody{}))
+	var be *BodyError
+	if !errors.As(got, &be) || !errors.Is(got, io.ErrUnexpectedEOF) {
+		t.Fatalf("cut body: error = %v, want a BodyError wrapping unexpected EOF", got)
+	}
+	if apierr.IsUnavailable(got) || rec.Code != http.StatusBadRequest {
+		t.Errorf("cut body: status %d (unavailable: %v), want 400", rec.Code, apierr.IsUnavailable(got))
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/", strings.NewReader(`{"a":1}`)))
+	if got != nil {
+		t.Errorf("whole body: error = %v", got)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/", strings.NewReader(strings.Repeat("x", MaxBodyBytes+1))))
+	var tooLarge *http.MaxBytesError
+	if !errors.As(got, &tooLarge) || errors.As(got, &be) {
+		t.Errorf("body over the cap: error = %v, want the cap's own", got)
 	}
 }
