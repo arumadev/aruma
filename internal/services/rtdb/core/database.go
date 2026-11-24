@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/services/rtdb/rules"
 )
 
@@ -172,6 +173,17 @@ func (d *Database) open(ctx context.Context) error {
 	return nil
 }
 
+// failure is the answer to commands a storage error failed: ErrOutage when the error says the
+// database is out of reach (apierr.IsUnavailable: a lost or refused connection, no answer
+// within database_timeout), which the WebSocket answers by closing the connection so that the
+// SDK sends the commands again; ErrUnavailable for any other failure, which they are told.
+func failure(err error) *Error {
+	if apierr.IsUnavailable(err) {
+		return ErrOutage
+	}
+	return ErrUnavailable
+}
+
 // execute applies a batch in one transaction. When the transaction fails, each command is
 // retried on its own, so one bad command cannot fail the others.
 func (d *Database) execute(batch []*command) {
@@ -181,7 +193,7 @@ func (d *Database) execute(batch []*command) {
 		if err := d.open(ctx); err != nil {
 			d.log.Error("rtdb: open database", "database", d.name, "error", err)
 			for _, c := range batch {
-				c.done(Result{Err: ErrUnavailable})
+				c.done(Result{Err: failure(err)})
 			}
 			return
 		}
@@ -194,6 +206,15 @@ func (d *Database) execute(batch []*command) {
 		// command cannot fail the others.
 		d.rate = rate
 		state.rollback()
+		if apierr.IsUnavailable(err) {
+			// The database is out of reach: each command on its own would only wait for
+			// it again, one after the other.
+			d.log.Error("rtdb: write", "database", d.name, "error", err)
+			for _, c := range batch {
+				c.done(Result{Err: ErrOutage})
+			}
+			return
+		}
 		if len(batch) > 1 {
 			for _, c := range batch {
 				d.execute([]*command{c})
@@ -216,7 +237,7 @@ func (d *Database) execute(batch []*command) {
 		state.rollback()
 		d.log.Error("rtdb: commit", "database", d.name, "error", err)
 		for _, c := range batch {
-			c.done(Result{Err: ErrUnavailable})
+			c.done(Result{Err: failure(err)})
 		}
 		return
 	}

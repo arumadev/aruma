@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/arumadev/aruma/internal/services/rtdb/core"
 	"github.com/arumadev/aruma/internal/services/rtdb/wire"
@@ -52,7 +53,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 			s.core.Set(b.Path, b.Data, b.Hash, func(n *core.Node, err error) {
 				switch {
 				case err != nil:
-					s.fill(sl, result(req.ID, err))
+					s.fillOrDrop(sl, req.ID, err)
 				case b.Hash != nil:
 					// A conditional put is acked with the data written (emulator 4.11.2).
 					s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(json.RawMessage(n.ExportJSON()))))
@@ -66,7 +67,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		var b wire.WriteBody
 		if s.decode(req, &b) {
 			sl := s.reserve(req.ID)
-			s.core.Update(b.Path, b.Data, func(err error) { s.fill(sl, result(req.ID, err)) })
+			s.core.Update(b.Path, b.Data, func(err error) { s.fillOrDrop(sl, req.ID, err) })
 		}
 
 	case wire.ActionGet:
@@ -77,7 +78,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		sl := s.reserve(req.ID)
 		s.core.Get(b.Path, querySpec(b.Query), func(n *core.Node, err error) {
 			if err != nil {
-				s.fill(sl, result(req.ID, err))
+				s.fillOrDrop(sl, req.ID, err)
 				return
 			}
 			s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(json.RawMessage(n.ExportJSON()))))
@@ -97,7 +98,7 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 		s.core.Listen(b.Path, querySpec(b.Query), tag, b.Hash, func(warnings []string, err error) {
 			switch {
 			case err != nil:
-				s.fill(sl, result(req.ID, err))
+				s.fillOrDrop(sl, req.ID, err)
 			case len(warnings) > 0:
 				s.fill(sl, wire.EncodeResponse(req.ID, wire.OKWith(map[string]any{"w": warnings})))
 			default:
@@ -159,6 +160,19 @@ func (s *session) dispatch(ctx context.Context, req *wire.Request) {
 	default:
 		s.send(wire.EncodeError(errorFrame))
 	}
+}
+
+// fillOrDrop answers a write, a listen or a get with err (nil: ok), unless its database was
+// out of reach (core.ErrOutage), which the SDKs would not retry: then the connection is
+// dropped instead, and the client sends the request again when it reconnects (session.drop).
+// Every other failure is answered, unavailable included: a failure that is not an outage
+// would fail again when resent, and a dropped connection would only bring it back forever.
+func (s *session) fillOrDrop(sl *slot, id int64, err error) {
+	if errors.Is(err, core.ErrOutage) {
+		s.drop()
+		return
+	}
+	s.fill(sl, result(id, err))
 }
 
 // decode reads a request's body, answering a malformed one as the emulator does.

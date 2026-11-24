@@ -45,6 +45,7 @@ For each difference you get what Firebase does, what Aruma does, and what it mea
 | JSONP | `callback=` is supported | Ignored; the reply is plain JSON | Do not use `callback=` |
 | REST write size | Up to 256 MB | 16 MB by default (`rtdb.limits.rest_write_bytes`, configurable) | Large REST imports need the operator to raise the limit |
 | Negative zero | — | A stored `-0.0` is returned as `0.0`. It can show on Android, iOS and the Admin SDKs | Do not rely on the sign of zero |
+| Database outage on a live connection | Not documented | A write, listen or get that the server cannot carry out because Postgres is unreachable closes the connection instead of failing with `unavailable`. The SDKs keep such requests and send them again when they reconnect; an `onDisconnect` registration still fails with `unavailable` | During a Postgres outage, writes stay pending and are applied once the database is back, as after a server restart, instead of being reverted with an error. An `update()` with `ServerValue.increment` that was applied just before the database failed may be applied twice, as after any lost connection |
 | Large reads | A single request has a size cap and fails with "Data requested exceeds the maximum size that can be accessed with a single request." | Same error, but the cap counts stored rows: 1,000,000 per read by default (configurable) | Use `shallow=true` or narrower queries |
 
 ## Cloud Storage
