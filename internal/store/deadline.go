@@ -30,8 +30,28 @@ func (timeoutError) Error() string         { return "the database did not answer
 func (timeoutError) DatabaseTimeout() bool { return true }
 func (timeoutError) Timeout() bool         { return true }
 
-// cancelKey carries the cancel of the deadline a tracer call added, for its end.
-type cancelKey struct{}
+// cancelKey carries the cancel of the deadline a tracer call added, for its end;
+// unboundedKey marks a context whose statements are not bounded (Unbounded).
+type (
+	cancelKey    struct{}
+	unboundedKey struct{}
+)
+
+// Unbounded returns ctx whose statements on the pool are not bounded by the pool's timeout:
+// for background work whose single statements may legitimately run longer as a project grows
+// (the purge of a deleted project, retention, garbage collection, index builds), which would
+// otherwise be cancelled at every pass and never finish. The wait for a connection stays
+// bounded, and so does everything a request does: no client waits on this work, and it ends
+// with ctx. While Postgres is frozen such a statement waits for it, holding one connection.
+func Unbounded(ctx context.Context) context.Context {
+	return context.WithValue(ctx, unboundedKey{}, true)
+}
+
+// IsUnbounded reports whether ctx was marked by Unbounded.
+func IsUnbounded(ctx context.Context) bool {
+	v, _ := ctx.Value(unboundedKey{}).(bool)
+	return v
+}
 
 // timeoutCtx is a context whose own deadline, once passed, reports ErrTimeout as its error,
 // so the error of the call it bounded says the database did not answer. A deadline the
@@ -52,6 +72,16 @@ func (c timeoutCtx) Err() error {
 // whose context ends mid-call), so the pool replaces it when the database answers again.
 type deadlineTracer struct{ d time.Duration }
 
+// statement bounds a statement, batch, copy or prepare, unless ctx is Unbounded.
+func (t deadlineTracer) statement(ctx context.Context) context.Context {
+	if IsUnbounded(ctx) {
+		// Its end must not cancel a deadline ctx inherited: a new connection's first
+		// statement runs on a context that carries the values of the wait for it.
+		return context.WithValue(ctx, cancelKey{}, context.CancelFunc(func() {}))
+	}
+	return t.start(ctx)
+}
+
 func (t deadlineTracer) start(ctx context.Context) context.Context {
 	bounded, cancel := context.WithDeadlineCause(ctx, time.Now().Add(t.d), ErrTimeout)
 	return context.WithValue(timeoutCtx{bounded}, cancelKey{}, cancel)
@@ -64,7 +94,7 @@ func (deadlineTracer) end(ctx context.Context) {
 }
 
 func (t deadlineTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryStartData) context.Context {
-	return t.start(ctx)
+	return t.statement(ctx)
 }
 
 func (t deadlineTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
@@ -72,7 +102,7 @@ func (t deadlineTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, _ pgx.Tr
 }
 
 func (t deadlineTracer) TraceBatchStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceBatchStartData) context.Context {
-	return t.start(ctx)
+	return t.statement(ctx)
 }
 
 func (deadlineTracer) TraceBatchQuery(context.Context, *pgx.Conn, pgx.TraceBatchQueryData) {}
@@ -82,7 +112,7 @@ func (t deadlineTracer) TraceBatchEnd(ctx context.Context, _ *pgx.Conn, _ pgx.Tr
 }
 
 func (t deadlineTracer) TraceCopyFromStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceCopyFromStartData) context.Context {
-	return t.start(ctx)
+	return t.statement(ctx)
 }
 
 func (t deadlineTracer) TraceCopyFromEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TraceCopyFromEndData) {
@@ -90,7 +120,7 @@ func (t deadlineTracer) TraceCopyFromEnd(ctx context.Context, _ *pgx.Conn, _ pgx
 }
 
 func (t deadlineTracer) TracePrepareStart(ctx context.Context, _ *pgx.Conn, _ pgx.TracePrepareStartData) context.Context {
-	return t.start(ctx)
+	return t.statement(ctx)
 }
 
 func (t deadlineTracer) TracePrepareEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TracePrepareEndData) {

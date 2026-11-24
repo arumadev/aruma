@@ -401,12 +401,14 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		// instance waits for while the old one runs, its binding to this database, the list of
 		// files that may be orphans, and the quota reconciled. A load balancer sees the instance
 		// only once it holds the directory.
-		if err := a.Storage.Boot(ctx); err != nil {
+		// Its reconciliation reads every object of the instance (store.Unbounded).
+		if err := a.Storage.Boot(store.Unbounded(ctx)); err != nil {
 			return fmt.Errorf("storage: %w", err)
 		}
 		// After: the orphans deleted, the GC, the expiry of sessions and the periodic sweep.
 		go func() {
-			if err := a.Storage.Run(ctx); err != nil && ctx.Err() == nil {
+			// Its garbage collection and sweeps are background work (store.Unbounded).
+			if err := a.Storage.Run(store.Unbounded(ctx)); err != nil && ctx.Err() == nil {
 				logger.Error("storage", "error", err)
 			}
 		}()
@@ -492,6 +494,8 @@ const retentionBatch = 1000
 // following hours; a purge that fails does not stop the others. It logs one line per pass with
 // the rows purged by table, and counts them in aruma_housekeeping_purged_rows_total.
 func (a *App) Housekeep(ctx context.Context) retention.Counts {
+	// Background work: a purge's single statements grow with the project (store.Unbounded).
+	ctx = store.Unbounded(ctx)
 	start := time.Now()
 	r := a.Config.Retention
 	c := retention.Counts{}

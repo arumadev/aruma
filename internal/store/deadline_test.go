@@ -165,3 +165,37 @@ func TestConnectTimeoutOnAFrozenDatabaseIsUnavailable(t *testing.T) {
 		t.Fatalf("a call that needs a new connection: %v after %v, want UNAVAILABLE after about 1s", err, time.Since(start))
 	}
 }
+
+// Background work marked Unbounded runs statements longer than the pool's timeout (a purge of
+// a large project), where the same statement on a request's context is cut at the timeout. The
+// wait for a connection stays bounded either way.
+func TestUnboundedStatementsOutliveTheTimeout(t *testing.T) {
+	const bound = 300 * time.Millisecond
+	ctx := context.Background()
+	pool, err := store.Open(ctx, storetest.NewDB(t)+"&pool_max_conns=1", store.Timeout(bound))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := pool.Exec(store.Unbounded(ctx), "SELECT pg_sleep(1)"); err != nil {
+		t.Errorf("an unbounded statement of 1s: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "SELECT pg_sleep(1)"); !errors.Is(err, store.ErrTimeout) && !apierr.IsUnavailable(err) {
+		t.Errorf("a bounded statement of 1s: %v, want the database timeout", err)
+	}
+	// The one connection is busy with an unbounded statement: waiting for it is bounded.
+	busy := make(chan error, 1)
+	go func() {
+		_, err := pool.Exec(store.Unbounded(ctx), "SELECT pg_sleep(2)")
+		busy <- err
+	}()
+	time.Sleep(200 * time.Millisecond)
+	start := time.Now()
+	_, err = pool.Exec(store.Unbounded(ctx), "SELECT 1")
+	if !errors.Is(err, store.ErrTimeout) || time.Since(start) > bound+time.Second {
+		t.Errorf("an unbounded call waiting for a connection: %v after %v, want the timeout", err, time.Since(start))
+	}
+	if err := <-busy; err != nil {
+		t.Errorf("the unbounded statement holding the connection: %v", err)
+	}
+}
