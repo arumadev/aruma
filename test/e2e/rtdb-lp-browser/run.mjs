@@ -129,7 +129,12 @@ try {
     const page = await ctx.newPage();
     const net = watch(page);
     await page.goto(pageURL);
-    const r = { firstConnectMs: await connected(page, 15000), flagAtStart: await page.evaluate(() => window.__flag()) };
+    const r = { firstConnectMs: await connected(page, 15000) };
+    // The SDK sets the flag when it opens a WebSocket and clears it once the connection has
+    // answered its first ping, a few milliseconds after the page reports connected: the flag is
+    // read once it has had that time.
+    await until(async () => (await page.evaluate(() => window.__flag())) === null, 5000);
+    r.flagAtStart = await page.evaluate(() => window.__flag());
     r.firstTransport = net.lp.some((x) => x.kind === 'start') ? 'long poll' : net.ws.length ? 'websocket' : 'none';
     await write('before-' + T0);
     r.seenBefore = await seen(page, 'before-' + T0);
