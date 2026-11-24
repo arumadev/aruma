@@ -113,10 +113,12 @@ func TestTimeoutBoundsCallsOnAFrozenDatabase(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	// What the freeze left: the connections that timed out are closed, their goroutines gone.
+	// The baseline was taken with no connection open, and each connection the pool holds now
+	// has the proxy's two goroutines: one or two connections, as the calls above left it.
 	deadline = time.Now().Add(10 * time.Second)
 	for {
 		g, conns, open := runtime.NumGoroutine(), proxy.Conns(), pool.Stat().TotalConns()
-		if g <= baseGoroutines+2 && int(open) == conns && conns <= 2 {
+		if g <= baseGoroutines+2*conns && int(open) == conns && conns <= 2 {
 			break
 		}
 		if time.Now().After(deadline) {
