@@ -152,11 +152,26 @@ The release-wide review and its scope are in [security](security.md#v05).
   seconds by default), and answers 503 `UNAVAILABLE` past it. In the same pause with the fix, every
   service answered 503 after 15.0 seconds and served again half a second after Postgres resumed.
   Streams stay long-lived; only the database calls inside them are bounded. `migrate`, `backup` and
-  `restore` are not bounded. See
+  `restore` are not bounded, nor is the server's own background work (housekeeping, the purge of a
+  deleted project, garbage collection, index builds), whose statements grow with a project. See
   [database timeout](reference/configuration.md#database-timeout).
 - **Two more 500s are 503 now.** A pooled connection that ended in the middle of an answer gave 500
   "unexpected EOF", and a connection that timed out while opening gave 500 on Storage and the
   Document Database and 499 `CANCELLED` on Auth.
+- **A request cut by its client is 400, not 500.** A client that announced a body and went away in
+  the middle of it got 500 from Auth. Such a request ends with the same error as a lost database
+  connection, so it is now marked where it is read and answered 400 `INVALID_ARGUMENT`, and never
+  counted as an outage.
+- **Realtime Database writes survive an outage.** A write, listen or read that failed because the
+  database was out of reach was answered `unavailable`, which the SDKs do not retry: the app was
+  told the write failed and the value was reverted. The server now closes the connection instead,
+  and the SDK sends the request again when it reconnects, as after a restart. With the official JS
+  SDK writing every 50 ms through 10 outages, 37 of 3,380 writes failed before the fix and none of
+  3,378 after it; after a 3-minute stop of Postgres the client was connected again 5 seconds after
+  Postgres was back (37 seconds before the fix, one run each). A failure that is not an outage is
+  still answered, so a write that can never succeed is not sent again forever. An `increment` whose
+  commit was cut by the outage may be applied twice: see
+  [known differences](reference/known-differences.md#realtime-database).
 - **Web users stay signed in through an outage.** Auth answered its SDK endpoints with 503 as an
   Identity Toolkit error in JSON. The web SDK signs the user out at the next app start on any error
   but a network failure, so a page reloaded during an outage came back signed out. Those endpoints
