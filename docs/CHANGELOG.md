@@ -45,8 +45,10 @@ the old process must stop before the new one starts.
 - **Go 1.27.4.** `govulncheck` found GO-2026-6859, a crash in `net/http`'s HTTP/1 server, reachable
   from `aruma` and `arumactl` built with Go 1.27.3. The binaries and the Docker image are built with
   Go 1.27.4. The Go SDK modules move to `golang.org/x/net` 0.62.0, and the dashboard to Next.js
-  16.4.6; Next.js's advisories did not apply to the dashboard's static build. After the move,
-  `govulncheck` finds no reachable advisory and `npm audit` finds none in the four npm packages.
+  16.4.6; Next.js's advisories did not apply to the dashboard's static build. The Go SDK modules
+  also move to OpenTelemetry 1.47.0 for GO-2026-6974, which Google's client libraries pull in; the
+  server does not use it. After the moves, `govulncheck` finds no reachable advisory and
+  `npm audit` finds none in the four npm packages.
 - **API key restrictions, corrected in the docs.** [Security](security.md) said key restrictions
   apply to every request. They apply to Auth and to the Document Database's WebChannel handshake.
   The Document Database's REST and gRPC requests do not check the key, as production does not; the
