@@ -16,6 +16,9 @@ const command = mode === 'production-build'
   : `npx vite --port ${PORT}`;
 
 export default defineConfig({
+  // On GitHub Actions Playwright would otherwise git fetch the pull request's base commit from
+  // github.com for the report's diff: the suite reaches nothing off this machine.
+  captureGitInfo: { commit: false, diff: false },
   testDir: './tests',
   // One browser at a time: every request comes from 127.0.0.1, which Aruma rate-limits.
   workers: 1,

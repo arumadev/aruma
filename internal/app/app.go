@@ -5,11 +5,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
+	"slices"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/arumadev/aruma/internal/admin/console"
 	"github.com/arumadev/aruma/internal/admin/mgmt"
@@ -22,6 +27,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/idtoken"
 	"github.com/arumadev/aruma/internal/platform/metrics"
 	"github.com/arumadev/aruma/internal/platform/ratelimit"
+	"github.com/arumadev/aruma/internal/platform/retention"
 	"github.com/arumadev/aruma/internal/platform/rules"
 	"github.com/arumadev/aruma/internal/server"
 	authapi "github.com/arumadev/aruma/internal/services/auth/api"
@@ -67,10 +73,21 @@ type App struct {
 	RulesLimits   rules.Limits
 	RulesInflight *rules.Inflight
 
+	// rtdbAPI and rtdbLock are the Realtime Database's transport and its single-instance lock
+	// (BootRTDB); both nil while it is disabled, and the lock nil until Serve boots it.
+	rtdbAPI  *rtdbapi.API
+	rtdbLock *store.InstanceLock
+	// rtdbMu orders BootRTDB's admission with the lock's callbacks, which the guard may run as
+	// soon as StartInstanceLock returns.
+	rtdbMu sync.Mutex
+
 	Server  *server.Server
 	Console *console.API
 	Mgmt    *mgmt.API
 	log     *slog.Logger
+
+	// purged counts the rows housekeeping deleted, by table.
+	purged *prometheus.CounterVec
 }
 
 // Option adjusts wiring, mainly for tests.
@@ -97,6 +114,15 @@ func WithIdPEndpoints(google, apple identity.IdPEndpoints, client *http.Client) 
 // server's own is 30 seconds.
 func WithRTDBWriteTimeout(d time.Duration) Option {
 	return func(s *settings) { s.rtdbWriteTimeout = d }
+}
+
+// authLimits are Auth's client limits with the configured rates and bursts (config
+// auth.limits); the password backoff keeps its fixed values.
+func authLimits(cfg *config.Config) authapi.Limits {
+	l, c := authapi.ClientLimits, cfg.Auth.Limits
+	l.RequestsPerMinute, l.RequestBurst = c.RequestsPerMinute, c.RequestBurst
+	l.SignUpsPerMinute, l.SignUpBurst = c.SignUpsPerMinute, c.SignUpBurst
+	return l
 }
 
 // argon2Concurrency caps simultaneous password hashes (≈19 MiB each).
@@ -139,6 +165,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	idTokens, revocations, users := authSvc.IDTokenVerifier(), authSvc.Revocations(), authSvc.Users()
 	m := metrics.New(version)
 	var rtdbSvc *rtdb.Service
+	var rtAPI *rtdbapi.API
 	if cfg.RTDB.Enabled {
 		l := cfg.RTDB.Limits
 		rtdbSvc = rtdb.New(rtdb.NewPGStore(pool), svc, rtdb.Options{
@@ -197,7 +224,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	consoleAPI := console.New(svc, auth, logger, console.Options{
 		Version: version, SecureCookies: cfg.SecureCookies(),
 		Mounts: []func(*consolemount.Mount){
-			authconsole.Routes(authSvc),
+			authconsole.Routes(authSvc, authLimits(cfg)),
 			rtdbconsole.Routes(rtdbSvc, rtdbconsole.Options{DatabaseURL: svc.DatabaseURL, DevOpenRules: cfg.RTDB.DevOpenRules}),
 			storageconsole.Routes(storageSvc, storageconsole.Options{
 				PublicURL: publicURL, ProjectDomain: cfg.ProjectDomain, Rules: svc, Audit: svc.Audit,
@@ -217,7 +244,7 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 		Console: consoleAPI.Handler(),
 		Mgmt:    mgmtAPI.Handler(),
 		OAuth:   oauth.New(svc, logger).Handler(),
-		Auth:    authapi.New(authSvc, auth, logger).Handler(),
+		Auth:    authapi.New(authSvc, auth, logger, authLimits(cfg)).Handler(),
 		Static:  dashboard,
 	}
 	if rtdbSvc != nil {
@@ -230,6 +257,8 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 			WriteTimeout:   st.rtdbWriteTimeout,
 		}, logger)
 		handlers.RTDB, handlers.TLSAsk = rtdbAPI, rtdbAPI.TLSAsk()
+		handlers.RTDBServing = rtdbSvc.Serving
+		rtAPI = rtdbAPI
 		// A purged project's databases go with it.
 		svc.OnProjectPurged(rtdbSvc.PurgeProject)
 	}
@@ -258,12 +287,61 @@ func New(cfg *config.Config, logger *slog.Logger, version string, pool *pgxpool.
 	if docs != nil {
 		docs.mount(&handlers)
 	}
+	// A purged project's users, sessions, keys and Auth settings go with it.
+	svc.OnProjectPurged(authSvc.PurgeProject)
+	purged := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "aruma_housekeeping_purged_rows_total",
+		Help: "Rows housekeeping deleted because they stopped working or outlived their retention, by table.",
+	}, []string{"table"})
+	m.Registry.MustRegister(purged)
 
 	srv := server.New(cfg, logger, pool, m, handlers)
-	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs,
+	return &App{Config: cfg, Service: svc, Auth: authSvc, RTDB: rtdbSvc, Storage: storageSvc, Documents: docs, rtdbAPI: rtAPI,
 		IDTokens: idTokens, Revocations: revocations, Users: users,
 		RulesLimits: rulesLimits, RulesInflight: rulesInflight,
-		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger}, nil
+		Server: srv, Console: consoleAPI, Mgmt: mgmtAPI, log: logger, purged: purged}, nil
+}
+
+// BootRTDB takes the Realtime Database's single-instance lock, trying for up to 30 seconds so a
+// stop-then-start deploy takes over, and keeps it until Close. Its listeners and writer live in
+// this process, so a second process on the same Postgres database would store writes its peer's
+// listeners never hear of. Until the lock is held the database answers UNAVAILABLE and /readyz
+// 503; losing it (the Postgres session ended, as in a restart) closes every connection, and
+// taking it again serves again. Serve calls it before the listener opens; a caller that serves
+// App.Server's handler itself needs no lock and serves from the start. It does nothing while
+// the Realtime Database is disabled.
+func (a *App) BootRTDB(ctx context.Context, pool *pgxpool.Pool, o store.InstanceLockOptions) {
+	if a.RTDB == nil {
+		return
+	}
+	o.Name, o.Service, o.Log = "rtdb.instance", "rtdb", a.log
+	onLost, onAcquired := o.OnLost, o.OnAcquired
+	o.OnLost = func() {
+		a.rtdbMu.Lock()
+		defer a.rtdbMu.Unlock()
+		// Stop admitting first, then end what is open: a client that reconnects at once is
+		// refused rather than served by a process that no longer owns the database.
+		a.RTDB.SetServing(false)
+		a.rtdbAPI.DropConnections()
+		if onLost != nil {
+			onLost()
+		}
+	}
+	o.OnAcquired = func() {
+		a.rtdbMu.Lock()
+		defer a.rtdbMu.Unlock()
+		a.RTDB.SetServing(true)
+		if onAcquired != nil {
+			onAcquired()
+		}
+	}
+	a.rtdbMu.Lock()
+	defer a.rtdbMu.Unlock()
+	a.RTDB.SetServing(false)
+	a.rtdbLock = store.StartInstanceLock(ctx, pool.Config().ConnConfig, o)
+	if a.rtdbLock.Held() {
+		a.RTDB.SetServing(true)
+	}
 }
 
 // AnnounceSetup prints the one-time setup code when the instance has no account yet.
@@ -281,7 +359,7 @@ func (a *App) AnnounceSetup(ctx context.Context) error {
 // Serve runs the server until ctx is cancelled. It refuses to start on an outdated schema or
 // one newer than the binary, and never migrates it itself (ADR-009).
 func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version string) error {
-	pool, err := store.Open(ctx, cfg.DatabaseURL.Reveal())
+	pool, err := store.Open(ctx, cfg.DatabaseURL.Reveal(), store.Timeout(cfg.DatabaseTimeout))
 	if err != nil {
 		return err
 	}
@@ -290,6 +368,7 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	if err := store.CheckCurrent(ctx, pool); err != nil {
 		return err
 	}
+	store.CheckPoolSize(ctx, pool, cfg.DatabaseURL.Reveal(), logger)
 	if !cfg.SecureCookies() {
 		logger.Warn("public_url is plain http on a non-loopback host: console cookies will not be Secure; put the server behind https")
 		if cfg.Storage.Enabled {
@@ -322,22 +401,33 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		// instance waits for while the old one runs, its binding to this database, the list of
 		// files that may be orphans, and the quota reconciled. A load balancer sees the instance
 		// only once it holds the directory.
-		if err := a.Storage.Boot(ctx); err != nil {
+		// Its reconciliation reads every object of the instance (store.Unbounded).
+		if err := a.Storage.Boot(store.Unbounded(ctx)); err != nil {
 			return fmt.Errorf("storage: %w", err)
 		}
 		// After: the orphans deleted, the GC, the expiry of sessions and the periodic sweep.
 		go func() {
-			if err := a.Storage.Run(ctx); err != nil && ctx.Err() == nil {
+			// Its garbage collection and sweeps are background work (store.Unbounded).
+			if err := a.Storage.Run(store.Unbounded(ctx)); err != nil && ctx.Err() == nil {
 				logger.Error("storage", "error", err)
 			}
 		}()
 	}
+	// Before the listener opens (ADR-024 §7): the Document Database's and the Realtime
+	// Database's single-instance locks, each tried for up to 30 seconds, which a new instance
+	// waits for while the old one drains. They are taken side by side, so a newcomer beside a
+	// running instance listens after 30 seconds, not after the sum.
+	docsBooted := make(chan error, 1)
 	if a.Documents != nil {
-		// Before the listener opens (ADR-024 §7): the single-instance lock, for up to 30
-		// seconds, which a new instance waits for while the old one drains.
-		if err := a.Documents.Boot(ctx, documents.InstanceOptions{}); err != nil {
-			return fmt.Errorf("documents: %w", err)
-		}
+		go func() { docsBooted <- a.Documents.Boot(ctx, documents.InstanceOptions{}) }()
+	} else {
+		docsBooted <- nil
+	}
+	a.BootRTDB(ctx, pool, store.InstanceLockOptions{})
+	if err := <-docsBooted; err != nil {
+		return fmt.Errorf("documents: %w", err)
+	}
+	if a.Documents != nil {
 		defer a.Documents.Close()
 	}
 	if cfg.Documents.DevOpenRules {
@@ -359,6 +449,10 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 		if err := a.RTDB.Close(stop); err != nil {
 			logger.Warn("rtdb: shutdown", "error", err)
 		}
+		// Only now may the next instance take over: this one's writers have drained.
+		if a.rtdbLock != nil {
+			a.rtdbLock.Close()
+		}
 	}
 	if a.Storage != nil {
 		// Storage waits for its writes in flight and for Run, then releases the data
@@ -373,24 +467,61 @@ func Serve(ctx context.Context, cfg *config.Config, logger *slog.Logger, version
 	return nil
 }
 
-// housekeepingEvery is how often expired deletions and tokens are purged.
+// housekeepingEvery is how often expired deletions, credentials that stopped working and rows
+// past their retention are purged.
 const housekeepingEvery = time.Hour
 
-// housekeeping purges what has outlived its retention, at start and then hourly.
+// housekeeping runs Housekeep at start and then hourly.
 func (a *App) housekeeping(ctx context.Context) {
 	t := time.NewTicker(housekeepingEvery)
 	defer t.Stop()
 	for {
-		if _, err := a.Service.PurgeExpired(ctx); err != nil && ctx.Err() == nil {
-			a.log.Error("housekeeping", "error", err)
-		}
-		if err := a.Auth.Housekeep(ctx); err != nil && ctx.Err() == nil {
-			a.log.Error("auth housekeeping", "error", err)
-		}
+		a.Housekeep(ctx)
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
 		}
 	}
+}
+
+// retentionBatch is the rows one DELETE of housekeeping's retention removes.
+const retentionBatch = 1000
+
+// Housekeep runs one pass of every purge: expired projects and apps, then the credentials that
+// stopped working and the rows past their retention (config retention). Each table is trimmed
+// in batches, at most retention.MaxBatches of them a pass, so a backlog is worked off over the
+// following hours; a purge that fails does not stop the others. It logs one line per pass with
+// the rows purged by table, and counts them in aruma_housekeeping_purged_rows_total.
+func (a *App) Housekeep(ctx context.Context) retention.Counts {
+	// Background work: a purge's single statements grow with the project (store.Unbounded).
+	ctx = store.Unbounded(ctx)
+	start := time.Now()
+	r := a.Config.Retention
+	c := retention.Counts{}
+	failed := func(what string, err error) {
+		if err != nil && ctx.Err() == nil {
+			a.log.Error("housekeeping", "job", what, "error", err)
+		}
+	}
+	_, err := a.Service.PurgeExpired(ctx)
+	failed("projects", err)
+	ac, err := a.Auth.Housekeep(ctx, identity.Retention{AuditDays: r.AuthAuditDays, Batch: retentionBatch})
+	maps.Copy(c, ac)
+	failed("auth", err)
+	cc, err := a.Service.Housekeep(ctx, core.Retention{AuditDays: r.ControlAuditDays, EventsDays: r.EventsDays})
+	maps.Copy(c, cc)
+	failed("control", err)
+	// One value names the tables: a key per table would be redacted when its name holds a word
+	// such as "token" (log.IsSensitiveKey).
+	var purged []string
+	for _, table := range slices.Sorted(maps.Keys(c)) {
+		if n := c[table]; n > 0 {
+			a.purged.WithLabelValues(table).Add(float64(n))
+			purged = append(purged, table+"="+strconv.FormatInt(n, 10))
+		}
+	}
+	attrs := []any{"rows", c.Total(), "purged", strings.Join(purged, " "), "elapsed", time.Since(start).Round(time.Millisecond).String()}
+	a.log.Info("housekeeping", attrs...)
+	return c
 }

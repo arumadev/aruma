@@ -44,7 +44,7 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Do not open a publ
 **Project isolation and API keys**
 
 - Using an API key as an admin identity: keys never reach an admin authenticator.
-- Using a restricted key from another site, address, app or API: key restrictions are enforced on every request. Website, Android and iOS restrictions rely on headers that a non-browser client can forge, so they limit accidental use, not a determined attacker. This is how Google's keys work too. An IP restriction reads `X-Forwarded-For` only from a trusted proxy.
+- Using a restricted key from another site, address, app or API: key restrictions are enforced on every Auth request and on the Document Database's WebChannel handshake. The Document Database's REST and gRPC requests do not check the key, as production does not: a Firestore REST read with a made-up key and a valid ID token succeeds there. Security rules and the caller's identity decide access on those paths, as they do on the Realtime Database and Storage, which take no key. Website, Android and iOS restrictions rely on headers that a non-browser client can forge, so they limit accidental use, not a determined attacker. This is how Google's keys work too. An IP restriction reads `X-Forwarded-For` only from a trusted proxy.
 - Reaching another project by changing a project number or ID: the project is resolved and its ownership checked at the entrance, and every query carries the project number.
 - Listing projects: anything the caller does not own returns the same `NOT_FOUND`.
 - Moving an app or key between projects by editing a request: identifiers are immutable, and the project comes from the resolved path, not the body.
@@ -94,10 +94,10 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md). Do not open a publ
 
 - **Serve over TLS.** Put Aruma behind a TLS proxy, and set `ARUMA_PUBLIC_URL` to the https address. Storage logs a warning on plain http. Firebase Admin credentials are refused without TLS. See [Configuration](reference/configuration.md).
 - **Protect the master key.** Generate it with `openssl rand -base64 32`. Keep it out of the repository, and store it apart from your database backups. Anyone with the database and the master key can read everything.
-- **Back up both halves.** `aruma backup` dumps the database only. If you use Storage, back up its data directory with it and restore both together. Test a restore.
+- **Back up both halves.** If you use Storage, run `aruma backup --storage-out`: it writes the database dump and an archive of the Storage files that dump names, from one snapshot. Without it, `aruma backup` dumps the database only. Restore both together, and test a restore. See [operations](guides/operations.md#docker).
 - **Mount the Storage disk before the service starts.** Aruma refuses to boot on an empty data directory when the database expects files. Make the service wait for the mount.
 - **Set `trusted_proxies` correctly.** List only your own proxies. Make the proxy set `X-Forwarded-For` and `X-Forwarded-Proto` itself instead of passing the client's.
-- **Protect the database.** Use TLS to PostgreSQL if it is not on the same host. Where you can, run migrations with a separate role and give the server DML rights only, because the audit log is protected from deletion by a trigger that the table owner could disable.
+- **Protect the database.** Use TLS to PostgreSQL if it is not on the same host. Where you can, run migrations with a separate role and give the server DML rights only, because the audit log is protected by a trigger that the table owner could disable: no row may be changed, and none younger than seven days deleted (retention deletes older ones, `retention.control_audit_days`).
 - **Remove `localhost` from authorized domains in production.** It is allowed by default, as in Firebase.
 - **Keep API keys restricted.** Restrictions reduce misuse. They are not secrets.
 - **Run one server for now.** Rate limits and signer caches live in memory. They restart empty and are not shared between servers.
@@ -107,7 +107,7 @@ Also out of scope today: phone sign-in, multi-factor authentication, email-link 
 
 ## Reviews
 
-Each final release from v0.1 to v0.3 had a security review by a reviewer who did not write the code. The reviewer reproduced each finding against a real server, and most fixes came with a test that failed before the fix and runs in CI. Severity labels are the reviewer's own. The v0.4 release candidate has no review of its own yet.
+Each final release from v0.1 to v0.3 had a security review by a reviewer who did not write the code. The reviewer reproduced each finding against a real server, and most fixes came with a test that failed before the fix and runs in CI. Severity labels are the reviewer's own. v0.4.0 was released without a release-wide review; the review of v0.5 covers its code.
 
 ### v0.1: accounts, console and Auth
 
@@ -205,4 +205,23 @@ Scope: the Storage byte-serving and upload paths, the rules engine, the new mana
 
 ### v0.4
 
-v0.4.0 has no release-wide review yet: it was released before one. Its parts were reviewed as they were built. The release-wide review is still planned, and its findings will be fixed in a v0.4.x release.
+v0.4.0 had no release-wide review: it was released before one. Its parts were reviewed as they were built. The release-wide review ran on the code of v0.5.0, which includes the Document Database, and its findings are fixed in v0.5.0 (below).
+
+### v0.5
+
+Scope: a source review of the server (`cmd/`, `internal/`), the dashboard, the web package's host handling, the Admin libraries for Node and Go, the Docker files and the CI workflows. Each finding was reproduced, against a running server or in a test, before it was fixed; the iOS one was found by reading the code. Alongside it, twenty acceptance tests now run in CI: every console and Management API route that names a project, across two projects; forged and foreign tokens on every data service; access cut on disable, delete, revoke and password change, open WebSockets included; 35 spellings of a protected path on each service; and a search for issued credentials in a dump of every schema and in the log.
+
+**Findings, all fixed in v0.5.0:**
+
+- Medium: a Cloud Storage list without the `/` delimiter returned the names of objects in folders whose rules deny a list to the caller. File contents stayed protected. Each deeper folder is now decided by the rules.
+- Medium: the dashboard's sign-in page sent the browser to another site when its `next` parameter held a tab or line break.
+- High, availability: a Realtime Database client could queue listens of a large node and disconnect, and the database's single writer still loaded each one, holding every other client's writes (27 seconds for 30 listens of a 180,000-row node).
+- Medium, availability: with a full rate-limit table, each new email typed at sign-in cost two scans of the table under one lock, so a flood of distinct emails slowed every sign-in.
+- Low: the iOS redirect library let an Auth host written with a trailing dot go to Google.
+- Low: the Document Database's REST and gRPC requests do not check the API key or its restrictions. This matches production, so the code is unchanged and this page now says where keys are checked.
+- High, found while building the Flutter example: a Flutter web app set up as the guides said sent the user's email and password to Google at sign-up and sign-in. `aruma-web flutter-web` now rewrites Auth too, by default.
+- Dependencies: `govulncheck` found one reachable advisory, GO-2026-6859 in `net/http`, fixed by Go 1.27.4. `npm audit` advisories in the dashboard's Next.js did not apply to its static build; it was updated anyway.
+
+**Checked and sound:** project isolation on every route, credential checks on every data service, rules path handling against odd spellings, secrets at rest (hashed or encrypted; none in a dump or the log), request size and nesting limits, the console's cookie, CSRF and CSP, and the headers on stored files.
+
+**Not verified in this review:** the Android, iOS and Flutter helper packages (`aruma-redirect`, the Gradle plugin, `ArumaRedirect` and `aruma_storage`) were not reviewed, and the unit test of the iOS fix has not run. TLS through a real reverse proxy was checked by reading the code. Several servers on one database are not supported and were not reviewed.

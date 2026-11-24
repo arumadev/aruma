@@ -41,6 +41,36 @@ func TestEnvOnly(t *testing.T) {
 	}
 }
 
+// database_timeout bounds a request's wait for Postgres: 15 s by default, settable from the
+// file or the environment, between 1 s and 10 min.
+func TestDatabaseTimeout(t *testing.T) {
+	c, err := Load("", env(required()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.DatabaseTimeout != 15*time.Second {
+		t.Errorf("default database_timeout = %v, want 15s", c.DatabaseTimeout)
+	}
+	m := required()
+	m["ARUMA_DATABASE_TIMEOUT"] = "5s"
+	if c, err := Load("", env(m)); err != nil || c.DatabaseTimeout != 5*time.Second {
+		t.Errorf("ARUMA_DATABASE_TIMEOUT=5s: %v, %v", c, err)
+	}
+	path := filepath.Join(t.TempDir(), "aruma.yaml")
+	if err := os.WriteFile(path, []byte("database_timeout: 30s\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := Load(path, env(required())); err != nil || c.DatabaseTimeout != 30*time.Second {
+		t.Errorf("database_timeout: 30s in the file: %v, %v", c, err)
+	}
+	for _, v := range []string{"0s", "500ms", "11m", "-1s"} {
+		m["ARUMA_DATABASE_TIMEOUT"] = v
+		if _, err := Load("", env(m)); err == nil || !strings.Contains(err.Error(), "database_timeout") {
+			t.Errorf("ARUMA_DATABASE_TIMEOUT=%s: %v, want rejected", v, err)
+		}
+	}
+}
+
 func TestMissingRequired(t *testing.T) {
 	_, err := Load("", env(nil))
 	if err == nil {

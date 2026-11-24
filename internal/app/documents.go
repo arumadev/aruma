@@ -25,6 +25,7 @@ import (
 	"github.com/arumadev/aruma/internal/services/documents/query"
 	docrest "github.com/arumadev/aruma/internal/services/documents/rest"
 	"github.com/arumadev/aruma/internal/services/documents/webchannel"
+	appstore "github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/tenancy/core"
 )
 
@@ -152,6 +153,7 @@ func (d *Documents) RuleDocuments() rules.Documents { return docapi.Lookups(d.st
 // mount puts the surfaces on the entry point.
 func (d *Documents) mount(h *server.Handlers) {
 	h.Documents, h.DocumentsREST, h.DocumentsOwns = d.GRPC, d.REST, docrest.Owns
+	h.DocumentsServing = d.serving
 }
 
 // Boot takes the single-instance lock, trying for up to 30 seconds (ADR-024 §7), opens the
@@ -204,7 +206,9 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	d.store.set(store)
 	d.hub.bind(store)
 	var jctx context.Context
-	jctx, d.stopJobs = context.WithCancel(ctx)
+	// Retention, index builds and TTL are background work whose statements may outlast
+	// database_timeout on a large database (store.Unbounded).
+	jctx, d.stopJobs = context.WithCancel(appstore.Unbounded(ctx))
 	d.jobsDone = make(chan struct{})
 	var jobs sync.WaitGroup
 	jobs.Go(func() { store.RunRetention(jctx, documents.RetentionOptions{Log: d.log}) })
@@ -212,7 +216,7 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 	// The usage's flushes outlive ctx: requests still draining after it ends count, and Close,
 	// once the server has drained them, runs the last flush.
 	var uctx context.Context
-	uctx, d.stopUsage = context.WithCancel(context.WithoutCancel(ctx))
+	uctx, d.stopUsage = context.WithCancel(appstore.Unbounded(context.WithoutCancel(ctx)))
 	d.usageDone = make(chan struct{})
 	go func() {
 		defer close(d.usageDone)
@@ -235,6 +239,15 @@ func (d *Documents) Boot(ctx context.Context, o documents.InstanceOptions) error
 // Close stops the retention job and the transactions' sweep, runs the usage's last flush, closes
 // the Listen hub, and releases the lock. It runs once the server has drained its requests, so the
 // last flush has their counts.
+// serving reports whether this process holds the Document Database's single-instance lock, for
+// /readyz. Before Boot there is no lock to hold: a caller that serves the handler without Boot
+// (the tests) serves from the start.
+func (d *Documents) serving() bool {
+	d.instanceMu.Lock()
+	defer d.instanceMu.Unlock()
+	return d.instance == nil || d.instance.Held()
+}
+
 func (d *Documents) Close() {
 	if d.stopJobs != nil {
 		d.stopJobs()

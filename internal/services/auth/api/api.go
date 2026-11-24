@@ -42,14 +42,15 @@ type API struct {
 	backoff     *ratelimit.Backoff // password guesses, per project and email
 }
 
-// New returns the Auth API. auth authenticates the Admin API's callers.
-func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger) *API {
+// New returns the Auth API with the given limits (ClientLimits by default). auth
+// authenticates the Admin API's callers.
+func New(svc *core.Service, auth *authn.Authenticator, logger *slog.Logger, l Limits) *API {
 	return &API{
 		svc: svc, auth: auth, log: logger,
-		ipLimit:     ratelimit.NewLimiter(ClientLimits.RequestsPerMinute, ClientLimits.RequestBurst),
-		signupLimit: ratelimit.NewLimiter(ClientLimits.SignUpsPerMinute, ClientLimits.SignUpBurst),
+		ipLimit:     ratelimit.NewLimiter(l.RequestsPerMinute, l.RequestBurst),
+		signupLimit: ratelimit.NewLimiter(l.SignUpsPerMinute, l.SignUpBurst),
 		mailLimit:   ratelimit.NewHourlyLimiter(60, 20),
-		backoff:     ratelimit.NewBackoff(ClientLimits.PasswordFailures, ClientLimits.FailureWindow, ClientLimits.BackoffBase, ClientLimits.BackoffMax),
+		backoff:     ratelimit.NewBackoff(l.PasswordFailures, l.FailureWindow, l.BackoffBase, l.BackoffMax),
 	}
 }
 
@@ -258,6 +259,28 @@ type errorItem struct {
 	Reason  string `json:"reason"`
 }
 
+// clientCallKey marks a request as a client call (API.client): an SDK's, not the Admin API's.
+type clientCallKey struct{}
+
+// writeOutage answers a client call the server cannot serve because its database is
+// unreachable (UNAVAILABLE): 503, with a body that is not JSON, as an HTTP front answers for a
+// backend that is down. The SDKs take that for a network failure, which is what it is to them:
+// the web SDK reports auth/network-request-failed, keeps the signed-in user it persisted and
+// retries its token refresh, whereas an Identity Toolkit error in JSON, such as Google's own
+// {"error":{"code":503,"status":"UNAVAILABLE"}}, becomes an error code of its message, and on
+// any code but a network one the SDK signs the user out when the app starts and stops
+// refreshing the token. The Android and iOS SDKs sign a user out only on the errors that say
+// the user or the token is gone, so this leaves them as they were. The Admin API keeps
+// google.rpc.Status, which the Admin SDKs retry on 503.
+func writeOutage(w http.ResponseWriter) {
+	h := w.Header()
+	h.Set("Content-Type", "text/plain; charset=utf-8")
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Retry-After", "5")
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_, _ = io.WriteString(w, apierr.UnavailableMessage+"\n")
+}
+
 type errorBody struct {
 	Error struct {
 		Code    int         `json:"code"`
@@ -280,6 +303,10 @@ type errorInfo struct {
 func (a *API) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	var e *core.Error
 	if !errors.As(err, &e) {
+		if r.Context().Value(clientCallKey{}) != nil && apierr.From(err).Code == apierr.Unavailable {
+			writeOutage(w)
+			return
+		}
 		httpx.WriteError(w, r, a.log, err)
 		return
 	}

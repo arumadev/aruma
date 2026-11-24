@@ -12,7 +12,8 @@ aruma config check
 
 | Variable | Required | Default | Meaning |
 |---|---|---|---|
-| `ARUMA_DATABASE_URL` | yes | | PostgreSQL connection URL |
+| `ARUMA_DATABASE_URL` | yes | | PostgreSQL connection URL. `pool_max_conns` in it sizes the connection pool; without it the pool holds at most max(16, 4 × CPUs) connections, up to 64, opened on demand. The server logs the size at startup and warns when Postgres's `max_connections` is too low for it, see the [operator guide](../guides/operations.md#6-capacity-descriptors-and-the-database-pool) |
+| `ARUMA_DATABASE_TIMEOUT` | | `15s` | How long a request waits for Postgres, 1s to 10m: for a connection from the pool, then for each statement's answer. Past it the request answers 503 `UNAVAILABLE`, see [Database timeout](#database-timeout) |
 | `ARUMA_PUBLIC_URL` | yes | | The address your SDKs reach, for example `https://aruma.example.com` |
 | `ARUMA_MASTER_KEY` | yes | | 32 random bytes in base64 (`openssl rand -base64 32`). Every other key is derived from it |
 | `ARUMA_LISTEN` | | `:8080` | The single public entry point |
@@ -34,6 +35,59 @@ aruma config check
 | `ARUMA_DOCUMENTS_DEV_OWNER_TOKEN` | | `false` | Accept the emulators' `Bearer owner` on the Document Database from this machine, as an admin of every project. For local development only: accepted only when `public_url` and `listen` are loopback addresses, see [Document Database](#document-database) |
 | `ARUMA_PG_BIN` | | | Directory of the PostgreSQL tools when they are not on `PATH`. Used by `make dev` |
 
+## Realtime Database instance
+
+The Realtime Database keeps its listeners in memory, so it runs on one Aruma process per Postgres database. At startup the process takes a session advisory lock (`rtdb.instance`) on a dedicated connection, waiting up to 30 seconds so that a stop-then-start deploy takes over; it waits for the Document Database's lock at the same time, and opens its listener after both. A second process on the same database serves everything else, logs `rtdb: another Aruma instance serves rtdb on this Postgres database`, answers the Realtime Database (and the Document Database, whose lock the first process holds too) with `UNAVAILABLE` and `/readyz` with 503 until the locks are free; it takes them within seconds of the first process stopping. Aruma 0.4 does not take this lock: when you upgrade from 0.4, stop the old process before you start the new one, or both serve the Realtime Database and listeners on one miss the writes made on the other. If the process loses its Postgres session (a restart or failover), it closes its Realtime Database connections and takes the lock again, trying at least every 5 seconds, so it serves again within about 5 seconds of Postgres' return; clients reconnect. In Kubernetes use `strategy: Recreate`, or a rolling update leaves the new pod unready until the old one stops. The connection must reach Postgres itself: a pooler in transaction mode does not keep the lock.
+
+## Realtime Database limits
+
+The Realtime Database's capacity limits, under `rtdb.limits` in the file, checked at startup. Byte limits are at least 1 MiB (`string_bytes` and `unauthenticated_message_bytes` at least 1 KiB, and neither above `message_bytes`), connection limits at least 1, `read_rows` at least 1,000. The limits the SDKs enforce themselves (a path at most 32 keys deep and 768 bytes long) are fixed.
+
+| Key | Variable | Default | Meaning |
+|---|---|---|---|
+| `message_bytes` | `ARUMA_RTDB_MESSAGE_BYTES` | `16777216` (16 MiB) | One WebSocket message once reassembled from its frames, and so one write from an SDK. A larger message is dropped with the error frame `Error on incoming message`; the connection stays |
+| `unauthenticated_message_bytes` | `ARUMA_RTDB_UNAUTHENTICATED_MESSAGE_BYTES` | `1048576` (1 MiB) | The same, on a connection that has not signed in (and is not under `dev_open_rules`), so anonymous sockets cannot make the server buffer large messages |
+| `inflight_bytes` | `ARUMA_RTDB_INFLIGHT_BYTES` | `536870912` (512 MiB) | Partly received messages, all connections together. Past it, a new multi-frame message is dropped as above |
+| `rest_write_bytes` | `ARUMA_RTDB_REST_WRITE_BYTES` | `16777216` (16 MiB) | One REST write's body (Firebase allows 256 MB). Larger: 400 |
+| `string_bytes` | `ARUMA_RTDB_STRING_BYTES` | `10485760` (10 MiB) | One string value, as in Firebase. Larger: `too_big` (400 over REST) |
+| `write_bytes_per_minute` | `ARUMA_RTDB_WRITE_BYTES_PER_MINUTE` | `67108864` (64 MiB) | Bytes written to one database per minute, over a sliding window. Past it a write is refused with `unavailable` "Write rate limit exceeded; retry later." (429 over REST) |
+| `connections_per_project` | `ARUMA_RTDB_CONNECTIONS_PER_PROJECT` | `10000` | Open connections (WebSockets and long polls) to one project's databases. A connection counts once it signs in or does its first operation the rules permit, so anonymous sockets take no slot. Past it, a sign-in or first operation is refused with `unavailable` "Too many connections to this project's database." REST requests do not count, as Firebase counts only its simultaneous connections: a database whose listeners fill the limit can still be read and written over REST, and its listeners get what is written |
+| `connections_per_ip` | `ARUMA_RTDB_CONNECTIONS_PER_IP` | `500` | Open connections (WebSockets and long polls) from one client address, resolved through `trusted_proxies`, counted from the handshake. Past it, the handshake is refused with 429 "Too many connections from this address." Behind a proxy that is not in `trusted_proxies`, every client shares the proxy's address |
+| `outbox_bytes` | `ARUMA_RTDB_OUTBOX_BYTES` | `67108864` (64 MiB) | Data waiting to be sent on one connection. A client that reads more slowly is disconnected (close 1008 "client too slow") and resynchronises when it reconnects. A reply larger than the whole outbox is answered `too_big` instead |
+| `read_rows` | `ARUMA_RTDB_READ_ROWS` | `1000000` | Stored rows one read may load: a get, the first data of a listen, the value a conditional write compares. A larger read is refused with `too_big` (400 over REST) before it is loaded |
+
+## Server timeouts
+
+The public listener's HTTP timeouts, under `server` in the file. They bound ordinary requests. Long-lived connections lift or renew their own deadlines once established, so these values never cut a healthy one: Realtime Database WebSockets, Document Database gRPC and WebChannel streams (after their first message, see `stream_first_message`), and Storage uploads and downloads, which must keep moving at `min_bytes_per_second`. A Realtime Database long poll is held 20 seconds, inside the write timeout. The private metrics listener keeps fixed timeouts.
+
+| Key | Variable | Default | Range | Meaning |
+|---|---|---|---|---|
+| `read_header_timeout` | `ARUMA_SERVER_READ_HEADER_TIMEOUT` | `10s` | 1s to 1h, at most `read_timeout` | Wait for a request's headers |
+| `read_timeout` | `ARUMA_SERVER_READ_TIMEOUT` | `60s` | 10s to 1h | Reading a whole request, body included |
+| `write_timeout` | `ARUMA_SERVER_WRITE_TIMEOUT` | `60s` | 30s to 1h | Writing a response, counted from the end of the request's headers |
+| `idle_timeout` | `ARUMA_SERVER_IDLE_TIMEOUT` | `120s` | 5s to 1h | A keep-alive connection with no request is closed |
+
+## Database timeout
+
+`database_timeout` (`ARUMA_DATABASE_TIMEOUT`, default `15s`, 1s to 10m) bounds every call the server makes on its connection pool: the wait for a free connection (and the opening of a new one, unless `connect_timeout` in `database_url` says otherwise), then each statement until its result is read. A Postgres that is frozen rather than down (a paused container, a stalled disk, a network partition that keeps TCP open) answers nothing and closes nothing, so without the bound every request would wait for as long as the freeze lasts. Past it the call fails, its connection is closed, and the request answers what a stopped Postgres gets: 503 `UNAVAILABLE` on Auth, the Document Database (REST and gRPC), the Realtime Database and Storage, which the SDKs retry. The connections that timed out are replaced once Postgres answers again, so the server serves again at once, without a restart. The server also sets `client_connection_check_interval` to 5 seconds on its connections, so that Postgres stops a statement whose caller gave up instead of running it to its end.
+
+The default sits above the longest statement a request runs on a live server (a Document Database commit bounds its statements at 10 seconds and its lock waits at 5) and well below the 30 seconds after which the SDKs give up on a request themselves. Raise it only if requests fail with 503 while Postgres is up but slow to answer. What runs longer is not bounded by it: Realtime Database WebSockets and Document Database Listen and Write streams last as long as the client stays (each statement they run is bounded), uploads and downloads move bytes on the disk, not through Postgres, and the single-instance locks hold their own connections with their own deadlines. Background work is exempt too, because some of its single statements grow with a project and would otherwise be cancelled at every pass: the purge of a deleted project once its 30 days have passed (a project's Realtime Database rows and Storage objects go in one statement each), retention and housekeeping, Storage's garbage collection and boot-time reconciliation, and the Document Database's index builds, TTL and usage. Its wait for a free connection stays bounded, and while Postgres is frozen such a statement waits for it. `aruma migrate` and `aruma backup` do not use the setting: their statements take as long as they need.
+
+Requests are always bounded, so a single request that makes Postgres work past `database_timeout` fails with 503 even though Postgres is healthy. The largest single statements a request can run are a Realtime Database write that replaces or deletes a large node (one statement deletes every row below it) and the Document Database's commits (each statement bounded at 10 seconds by the commit itself). Measured on a 4-CPU VM with a local SSD: deleting or overwriting a Realtime Database node of 1 million leaves took 0.8 seconds, 2 million 1.4 seconds and 5 million 4.2 seconds, so about 15 seconds is reached near 18 million leaves under one node, far beyond what the default `rtdb.limits.read_rows` lets a client read back. Slower disks or a loaded Postgres lower that figure; raise `database_timeout` if your largest nodes approach it.
+
+## Auth rate limits
+
+Auth's limits per client address (resolved through `trusted_proxies`), the same for every project, under `auth.limits` in the file. Each is a token bucket: it holds up to its burst and refills at its rate. A call over the limit answers `TOO_MANY_ATTEMPTS_TRY_LATER`. Every value is a count from 1 to 1,000,000, checked at startup. The console shows the values in force on the Auth settings page. The growing delay after wrong passwords (10 failures per project and email in 15 minutes, then 30 seconds doubling up to 15 minutes) and the email sending limit are fixed.
+
+| Key | Variable | Default | Meaning |
+|---|---|---|---|
+| `requests_per_minute` | `ARUMA_AUTH_REQUESTS_PER_MINUTE` | `300` | Refill rate of the bucket every client call takes from |
+| `request_burst` | `ARUMA_AUTH_REQUEST_BURST` | `100` | Size of that bucket |
+| `sign_ups_per_minute` | `ARUMA_AUTH_SIGN_UPS_PER_MINUTE` | `2` | Refill rate of the bucket account creation takes from (about Firebase's 100 accounts per hour per address) |
+| `sign_up_burst` | `ARUMA_AUTH_SIGN_UP_BURST` | `100` | Size of that bucket |
+
+Behind a reverse proxy, list it in `trusted_proxies`, or every client shares the proxy's address and one budget.
+
 ## Storage
 
 Storage is off by default. Turn it on with `storage.enabled: true` and give it `storage.data_dir`; the server refuses to start without an absolute `data_dir`. The bucket of each project is `<project_id>.<project_domain>`, and each project starts with locked rules (`allow read, write: if false;`) until you deploy its own.
@@ -41,7 +95,7 @@ Storage is off by default. Turn it on with `storage.enabled: true` and give it `
 > **`data_dir` warning.** The directory holds the bytes, and the database only what points to them, so the two belong together:
 > - Use a local file system. NFS and other shared file systems are not supported: one server owns the directory under an exclusive lock.
 > - Mount the disk before Aruma starts (systemd `RequiresMountsFor=<data_dir>`). Aruma refuses to start on an empty directory when its database expects files there, so an unmounted disk stops the server instead of losing uploads.
-> - The directory is bound to one database. `aruma backup` copies only the database: back up the directory with it, and restore both together.
+> - The directory is bound to one database. Back up both with one command, `aruma backup --out aruma.dump --storage-out aruma-storage.tar.gz`, while the server runs, and restore both together (the [operations guide](../guides/operations.md#docker) shows how). A copy of the directory made some other way while the server runs can miss files the dump names: files of overwritten and deleted objects are deleted `gc_grace` later.
 > - Replace a running server by stopping it first. In Kubernetes use `strategy: Recreate`; a rolling update waits on the lock.
 > - Off loopback, serve Storage over https. Aruma logs a warning at startup when it runs on plain http.
 
@@ -99,7 +153,7 @@ The limits, under `documents.limits` in the file. Each must be positive.
 | Key | Variable | Type | Default | Meaning |
 |---|---|---|---|---|
 | `message_bytes` | `ARUMA_DOCUMENTS_MESSAGE_BYTES` | bytes | `17825792` (17 MiB) | One gRPC message, and one REST body: a 16 MiB document from a mobile client and its overhead. At least 1 MiB |
-| `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's 60-second timeouts lifted for it |
+| `stream_first_message` | `ARUMA_DOCUMENTS_STREAM_FIRST_MESSAGE` | duration | `10s` | How long a stream may take to deliver its first message and credential; only then are the server's read and write timeouts (`server.read_timeout`, `server.write_timeout`) lifted for it |
 | `stream_idle` | `ARUMA_DOCUMENTS_STREAM_IDLE` | duration | `5m` | How long a listen stream may go without a target, or a write stream without a request, before it ends with `UNAVAILABLE`; the client reopens it when it needs it |
 | `stream_write_stall` | `ARUMA_DOCUMENTS_STREAM_WRITE_STALL` | duration | `30s` | How long a streamed answer (a batch get, a query) may wait on a client that stopped reading before it is cut |
 | `server_stream_max` | `ARUMA_DOCUMENTS_SERVER_STREAM_MAX` | duration | `5m` | The longest a streamed answer may last when the client set no deadline; it then ends with `DEADLINE_EXCEEDED` |
@@ -163,6 +217,32 @@ The Firestore and Storage rules engine, under `rules.limits` in the file, each w
 | `regex_bytes` | `4194304` | The estimated programs of one ruleset's literal patterns together. A file past it fails to compile ("Regular expressions are too complex to compile safely"), where Firebase may accept it |
 | `compiled_rulesets_bytes` | `134217728` | Compiled rulesets kept in memory, by estimated weight. One ruleset may weigh a quarter of it, or it fails to compile ("The rules are too large to keep compiled"). It must be at least four times `source_bytes` and `regex_cache_bytes` and five times `regex_bytes` together, so that any file within those limits compiles |
 
+## Retention
+
+Housekeeping runs at startup and then every hour. It deletes rows that nothing reads any more, in batches of 1,000 rows and at most 50 batches per table per pass, so a large backlog (after an upgrade, say) is worked off over the following hours without long locks. Each pass logs one `housekeeping` line with the rows it deleted per table, and the metric `aruma_housekeeping_purged_rows_total{table}` counts them.
+
+Three tables are kept for a configurable number of days, under `retention` in the file. `0` keeps a table forever; a negative value is refused at startup.
+
+| Key | Variable | Default | Table |
+|---|---|---|---|
+| `auth_audit_days` | `ARUMA_RETENTION_AUTH_AUDIT_DAYS` | `90` | `auth.audit`: a row per sign-in attempt (successful or denied), per email action code and per session cookie issued. Nothing in the server reads it; it is there for your own queries |
+| `control_audit_days` | `ARUMA_RETENTION_CONTROL_AUDIT_DAYS` | `90` | `control.audit_log`: administrative actions from the console and the Management API, shown on the audit log pages. At least `7`: the database itself refuses to delete a row younger than seven days, or to change any row |
+| `events_days` | `ARUMA_RETENTION_EVENTS_DAYS` | `30` | `events.changes`: the shared change log, a row per account created. Nothing in the server reads it yet |
+
+Credentials and temporary rows go a fixed time after they stop working, with no setting:
+
+| Rows | Deleted |
+|---|---|
+| Console sessions (`control.sessions`) | 1 day after their absolute expiry (`session.absolute_timeout`); revoked or idle sessions stop working at once |
+| CLI tokens (`control.access_tokens`) | 1 day after revocation, 30 days after expiry (the console lists expired tokens until then) |
+| Service account access tokens | 1 day after expiry |
+| App users' refresh tokens | 30 days after the user is deleted or the session revoked, so that a client that comes back hears `USER_NOT_FOUND` or `TOKEN_EXPIRED` and signs out. A live refresh token is never deleted: refresh tokens do not expire, as in Firebase |
+| Email action codes, Google and Apple sign-in sessions | 1 day after use or expiry |
+| Auth outbox messages | 30 days after delivery or the last failed attempt |
+| Storage upload sessions | at expiry (`storage.limits.*_ttl`) |
+| Document Database versions, change log, operations and usage | by the Document Database's own job, every minute: versions past the database's `versionRetentionPeriod`, change log rows after an hour, finished operations after 30 days, usage hours after 31 days |
+| A deleted project's data, Auth included | when its 30 days of deletion end |
+
 ## Minimal production example
 
 ```yaml
@@ -181,7 +261,10 @@ aruma migrate up|status                       # the server never runs DDL and re
 aruma serve
 aruma accounts create --email you@example.com # password from the terminal without echo, or from stdin
 aruma accounts disable|enable|reset-password --email you@example.com
-aruma backup --out aruma.dump                 # pg_dump, custom format
-aruma restore --in aruma.dump --yes           # with the server stopped, in a single transaction
+aruma backup --out aruma.dump [--storage-out aruma-storage.tar.gz]
+                                              # pg_dump, custom format; with Storage, the files the dump names
+aruma restore --in aruma.dump --yes           # with the server stopped (it refuses otherwise), in a single transaction
 aruma config check
 ```
+
+`migrate`, `backup` and `restore` need only `database_url` (and `backup --storage-out` the Storage `data_dir`), from the file given with `--config` or from the environment, so they run before the rest of the configuration is complete. `pool_max_conns` and pgx's other pool settings in the URL are left to the server.

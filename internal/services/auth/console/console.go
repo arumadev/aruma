@@ -11,6 +11,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/consolemount"
+	"github.com/arumadev/aruma/internal/services/auth/api"
 	"github.com/arumadev/aruma/internal/services/auth/core"
 )
 
@@ -18,9 +19,9 @@ import (
 var anyCred = authn.Policy{Session: true, AccessToken: true}
 
 // Routes returns the mount that registers the Auth screens' routes with the console API.
-func Routes(svc *core.Service) func(*consolemount.Mount) {
+func Routes(svc *core.Service, limits api.Limits) func(*consolemount.Mount) {
 	return func(m *consolemount.Mount) {
-		h := &handlers{svc: svc, m: m}
+		h := &handlers{svc: svc, m: m, limits: limits}
 		h.authRoutes()
 		h.authEmailRoutes()
 		h.authProviderRoutes()
@@ -28,8 +29,9 @@ func Routes(svc *core.Service) func(*consolemount.Mount) {
 }
 
 type handlers struct {
-	svc *core.Service
-	m   *consolemount.Mount
+	svc    *core.Service
+	m      *consolemount.Mount
+	limits api.Limits // the Auth API's, shown read-only
 }
 
 // project resolves the {project} of the request for the signed-in owner.

@@ -42,7 +42,8 @@ start() {
   rm -rf "$gen"
   mkdir -p "$gen"
   go build -o "$gen/genconfig" ./test/smoke/genconfig
-  "$gen/genconfig" -out "$gen" -serve -anonymous >"$gen/server.env" 2>"$gen/server.log" &
+  # -db-switch: the outage tests take the server's Postgres away (tests/outage.spec.mjs).
+  "$gen/genconfig" -out "$gen" -serve -anonymous -db-switch 127.0.0.1:0 >"$gen/server.env" 2>"$gen/server.log" &
   server=$!
   for _ in $(seq 1 240); do
     grep -q ARUMA_CLI_TOKEN "$gen/server.env" 2>/dev/null && break

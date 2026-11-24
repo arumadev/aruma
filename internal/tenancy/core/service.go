@@ -109,7 +109,9 @@ func internal(err error) error {
 	if errors.As(err, &e) {
 		return e
 	}
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	// A database that could not be reached is UNAVAILABLE (Wrap turns INTERNAL into it), even
+	// when the driver's error carries a deadline, such as a connection that timed out opening.
+	if !apierr.IsUnavailable(err) && (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) {
 		return apierr.Wrap(err, apierr.Canceled, "The request was cancelled.")
 	}
 	return apierr.Wrap(err, apierr.Internal, "Internal error encountered.")

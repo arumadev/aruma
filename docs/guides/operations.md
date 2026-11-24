@@ -17,20 +17,47 @@ The image runs as user `aruma` (uid 10001), applies pending migrations before `s
 
 The port is bound to `127.0.0.1`. To serve other machines, run a TLS proxy (Caddy, nginx) in front, set `ARUMA_PUBLIC_URL` to its `https://` address, and list the proxy in `ARUMA_TRUSTED_PROXIES`. Firestore clients on iOS and Android need the proxy to speak HTTP/2 to Aruma (h2c), as the [Firestore migration guide](firestore-migration.md) describes. The Realtime Database's production-style URLs need the setup in [Realtime Database](#realtime-database) below.
 
-**Back up** (the database and the Storage volume belong together, take both):
+The `compose.yaml` asks for 65536 open files (`ulimits`). A Docker whose own limit is lower (rootless Docker, some containers and virtual servers) refuses to start the container with `error setting rlimit type 7: operation not permitted`; lower `nofile` under `ulimits:` to that limit.
+
+**Back up** while the server runs. One command writes both halves, which belong together: the dump of the database, and an archive of the Storage files that dump names. Copy both out of the container, then delete them there:
 
 ```bash
-docker compose exec aruma aruma backup --out /tmp/aruma.dump
+docker compose exec aruma aruma backup --out /tmp/aruma.dump --storage-out /tmp/aruma-storage.tar.gz
 docker compose cp aruma:/tmp/aruma.dump ./aruma-$(date +%F).dump
-docker run --rm -v aruma_storage:/data -v "$PWD":/out alpine tar -czf /out/aruma-storage-$(date +%F).tar.gz -C /data .
+docker compose cp aruma:/tmp/aruma-storage.tar.gz ./aruma-storage-$(date +%F).tar.gz
+docker compose exec aruma rm /tmp/aruma.dump /tmp/aruma-storage.tar.gz
 ```
 
-**Upgrade:** back up, then check out the new tag and rebuild. Migrations run when the server starts.
+- Keep `.env` too, but apart from the backup: the backup is useless without `ARUMA_MASTER_KEY`, and the two together give access to everything.
+- The archive is as large as the stored objects, and is written inside the container first. For a large Storage, add a volume for backups to the `aruma` service and write there.
+- Do not copy the `storage` volume yourself (`tar`, a disk snapshot) while the server runs: Aruma deletes the file of an overwritten or deleted object one minute later (`ARUMA_STORAGE_GC_GRACE`), so a copy that ends after the dump can miss files the dump still names, and the restored objects answer 503. `--storage-out` holds those deletions while it runs and copies exactly the files of the dump's snapshot.
+
+**Restore** with the same `ARUMA_MASTER_KEY` in `.env`, into this installation or a new one (`docker compose up -d` once, so the database and the volumes exist). The server must be stopped: `aruma restore` refuses while a server is connected to the database. The backup files are readable by their owner only, so the restore runs as root:
 
 ```bash
-git fetch --tags && git checkout v0.4.1      # the version you are moving to
+docker compose stop aruma
+docker compose run --rm --no-deps --user root -v "$PWD":/backup aruma restore --in /backup/aruma-2026-11-23.dump --yes
+docker run --rm -v aruma_storage:/data -v "$PWD":/backup alpine \
+  sh -c 'find /data -mindepth 1 -delete && tar -xzf /backup/aruma-storage-2026-11-23.tar.gz -C /data'
+docker compose start aruma
+```
+
+What the restore brings back is the backup's moment, for everything:
+
+- Users sign in with the passwords they had then. Sessions begun after the backup are gone: their refresh tokens are refused and those users sign in again. Anything revoked, disabled or changed after the backup (a password, a disabled user, a revoked session, a deleted service account key) is as it was before, so repeat it.
+- ID tokens and service account keys issued before the backup keep working; the signing keys are in the database.
+- Document Database listeners resume: a client whose cache holds documents the backup does not is told so (an existence filter mismatch) and reads the query again.
+- With another `ARUMA_MASTER_KEY` the server starts but cannot open what it encrypted: every sign-in, refresh and console token fails, and the log says `cannot open envelope`. Stop it and start it with the right key: the start under the wrong one changed nothing.
+- A database restored next to an empty or foreign `storage` volume does not start, and its log says which directory it expects.
+
+**Upgrade:** back up, then check out the new tag and rebuild. Migrations run when the server starts. `docker compose up -d --build` stops the old container before it starts the new one, which is what an upgrade from 0.4 needs (see [Realtime Database instance](../reference/configuration.md#realtime-database-instance)).
+
+```bash
+git fetch --tags && git checkout v0.5.0      # the version you are moving to
 docker compose up -d --build
 ```
+
+**Retention.** The server deletes, every hour, the rows nothing reads any more: expired console sessions and CLI tokens, app users' sessions 30 days after a sign-out by revocation or account deletion, a deleted project's data when its 30 days end, and the sign-in audit, administrative audit log and change log after 90, 90 and 30 days. The `retention` settings change the three periods, and `0` keeps a table forever; [configuration](../reference/configuration.md#retention) lists every table. Each pass logs a `housekeeping` line and counts the rows in `aruma_housekeeping_purged_rows_total`. A large backlog, the first pass after an upgrade for example, is deleted 50,000 rows per table per hour. Export the audit tables first if you must keep them longer.
 
 ## Prebuilt binaries
 
@@ -39,11 +66,24 @@ Each [release](https://github.com/arumadev/aruma/releases) has one archive per s
 **Check what you downloaded.** `checksums.txt` lists the SHA-256 of every archive, and each archive has a build attestation that proves it was built by this repository's release workflow:
 
 ```bash
-grep aruma_0.4.0_linux_amd64 checksums.txt | sha256sum --check     # macOS: shasum -a 256 --check
-gh attestation verify aruma_0.4.0_linux_amd64.tar.gz --repo arumadev/aruma
+grep aruma_0.5.0_linux_amd64 checksums.txt | sha256sum --check     # macOS: shasum -a 256 --check
+gh attestation verify aruma_0.5.0_linux_amd64.tar.gz --repo arumadev/aruma
 ```
 
 **Not signed by Apple or Microsoft.** macOS blocks a binary downloaded with a browser until you allow it: `xattr -d com.apple.quarantine aruma arumactl`, or System Settings, Privacy & Security, Open Anyway. Windows SmartScreen may show "Windows protected your PC"; choose More info, then Run anyway. Files fetched with `curl` are not marked on macOS. Docker avoids both.
+
+**Back up, restore and upgrade** as with Docker, with the `aruma` binary on the server and the PostgreSQL 18 client tools (`pg_dump` and `pg_restore` 18) on `PATH` or in `ARUMA_PG_BIN`. The commands read `database_url` and `storage.data_dir` from the configuration file (`--config`) or the environment:
+
+```bash
+aruma backup --out aruma.dump --storage-out aruma-storage.tar.gz   # the server may run
+# Restore: stop the server, restore the database, put the files in an empty data_dir, start.
+aruma restore --in aruma.dump --yes
+tar -xzf aruma-storage.tar.gz -C /var/lib/aruma/storage            # storage.data_dir, empty
+# Upgrade: back up, stop the old binary, then with the new one:
+aruma migrate up && aruma serve
+```
+
+Extract the archive as the user the server runs as, or give that user the files afterwards (`chown -R`). A database URL with `pool_max_conns` (section 6 below) works for both commands.
 
 **Windows.** The server, Auth, the Realtime Database and the Document Database run. Cloud Storage does not start on Windows, because it needs the file locks and disk calls Aruma implements for Linux and macOS. Use Docker or WSL for Storage.
 
@@ -181,7 +221,8 @@ and must pass WebSocket upgrades (`Upgrade` and `Connection` headers).
   ```
 - **Load balancers** (AWS ALB, Google Cloud, HAProxy `timeout tunnel`): raise the idle timeout to
   120 seconds or more.
-- Aruma's own 60-second request timeout and 1 MB body cap do not apply to database connections.
+- Aruma's own request timeouts (`server.read_timeout` and `server.write_timeout`, 60 seconds by
+  default) and 1 MB body cap do not apply to database connections.
 
 ### 6. Capacity: descriptors and the database pool
 
@@ -193,9 +234,15 @@ Measured on the reference server:
   Docker). On stock macOS `kern.maxfilesperproc` stops one process at about 10,200 connections.
 - **Each busy database holds a Postgres connection** while its writer commits a batch. When more
   databases write at once than the pool has connections, they queue for one: ten busy databases on
-  the default pool (max(4, CPUs)) wrote about 40% less than with `pool_max_conns=32`. Size the pool
-  above the number of databases that write at the same time, in `database_url`:
-  `postgres://…/aruma?pool_max_conns=32`, within Postgres's `max_connections`.
+  pgx's default pool (max(4, CPUs)) wrote about 40% less than with `pool_max_conns=32`. Aruma's
+  default is therefore max(16, 4 × CPUs) connections, at most 64; the server logs it at startup
+  (`database pool`, `max_conns`). Size the pool above the number of databases that write at the
+  same time, in `database_url`: `postgres://…/aruma?pool_max_conns=32`. A value there always wins.
+- **Postgres must accept the pool and two more connections** (the single-instance locks of the
+  Realtime Database and the Document Database), and twice that while a new instance starts beside
+  the old one or `aruma migrate` runs. Postgres's default `max_connections` is 100, less 3 reserved
+  for superusers. The server warns at startup when `max_connections` is too low for its pool; raise
+  it, or put a smaller `pool_max_conns` in `database_url`.
 
 ### 7. Check it
 

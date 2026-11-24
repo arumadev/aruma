@@ -144,7 +144,21 @@ run_android() {
   : "${ANDROID_HOME:=$HOME/Library/Android/sdk}"
   export ANDROID_HOME
   cp "$gen/google-services.json" "$smoke/android/app/"
-  (cd "$smoke/android" && ./gradlew --no-daemon -q :app:assembleDebug :app:testDebugUnitTest)
+  # Maven Central and Google's repository answer 429 to a shared runner now and then, and a cold
+  # Gradle cache fetches everything; Robolectric fetches its Android framework jar itself, inside
+  # the test. Only a run that failed to download is repeated (what it got stays in the cache): a
+  # failure of the build or of a test is final on the first attempt.
+  local attempt log
+  log=$(mktemp)
+  for attempt in 1 2 3; do
+    if (cd "$smoke/android" && ./gradlew --no-daemon -q :app:assembleDebug :app:testDebugUnitTest) 2>&1 | tee "$log"; then
+      return 0
+    fi
+    grep -qE 'Could not (GET|HEAD|resolve|download)|Failed to fetch maven artifact|(status|response) code:? (429|5[0-9][0-9])|Connection (reset|timed out)|Read timed out' "$log" || return 1
+    [[ $attempt -lt 3 ]] || return 1
+    echo "android: gradle could not download its dependencies (attempt $attempt of 3), trying again in $((attempt * 30)) s" >&2
+    sleep $((attempt * 30))
+  done
 }
 
 # simulator picks an available iPhone simulator, or uses ARUMA_IOS_SIMULATOR.

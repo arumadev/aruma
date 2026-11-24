@@ -38,6 +38,14 @@ type Handlers struct {
 	// proxy that issues the database hosts' certificates on demand (ADR-018 §5). Nil while the
 	// Realtime Database is disabled.
 	TLSAsk http.Handler
+	// RTDBServing reports whether this process may serve the Realtime Database, which it may
+	// only while it holds the database's single-instance lock. While it reports false, /readyz
+	// answers 503 so a load balancer keeps traffic to the instance that holds it. Nil counts
+	// as serving.
+	RTDBServing func() bool
+	// DocumentsServing reports the same of the Document Database and its single-instance lock:
+	// a process that the load balancer sends traffic to must serve both. Nil counts as serving.
+	DocumentsServing func() bool
 	// Storage is Cloud Storage's Firebase REST API, under StoragePrefixes, and GCS its GCS JSON
 	// API, under GCSPrefixes (ADR-022 §1). Their bodies may be as large as an object. Nil while
 	// Storage is disabled: the paths then fall through to the rest of the entry point.
@@ -290,6 +298,14 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "database"})
 		return
 	}
+	if f := s.handlers.RTDBServing; f != nil && !f() {
+		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "rtdb-instance"})
+		return
+	}
+	if f := s.handlers.DocumentsServing; f != nil && !f() {
+		httpx.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable", "reason": "documents-instance"})
+		return
+	}
 	// A schema newer than the binary keeps a running server ready: `aruma migrate up` runs
 	// before the new version starts (ADR-009), and the old instances serve until replaced.
 	// Startup refuses such a schema instead (ADR-015).
@@ -311,29 +327,35 @@ func (s *Server) PrivateHandler() http.Handler {
 	return mux
 }
 
-// Run serves until ctx is cancelled, then shuts down gracefully.
-func (s *Server) Run(ctx context.Context) error {
+// publicServer is the public entry point's HTTP server, with the configured timeouts.
+func (s *Server) publicServer() *http.Server {
 	// HTTP/1.1 for every service, and HTTP/2 without TLS (h2c with prior knowledge), which every
 	// gRPC client speaks to the Document Database behind a TLS proxy (ADR-027 §3.3).
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
 	protocols.SetHTTP2(true)
 	protocols.SetUnencryptedHTTP2(true)
-	public := &http.Server{
+	return &http.Server{
 		Addr:      s.cfg.Listen,
 		Handler:   s.Handler(),
 		Protocols: &protocols,
 		// One connection may not open streams without bound before the per-address limits
 		// count them (ADR-027 §3.2).
-		HTTP2:             &http.HTTP2Config{MaxConcurrentStreams: maxConcurrentStreams},
-		ReadHeaderTimeout: 10 * time.Second,
+		HTTP2: &http.HTTP2Config{MaxConcurrentStreams: maxConcurrentStreams},
+		// The timeouts of ordinary requests (config server). Long-lived streams lift or renew
+		// their deadlines themselves once established, so these never cut one.
+		ReadHeaderTimeout: s.cfg.Server.ReadHeaderTimeout,
 		MaxHeaderBytes:    64 << 10,
-		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		ReadTimeout:       s.cfg.Server.ReadTimeout,
+		WriteTimeout:      s.cfg.Server.WriteTimeout,
+		IdleTimeout:       s.cfg.Server.IdleTimeout,
 		ErrorLog:          slog.NewLogLogger(s.log.Handler(), slog.LevelWarn),
 	}
-	servers := []*http.Server{public}
+}
+
+// Run serves until ctx is cancelled, then shuts down gracefully.
+func (s *Server) Run(ctx context.Context) error {
+	servers := []*http.Server{s.publicServer()}
 	if s.cfg.MetricsListen != "" {
 		servers = append(servers, &http.Server{
 			Addr:              s.cfg.MetricsListen,

@@ -120,16 +120,24 @@ enum AuthEndpoints {
   private static func target(of url: URL) -> (host: String, path: String, query: String?)? {
     guard let c = URLComponents(url: url, resolvingAgainstBaseURL: false),
           c.scheme?.lowercased() == "https",
-          let host = c.host?.lowercased(),
+          let rawHost = c.host?.lowercased(),
           c.port == nil || c.port == 443,
           c.user == nil, c.password == nil
     else { return nil }
+    // A fully qualified name (`identitytoolkit.googleapis.com.`) is the same host: the web and
+    // Android libraries strip the dot, and so must this, or such an Auth request would go to
+    // Google with the user's credentials. A Storage request so named stays unmappable: it fails
+    // through `isStorageHost` instead (testUnmappableStorageRequestsFail).
+    let dotted = rawHost.hasSuffix(".")
+    let host = dotted ? String(rawHost.dropLast()) : rawHost
     let path = c.percentEncodedPath
     // Dot segments would let the rewritten path escape the host prefix on the server.
     if path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }) { return nil }
     switch host {
-    case identityToolkitHost, secureTokenHost, storageHost:
+    case identityToolkitHost, secureTokenHost:
       break
+    case storageHost:
+      if dotted { return nil }
     case legacyHost:
       guard path.hasPrefix(legacyPathPrefix) else { return nil }
     default:

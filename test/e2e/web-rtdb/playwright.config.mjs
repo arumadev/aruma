@@ -10,6 +10,9 @@ if (!process.env.ARUMA_URL) {
 const PORT = Number(process.env.ARUMA_E2E_PAGE_PORT ?? 4181);
 
 export default defineConfig({
+  // On GitHub Actions Playwright would otherwise git fetch the pull request's base commit from
+  // github.com for the report's diff: the suite reaches nothing off this machine.
+  captureGitInfo: { commit: false, diff: false },
   testDir: './tests',
   // One test at a time: the offline tests take the whole server down.
   workers: 1,

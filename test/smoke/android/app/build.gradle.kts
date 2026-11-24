@@ -28,6 +28,14 @@ android {
                 // Robolectric's Android framework jars go next to the Gradle caches, not ~/.m2.
                 it.systemProperty("maven.repo.local", gradle.gradleUserHomeDir.resolve("robolectric").absolutePath)
                 it.maxHeapSize = "1g"
+                // The smoke run is quiet (-q): a failed test still prints its exception, so that
+                // the job's log says why it failed.
+                it.testLogging {
+                    quiet {
+                        events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+                        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                    }
+                }
             }
         }
     }

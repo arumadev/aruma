@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -144,6 +145,30 @@ func (c *trackedConn) Close() error {
 		c.l.mu.Unlock()
 	})
 	return c.Conn.Close()
+}
+
+// forward pipes each connection l accepts to upstream, for the switch between the server and
+// Postgres (-db-switch): down then closes the server's side of every pipe, which closes the
+// other, and refuses new connections, as a stopped Postgres does.
+func forward(l *switchListener, upstream string) {
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			return
+		}
+		go func() {
+			defer c.Close()
+			up, err := net.Dial("tcp", upstream)
+			if err != nil {
+				return
+			}
+			defer up.Close()
+			done := make(chan struct{}, 2)
+			go func() { _, _ = io.Copy(up, c); done <- struct{}{} }()
+			go func() { _, _ = io.Copy(c, up); done <- struct{}{} }()
+			<-done
+		}()
+	}
 }
 
 // serveSwitch serves the switch's control on addr, for the tests: POST /down and POST /up.

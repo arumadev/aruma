@@ -169,7 +169,7 @@ Flutter needs no Aruma Dart package for Auth, Realtime Database or Firestore. Th
 
 - **Android:** add `aruma-redirect` and `ArumaURL` in `android/app/build.gradle(.kts)` and `android/app/src/main/AndroidManifest.xml`, with `mavenLocal()` in the repositories of `android/build.gradle(.kts)`. For Storage, add the `dev.aruma.storage` plugin in `android/settings.gradle(.kts)` and `android/app/build.gradle(.kts)`.
 - **iOS:** add `pod 'ArumaRedirect', :path => '<aruma>/sdk/ios/ArumaRedirect'` to `ios/Podfile`, and `ArumaURL` to `ios/Runner/Info.plist`. For Storage, turn on Swift Package Manager (`enable-swift-package-manager`) and put the mirror in `ios/Runner.xcworkspace/xcshareddata/swiftpm/configuration/mirrors.json`.
-- **Web:** use `@aruma/web`, as in [auth-web.md](auth-web.md).
+- **Web:** run `npx aruma-web flutter-web --url <url> --products auth,storage,firestore` once in the project, and again after upgrading `firebase_core` (see [Connecting a web app to Aruma Auth](auth-web.md#flutter-web), [Cloud Storage](storage.md) and [Firestore](firestore.md)). It rewrites the Firebase JS SDK files that FlutterFire would load from Google (`firebase-auth.js`, `firebase-storage.js`, `firebase-firestore.js`) and loads them from `web/index.html`. List the products the app uses; `auth` and `storage` are the default. Leave `auth` out and sign-in sends the user's email and password to Google. `examples/flutter/tool/web.sh` runs it.
 
 Keep the official `firebase_auth` and `firebase_storage` in Dart, with no `useAuthEmulator` and no `useStorageEmulator`.
 
@@ -235,4 +235,4 @@ Use the build-time package on each platform so download links point at Aruma: th
 
 ### Firestore
 
-The official Android and iOS Firestore suites have not run against Aruma yet. Neither the config files nor `aruma-redirect` / `ArumaRedirect` carry the Firestore host, because Firestore uses gRPC and not `URLSession` or `HttpURLConnection`. Set the host in code before first use. See [Using Firestore with Aruma](firestore.md#android-ios-and-flutter) for the snippets, and [compatibility](../reference/compatibility.md#firestore) for the exact status.
+Aruma's Android and iOS end-to-end suites pass with the official Firestore SDKs, on an emulator and in a simulator, in cleartext on loopback. Neither the config files nor `aruma-redirect` / `ArumaRedirect` carry the Firestore host, because Firestore uses gRPC and not `URLSession` or `HttpURLConnection`. Set the host in code before first use. See [Using Firestore with Aruma](firestore.md#android-ios-and-flutter) for the snippets, and [compatibility](../reference/compatibility.md#firestore) for the exact status.

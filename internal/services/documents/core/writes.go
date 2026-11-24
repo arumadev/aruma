@@ -110,6 +110,40 @@ func newPlan(writes []Write) *plan {
 	return p
 }
 
+// errDeleteThenUpdate is a commit that deletes a document and then updates it under a
+// precondition. The emulator's answer; firebase-js-sdk's transactions.test.ts, which also runs
+// against production, expects INVALID_ARGUMENT for it. Production's text is not recorded.
+var errDeleteThenUpdate = &Error{InvalidArgument, "Cannot delete then update an entity in the same request."}
+
+// checkDeleteThenUpdate refuses a commit in which a write updates a document under a
+// precondition (exists: true, or an update_time) after an earlier write of the commit deleted it
+// and no write in between wrote it. An update without a precondition may follow a delete
+// (f2-commit.json, same.delete_update), as may one with exists: false. The emulator judges the
+// request before any precondition: its answer wins over a precondition that fails, on this
+// document or another, before or after (checked on cloud-firestore-emulator v1.22.0).
+func checkDeleteThenUpdate(writes []Write) error {
+	var deleted map[string]bool
+	for _, w := range writes {
+		switch w.Kind {
+		case WriteDelete:
+			if deleted == nil {
+				deleted = map[string]bool{}
+			}
+			deleted[string(nameKey(w.Path))] = true
+		case WriteUpdate:
+			if deleted == nil {
+				continue
+			}
+			k := string(nameKey(w.Path))
+			if deleted[k] && (w.Precondition.Exists != nil && *w.Precondition.Exists || !w.Precondition.UpdateTime.IsZero()) {
+				return errDeleteThenUpdate
+			}
+			delete(deleted, k)
+		}
+	}
+	return nil
+}
+
 // storedKeys returns the documents' name_key values, in lock order.
 func (p *plan) storedKeys() [][]byte {
 	ks := make([][]byte, len(p.docs))

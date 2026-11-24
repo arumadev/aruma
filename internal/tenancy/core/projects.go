@@ -14,6 +14,7 @@ import (
 	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/platform/authn"
 	"github.com/arumadev/aruma/internal/platform/ids"
+	"github.com/arumadev/aruma/internal/platform/retention"
 	"github.com/arumadev/aruma/internal/store"
 	"github.com/arumadev/aruma/internal/tenancy/queries"
 )
@@ -388,19 +389,18 @@ func (s *Service) RestoreProject(ctx context.Context, p *authn.Principal, ref st
 // forever.
 func (s *Service) PurgeExpired(ctx context.Context) (int, error) {
 	// The data services purge their own data of every expired project, at each run: their
-	// purges are idempotent, and the control plane cannot see whether they hold data.
+	// purges are idempotent, and the control plane cannot see whether they hold data. So is the
+	// project's part of the shared change log.
 	failed := map[int64]bool{}
-	if len(s.purgeHooks) > 0 {
-		expired, err := s.q.ListExpiredProjectNumbers(ctx)
-		if err != nil {
-			return 0, internal(err)
-		}
-		for _, n := range expired {
-			if err := s.purgeServices(ctx, n); err != nil {
-				// The project's control rows stay too, so nothing points at orphaned data.
-				s.log.Error("purging an expired project's service data", "project_number", n, "error", err)
-				failed[n] = true
-			}
+	expired, err := s.q.ListExpiredProjectNumbers(ctx)
+	if err != nil {
+		return 0, internal(err)
+	}
+	for _, n := range expired {
+		if err := s.purgeServices(ctx, n); err != nil {
+			// The project's control rows stay too, so nothing points at orphaned data.
+			s.log.Error("purging an expired project's service data", "project_number", n, "error", err)
+			failed[n] = true
 		}
 	}
 	numbers, err := s.q.ListExpiredProjects(ctx)
@@ -453,6 +453,11 @@ func (s *Service) OnProjectPurged(fn func(ctx context.Context, project int64) er
 }
 
 func (s *Service) purgeServices(ctx context.Context, project int64) error {
+	if _, err := retention.Drain(ctx, purgeBatch, func(ctx context.Context, n int) (int64, error) {
+		return s.q.PurgeProjectEvents(ctx, queries.PurgeProjectEventsParams{ProjectNumber: project, Batch: int32(n)})
+	}); err != nil {
+		return err
+	}
 	for _, purge := range s.purgeHooks {
 		if err := purge(ctx, project); err != nil {
 			return err

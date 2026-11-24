@@ -37,6 +37,13 @@ func (t PGTools) path(name string) (string, error) {
 // Backup writes a custom-format dump of the database to out. The file holds every table, so it
 // is created readable by its owner only.
 func Backup(ctx context.Context, tools PGTools, databaseURL, out string) error {
+	return BackupSnapshot(ctx, tools, databaseURL, out, "")
+}
+
+// BackupSnapshot is Backup of the database as a transaction that exported snapshot sees
+// (pg_export_snapshot), so what is read next to the dump in that transaction agrees with it.
+// An empty snapshot is a dump of its own.
+func BackupSnapshot(ctx context.Context, tools PGTools, databaseURL, out, snapshot string) error {
 	bin, err := tools.path("pg_dump")
 	if err != nil {
 		return err
@@ -54,14 +61,23 @@ func Backup(ctx context.Context, tools PGTools, databaseURL, out string) error {
 		return err
 	}
 	f.Close()
-	cmd := exec.CommandContext(ctx, bin, "--format=custom", "--no-owner", "--no-privileges", "--file="+out)
-	return run(cmd, env)
+	args := []string{"--format=custom", "--no-owner", "--no-privileges", "--file=" + out}
+	if snapshot != "" {
+		args = append(args, "--snapshot="+snapshot)
+	}
+	return run(exec.CommandContext(ctx, bin, args...), env)
 }
 
 // Restore replaces the database's contents with a dump made by Backup. Objects in the dump are
-// dropped and recreated, all in one transaction, so a failed restore changes nothing.
+// dropped and recreated, all in one transaction, so a failed restore changes nothing. It
+// refuses while an Aruma server is connected to the database: a server keeps state of the
+// database in memory (the Realtime Database's tree and listeners, the Document Database's
+// listeners, Storage's binding to its directory) that a restore under it would contradict.
 func Restore(ctx context.Context, tools PGTools, databaseURL, in string) error {
 	if _, err := os.Stat(in); err != nil {
+		return err
+	}
+	if err := refuseWhileServed(ctx, databaseURL); err != nil {
 		return err
 	}
 	bin, err := tools.path("pg_restore")
@@ -95,6 +111,16 @@ var pgParams = map[string]string{
 	"application_name": "PGAPPNAME",
 }
 
+// clientParams are parameters of the URL that set up pgx's pool or its client side, not the
+// connection (the operations guide suggests pool_max_conns): pg_dump and pg_restore open one
+// connection and have nothing to apply them to.
+var clientParams = map[string]bool{
+	"pool_max_conns": true, "pool_min_conns": true, "pool_min_idle_conns": true,
+	"pool_max_conn_lifetime": true, "pool_max_conn_lifetime_jitter": true, "pool_max_conn_idle_time": true,
+	"pool_health_check_period": true, "statement_cache_capacity": true, "description_cache_capacity": true,
+	"default_query_exec_mode": true,
+}
+
 // pgEnv passes the connection through PG* variables rather than arguments, so the password
 // never shows in the process list.
 func pgEnv(databaseURL string) (connEnv, error) {
@@ -116,6 +142,9 @@ func pgEnv(databaseURL string) (connEnv, error) {
 		vars = append(vars, "PGPASSWORD="+cfg.Password)
 	}
 	for k, v := range u.Query() {
+		if clientParams[k] {
+			continue
+		}
 		env, ok := pgParams[k]
 		if !ok {
 			return connEnv{}, fmt.Errorf("database url: parameter %q is not supported by backup and restore", k)
@@ -126,6 +155,27 @@ func pgEnv(databaseURL string) (connEnv, error) {
 		vars = append(vars, "PGSSLMODE=prefer") // libpq's and pgx's shared default
 	}
 	return connEnv{vars: vars, database: cfg.Database}, nil
+}
+
+// refuseWhileServed fails when another session of an Aruma process (Open's application_name)
+// is connected to the database.
+func refuseWhileServed(ctx context.Context, databaseURL string) error {
+	pool, err := Open(ctx, databaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	var n int
+	var addr string
+	err = pool.QueryRow(ctx, `SELECT count(*), COALESCE(min(host(client_addr)), 'a local socket') FROM pg_stat_activity
+		WHERE datname = current_database() AND application_name = 'aruma' AND pid <> pg_backend_pid()`).Scan(&n, &addr)
+	if err != nil {
+		return fmt.Errorf("check for a running server: %w", err)
+	}
+	if n > 0 {
+		return fmt.Errorf("an Aruma server is connected to this database (%d connections, from %s): stop it before the restore, and start it after", n, addr)
+	}
+	return nil
 }
 
 func run(cmd *exec.Cmd, env connEnv) error {

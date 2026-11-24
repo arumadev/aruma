@@ -57,6 +57,10 @@ var (
 	ErrWriteRate = &Error{statusUnavailable, "Write rate limit exceeded; retry later.", http.StatusTooManyRequests}
 	// ErrUnavailable is a failure of the server itself, such as its database.
 	ErrUnavailable = &Error{statusUnavailable, "The service is currently unavailable.", http.StatusServiceUnavailable}
+	// ErrOutage is ErrUnavailable when the database is out of reach, so the command was not
+	// carried out and may be sent again: the same status, message and HTTP status, but a
+	// WebSocket closes its connection instead of replying (api fillOrDrop), and the SDK resends.
+	ErrOutage = &Error{statusUnavailable, "The service is currently unavailable.", http.StatusServiceUnavailable}
 	// ErrUnsupported is a request this version does not serve yet.
 	ErrUnsupported = &Error{statusUnavailable, "Not supported by this server yet.", http.StatusNotImplemented}
 

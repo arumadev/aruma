@@ -47,6 +47,31 @@ const serverCodes = {
   WEAK_PASSWORD: AuthErrorCode.INVALID_PASSWORD,
 };
 
+// The messages firebase-admin gives these codes (AUTH_SERVER_TO_CLIENT_CODE and AuthClientErrorCode in
+// firebase-admin-node src/auth/error.ts), used when Aruma's answer carries no detail of its own, so
+// that error.message reads as it does with Google's Auth.
+const defaultMessages = {
+  [AuthErrorCode.CLAIMS_TOO_LARGE]: 'Developer claims maximum payload size exceeded.',
+  [AuthErrorCode.EMAIL_ALREADY_EXISTS]: 'The email address is already in use by another account.',
+  [AuthErrorCode.EMAIL_NOT_FOUND]: 'There is no user record corresponding to the provided email.',
+  [AuthErrorCode.FORBIDDEN_CLAIM]: 'The specified developer claim is reserved and cannot be specified.',
+  [AuthErrorCode.ID_TOKEN_EXPIRED]: 'The provided Firebase ID token is expired.',
+  [AuthErrorCode.INVALID_CLAIMS]: 'The provided custom claim attributes are invalid.',
+  [AuthErrorCode.INVALID_DISPLAY_NAME]: 'The displayName field must be a valid string.',
+  [AuthErrorCode.INVALID_EMAIL]: 'The email address is improperly formatted.',
+  [AuthErrorCode.INVALID_ID_TOKEN]: 'The provided ID token is not a valid Firebase ID token.',
+  [AuthErrorCode.INVALID_PAGE_TOKEN]: 'The page token must be a valid non-empty string.',
+  [AuthErrorCode.INVALID_PASSWORD]: 'The password must be a string with at least 6 characters.',
+  [AuthErrorCode.INVALID_PHOTO_URL]: 'The photoURL field must be a valid URL.',
+  [AuthErrorCode.INVALID_SESSION_COOKIE_DURATION]: 'The session cookie duration must be a valid number in milliseconds between 5 minutes and 2 weeks.',
+  [AuthErrorCode.INVALID_UID]: 'The uid must be a non-empty string with at most 128 characters.',
+  [AuthErrorCode.MAXIMUM_USER_COUNT_EXCEEDED]: 'The maximum allowed number of users to import has been exceeded.',
+  [AuthErrorCode.MISSING_UID]: 'A uid identifier is required for the current operation.',
+  [AuthErrorCode.UID_ALREADY_EXISTS]: 'The user with the provided uid already exists.',
+  [AuthErrorCode.USER_DISABLED]: 'The user record is disabled.',
+  [AuthErrorCode.USER_NOT_FOUND]: 'There is no user record corresponding to the provided identifier.',
+};
+
 /**
  * Turns an Aruma error response into a FirebaseAuthError. Identity Toolkit errors carry
  * "CODE" or "CODE : detail" as their message; credential failures are google.rpc.Status.
@@ -59,7 +84,8 @@ export function fromResponse(status, body) {
   const serverCode = (sep === -1 ? message : message.slice(0, sep)).trim();
   const detail = sep === -1 ? '' : message.slice(sep + 1).trim();
   if (serverCodes[serverCode]) {
-    return authError(serverCodes[serverCode], detail || `Aruma Auth answered ${serverCode}.`);
+    const code = serverCodes[serverCode];
+    return authError(code, detail || defaultMessages[code] || `Aruma Auth answered ${serverCode}.`);
   }
   if (status === 401) {
     return authError(AuthErrorCode.INVALID_CREDENTIAL, 'Aruma refused the service account credential.');

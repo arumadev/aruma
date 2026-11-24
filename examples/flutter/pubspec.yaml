@@ -1,0 +1,71 @@
+name: team_board
+description: "Team Board: an example Flutter app on the official FlutterFire plugins, run against Aruma or Firebase."
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.44.2"
+
+# The FlutterFire plugins are pinned to one release train: firebase_core 4.15.2 of 2026-10-23 and the
+# plugin versions released with it. This is FlutterFire's last line on the Firebase iOS SDK 12.x
+# (firebase_core asks SwiftPM for firebase-ios-sdk exactly 12.19.3), the only tag the patched
+# FirebaseStorage mirror pins (sdk/ios/firebase-storage-patch/mirror.lock). The 5.x line asks for
+# firebase-ios-sdk 13.1.1, which has no mirror tag yet. On Android this line uses the Firebase BoM
+# 34.19.0. Raise all of them together, and re-run the e2e on every upgrade.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  firebase_core: 4.15.2
+  firebase_auth: 6.7.1
+  cloud_firestore: 6.10.2
+  firebase_database: 12.6.1
+  firebase_storage: 13.6.1
+  # refFromURL on an Aruma download link (fromArumaUrl). Not on pub.dev yet: from this repository.
+  aruma_storage:
+    path: ../../sdk/flutter/aruma_storage
+  intl: any
+  shared_preferences: 2.5.6
+  file_picker: 13.4.1
+  url_launcher: 6.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+# firebase_core_web loads the Firebase JS SDK of one version from www.gstatic.com at run time, and
+# `npx aruma-web flutter-web` rewrites firebase-storage.js and firebase-firestore.js of exactly that
+# version (taken from the firebase npm package). firebase_core 4.15.2 accepts any firebase_core_web
+# ^3.11.0: 3.11.0 loads the JS SDK 12.18.0 and 3.12.0 loads 12.19.0. The 5.x line moves on with every
+# release (4.1.0 loads 13.1.0, 4.2.0 loads 13.3.0). Pinning it here keeps the rewritten files, the
+# npm package the build step installs (tool/web.sh) and the SDK the page loads on one version:
+# 12.19.0, whose two files the rewrite rules were checked on. Raise it together with tool/web.sh.
+dependency_overrides:
+  firebase_core_web: 3.12.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  config:
+    # FlutterFire on iOS through Swift Package Manager, so that SwiftPM's mirror can hand the app
+    # the patched FirebaseStorage (docs/guides/mobile-apps.md).
+    enable-swift-package-manager: true
+  assets:
+    # The one Aruma setting (its URL, and whether to use it at all), read at start-up; the Android
+    # and iOS builds and tool/web.sh read the same file.
+    - aruma.json
+  # Bundled, so that the web build draws Latin and Arabic text without fetching fonts from Google.
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Medium.ttf
+          weight: 500
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+        - asset: assets/fonts/NotoSansArabic-Medium.ttf
+          weight: 500

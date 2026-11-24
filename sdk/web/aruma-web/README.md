@@ -92,6 +92,22 @@ module.exports = { entry: { main: ['./src/aruma.js', './src/index.js'] } };
 Or import `@aruma/web/auto`, which reads `globalThis.__ARUMA__` (`{ url, allowInsecure, log }` or a
 URL string) and, in Vite-style builds, `import.meta.env.VITE_ARUMA_URL`.
 
+### Flutter web
+
+Flutter web has no bundler: `firebase_core_web` loads the Firebase JS SDK from `www.gstatic.com` at
+run time. Run the build step once in the Flutter project instead:
+
+```sh
+npx aruma-web flutter-web --url https://aruma.example.com   # products auth and storage by default
+```
+
+For Auth it takes `firebase-auth.js` of exactly the version `firebase_core_web` pins from the
+`firebase` npm package, rewrites its two host defaults the way `mode: 'build'` does (and its
+`apiScheme` on http), writes it to `web/aruma/firebase-auth-<version>.js`, and loads it from
+`web/index.html` before `flutter_bootstrap.js`, so every request of `firebase_auth` (sign-up,
+sign-in, anonymous sign-in, token refresh, profile, delete) goes to Aruma. Details, and the other
+products, in [Flutter web](#flutter-web-1) below.
+
 ### Build-time mode (`mode: 'build'`, Vite 8+)
 
 No run-time code: the plugin rewrites the two host literals inside `@firebase/auth` while building
@@ -199,7 +215,7 @@ requests in the browser (with any bundler, and in the Vite dev server).
 | Rolldown | `arumaStorage.rolldown({ url })` | inside Vite 8 only |
 | Next.js | `export default withArumaStorage(config, { url })` (`@aruma/web/next`) | 16.4.3: `next build --webpack`, `next build` and `next dev` (Turbopack); the App Router (server components and client) and the Pages Router (`getServerSideProps`) |
 | Expo, React Native (Metro) | `module.exports = withArumaStorage(getDefaultConfig(__dirname), { url })` (`@aruma/web/metro`) | Expo 58.0.19 (Metro 0.87.1): the web export, and the Android bundle; with react-native-svg-transformer 1.5.3 applied before it |
-| Flutter web | `npx aruma-web flutter-web --url <url>` once in the project, then `flutter build web` | Flutter 3.44.2, firebase_core_web 4.1.0 (JS SDK 13.1.0), firebase_storage 14.0.1 |
+| Flutter web | `npx aruma-web flutter-web --url <url>` once in the project (Auth and Storage), then `flutter build web` | Flutter 3.44.2, firebase_core_web 4.1.0 (JS SDK 13.1.0), firebase_auth 7.0.1, firebase_storage 14.0.1 |
 
 Measured means: the official SDK in production mode, built from npm, against a real Aruma, passes
 the eleven operations of `test/e2e/web-storage` in Chromium (uploads, the 3 MB resumable one,
@@ -255,14 +271,48 @@ After the rewrite the SDK parses links against Aruma's host, so `ref(storage, li
 ### Flutter web
 
 `firebase_core_web` loads the JS SDK from `www.gstatic.com` at run time. The tool reads the version
-it pins (`.dart_tool/package_config.json`), takes `firebase-storage.js` of exactly that version from
-the `firebase` npm package (`npm install --no-save firebase@<version>`, or `--firebase <dir>`),
-rewrites it once, writes it to `web/aruma/firebase-storage-<version>.js` with a notice that it was
+it pins (`.dart_tool/package_config.json`), takes `firebase-<product>.js` of exactly that version
+from the `firebase` npm package (`npm install --no-save firebase@<version>`, or `--firebase <dir>`),
+rewrites it once, writes it to `web/aruma/firebase-<product>-<version>.js` with a notice that it was
 modified, and puts in `web/index.html`, in place of the `flutter_bootstrap.js` script, a block that
-sets `flutterfire_ignore_scripts = [..., 'storage']`, imports that file as `window.firebase_storage`
-and only then loads `flutter_bootstrap.js`. The file imports `firebase-app.js` from gstatic at the
-same version, so it shares the app firebase_core_web creates. Run it again after upgrading
-firebase_core (it replaces its own block).
+adds the products to `flutterfire_ignore_scripts`, imports each file as `window.firebase_<product>`
+(Auth first) and only then loads `flutter_bootstrap.js`. Each file imports `firebase-app.js` from
+gstatic at the same version, so it shares the app firebase_core_web creates.
+
+```sh
+npx aruma-web flutter-web --url https://aruma.example.com                             # auth,storage
+npx aruma-web flutter-web --url https://aruma.example.com --products auth,storage,firestore
+```
+
+| Product | `firebase-<product>.js` | What is rewritten |
+|---|---|---|
+| `auth` (default) | `firebase-auth.js` | the `apiHost` and `tokenApiHost` defaults become `<host>/identitytoolkit.googleapis.com` and `<host>/securetoken.googleapis.com`, and on http the `apiScheme` default: the rule of `mode: 'build'` |
+| `storage` (default) | `firebase-storage.js` | `DEFAULT_HOST`, and on http the protocol |
+| `firestore` | `firebase-firestore.js` | the default host, and on http its `ssl` default |
+
+- **Auth is in the default set** because without it sign-up and sign-in send the user's email and
+  password to `identitytoolkit.googleapis.com`. A list without it (`--products storage`) turns it
+  off, and the tool then warns when the project uses `firebase_auth`.
+- **With Auth on Aruma, Storage and Firestore must be on Aruma too:** their SDKs send the user's ID
+  token with every request. The tool fails when the project uses `firebase_storage` or
+  `cloud_firestore` on the web (their web plugins in `package_config.json`) and that product is not
+  in the list.
+- **It fails instead of shipping Google's host:** a file whose defaults are not found exactly once
+  (a release this rule does not know), a `firebase-auth.js` that still names a Google Auth host
+  after the rewrite, and a `web/index.html` that also loads one of these SDKs from `www.gstatic.com`
+  itself.
+- **Re-running is safe:** it replaces its own block, so a second run changes nothing, and a run
+  without a product takes its import and its file out again (also the files of an older SDK
+  version). Run it again after upgrading firebase_core.
+- `--url` may have a path prefix only with `--products auth` (Storage and Firestore are served at the
+  root of the host).
+- Tested: `test/e2e/web-storage/measure.sh flutter` builds a Flutter web app (Flutter 3.44.2,
+  firebase_core_web 4.1.0, firebase_auth 7.0.1, firebase_storage 14.0.1) after the tool, signs up,
+  out and in with a password, refreshes the token, updates the profile, signs in anonymously and
+  runs the eleven Storage operations signed in, with no request to Google's Auth hosts; and a
+  control build without `auth`, whose sign-up the SDK builds for
+  `https://identitytoolkit.googleapis.com/v1/accounts:signUp` (aborted by the test's guard).
+  `examples/flutter` (firebase_core_web 3.12.0, JS SDK 12.19.0) uses it for all three products.
 
 ### The fallback
 
@@ -312,7 +362,7 @@ server), and in Node every connection to it (DNS lookup, TCP, TLS, HTTP/2, HTTP 
 | webpack, Rspack, Rollup, esbuild, Rolldown | `arumaFirestore.webpack({ url })` and so on (`@aruma/web/unplugin`) |
 | Next.js | `withArumaFirestore(config, { url })` (`@aruma/web/next`), alone or around `withArumaStorage` |
 | Expo, React Native (Metro) | `withArumaFirestore(config, { url })` (`@aruma/web/metro`), alone or around `withArumaStorage` |
-| Flutter web | `npx aruma-web flutter-web --url <url> --products storage,firestore` |
+| Flutter web | `npx aruma-web flutter-web --url <url> --products auth,storage,firestore` |
 
 The build fails instead of shipping Google's host, as for Storage: a `@firebase/firestore` file with
 two host literals (or, for http, without the `ssl` default next to it); a bundle in which a

@@ -22,14 +22,28 @@ func (s *Service) PurgeProject(ctx context.Context, project int64) error {
 		return err
 	}
 	defer leave()
-	if err := s.store.DeletePrefix(blob.StagingPrefix(project)); err != nil {
-		return fmt.Errorf("storage: purge the staging files of project %d: %w", project, err)
+	// The files go under storage.backup, as the gc's do: a backup in progress delays the purge.
+	err = s.inTx(ctx, func(q *queries.Queries) error {
+		free, err := q.TryLockFilesAgainstBackup(ctx)
+		if err != nil {
+			return fmt.Errorf("storage: purge project %d: check for a backup: %w", project, err)
+		}
+		if !free {
+			return fmt.Errorf("storage: purge project %d: %w", project, ErrBackupRunning)
+		}
+		if err := s.store.DeletePrefix(blob.StagingPrefix(project)); err != nil {
+			return fmt.Errorf("storage: purge the staging files of project %d: %w", project, err)
+		}
+		hook("purge.staging")
+		if err := s.store.DeletePrefix(blob.ProjectPrefix(project)); err != nil {
+			return fmt.Errorf("storage: purge the files of project %d: %w", project, err)
+		}
+		hook("purge.files")
+		return nil
+	})
+	if err != nil {
+		return err
 	}
-	hook("purge.staging")
-	if err := s.store.DeletePrefix(blob.ProjectPrefix(project)); err != nil {
-		return fmt.Errorf("storage: purge the files of project %d: %w", project, err)
-	}
-	hook("purge.files")
 	err = s.inTx(ctx, func(q *queries.Queries) error {
 		if err := q.PurgeUploadSessions(ctx, project); err != nil {
 			return err

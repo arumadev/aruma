@@ -231,6 +231,138 @@ jobs:
             test/e2e/web-rtdb/.generated/server.log
             test/e2e/web-rtdb/.generated/lp-browser.json
 
+  # The example app of examples/web (Team Board): the official firebase package in production mode
+  # through @aruma/web, against a fresh server with all four services and the app's own rules,
+  # driven by Playwright as two users. Everything is installed before the egress guard goes on.
+  example-web:
+    name: Example web app e2e (Team Board; Auth, Firestore, Realtime Database, Storage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: examples/web/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('examples/web/package-lock.json') }}
+      - name: Install (Go modules, the app)
+        working-directory: examples/web
+        run: |
+          go mod download
+          (cd ../.. && go build -o /dev/null ./test/smoke/genconfig)
+          npm ci --no-audit --no-fund
+      - name: Install Chromium and its system dependencies
+        working-directory: examples/web
+        timeout-minutes: 20
+        run: |
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" chromium
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: Team Board against a real server, no request to Google
+        run: test/ci/egress-guard.sh run examples/web/e2e/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: example-web-report
+          include-hidden-files: true
+          path: |
+            examples/web/e2e/.generated/report
+            examples/web/e2e/.generated/test-results
+            examples/web/e2e/.generated/server.log
+
+  # The Flutter example (examples/flutter): analyze and widget tests, then its web build, with
+  # tool/web.sh (@aruma/web flutter-web for Auth, Storage and Firestore), against a fresh server with all
+  # four services and the example's rules, driven by Playwright as two users and a guest. Its
+  # Android and iOS projects are not built here. Everything is installed before the egress guard.
+  example-flutter:
+    name: Example Flutter app (analyze, widget tests, web e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARUMA_E2E_APP_DIR: ${{ github.workspace }}/.cache/example-flutter
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: npm
+          cache-dependency-path: |
+            examples/flutter/package-lock.json
+            examples/flutter/e2e/package-lock.json
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('examples/flutter/e2e/package-lock.json') }}
+      - name: Install (Go modules, Flutter's web artifacts, the app's packages and its copy for the e2e)
+        working-directory: examples/flutter
+        run: |
+          flutter config --no-analytics --no-cli-animations
+          dart --disable-analytics
+          flutter precache --web
+          go mod download
+          (cd ../.. && go build -o /dev/null ./test/smoke/genconfig)
+          flutter pub get
+          e2e/run.sh --install
+      - name: Install Chromium and its system dependencies
+        working-directory: examples/flutter/e2e
+        timeout-minutes: 20
+        run: |
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" chromium
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: flutter analyze and the widget tests
+        run: test/ci/egress-guard.sh run bash -c 'cd examples/flutter && flutter analyze --no-pub && flutter test --no-pub'
+      - name: Team Board on the web against a real server, no request to Google
+        run: test/ci/egress-guard.sh run examples/flutter/e2e/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: example-flutter-report
+          include-hidden-files: true
+          path: |
+            examples/flutter/e2e/test-results
+            examples/flutter/e2e/.generated/build-web.log
+            examples/flutter/e2e/.generated/server/server.log
+
   # The v0.3 Storage suites. Each job installs what its suite needs first, then runs the suite
   # under test/ci/egress-guard.sh: a packet that would leave the machine is rejected and counted,
   # and the job fails on any. The suites keep their own guards as well (netguard.cjs, the
@@ -318,16 +450,13 @@ jobs:
           go mod download
           npm ci --no-audit --no-fund
       # `playwright install --with-deps webkit` has hung twice: each attempt is cut at 5 minutes,
-      # and there is one retry.
+      # with two retries, each after the apt-get the cut left behind has finished (see the script).
       - name: Install ${{ matrix.engine }} and its system dependencies
         working-directory: test/e2e/browser-matrix
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
-          for attempt in 1 2; do
-            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
-            echo "playwright install failed or timed out (attempt $attempt)" >&2
-          done
-          exit 1
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" ${{ matrix.engine }}
       # The runner has no sound device. Case 14 browses to the song, whose media document plays
       # it aloud, and Firefox then fails the element with MEDIA_ERR_DECODE
       # (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR, OnMediaSinkAudioError) for MP3, Opus and WAV alike:
@@ -395,16 +524,13 @@ jobs:
           go mod download
           (cd ../../../sdk/web/aruma-web && npm ci --no-audit --no-fund)
           npm ci --no-audit --no-fund
-      # See the browser matrix: the install is cut at 5 minutes per attempt, with one retry.
+      # See the browser matrix: the install is cut at 5 minutes per attempt, with two retries.
       - name: Install ${{ matrix.engine }} and its system dependencies
         working-directory: test/e2e/web-documents
-        timeout-minutes: 12
+        timeout-minutes: 20
         run: |
-          for attempt in 1 2; do
-            timeout 5m npx playwright install --with-deps ${{ matrix.engine }} && exit 0
-            echo "playwright install failed or timed out (attempt $attempt)" >&2
-          done
-          exit 1
+          echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout >/dev/null
+          "$GITHUB_WORKSPACE/test/ci/playwright-install.sh" ${{ matrix.engine }}
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
       - name: Firestore in ${{ matrix.engine }} (WebChannel, REST, rules, @aruma/web)
@@ -604,8 +730,74 @@ jobs:
           include-hidden-files: true
           path: .cache/upstream/storage/results
 
+  # Firebase's own Firestore integration tests (firebase-js-sdk packages/firestore, integration,
+  # persistence and lite, in Node over gRPC), unmodified, against the Document Database. Every
+  # test that passes on the emulator (test/compat/documents/baseline-emulator.json) must pass, or
+  # be listed with its reason in test/compat/documents/classified.json; a listed test that passes
+  # fails the job too. Installs first, then the suites under test/ci/egress-guard.sh.
+  documents-compat:
+    name: Document Database compat (Firebase's own Firestore tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ARUMA_CACHE_DIR: ${{ github.workspace }}/.cache
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+      - name: Caches where the runner keeps them
+        id: paths
+        run: |
+          {
+            echo "GOCACHE=$(go env GOCACHE)"
+            echo "GOMODCACHE=$(go env GOMODCACHE)"
+            echo "npm_config_cache=$HOME/.npm"
+          } >>"$GITHUB_ENV"
+          echo "upstream=$(grep -E '^(JS_SDK_TAG|YARN)=' test/compat/documents/run.sh | sha256sum | cut -c1-16)" >>"$GITHUB_OUTPUT"
+      # The clone and its yarn install and build (about 1.5 GB), keyed on the pinned tag and yarn
+      # (run.sh's stamp installs again on a change).
+      - uses: actions/cache@v6
+        with:
+          path: .cache/upstream/firebase-js-sdk
+          key: documents-compat-${{ runner.os }}-${{ steps.paths.outputs.upstream }}
+      - name: Install (Go modules, firebase-js-sdk at the pinned tag and its install)
+        run: |
+          go mod download
+          go build -o /dev/null ./test/smoke/genconfig
+          test/compat/documents/run.sh --prepare
+      - name: Egress guard on
+        run: test/ci/egress-guard.sh on
+      - name: integration, persistence and lite; every difference from the emulator classified
+        run: test/ci/egress-guard.sh run test/compat/documents/run.sh
+      - name: Nothing left the machine
+        if: always()
+        run: test/ci/egress-guard.sh check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: documents-compat-results
+          include-hidden-files: true
+          path: .cache/upstream/results/documents
+
+  # A Flutter web app (test/e2e/web-storage/apps/flutter) after `aruma-web flutter-web` with its
+  # default products: firebase_auth signs up, in with a password and anonymously, refreshes the
+  # token, then firebase_storage runs the eleven operations signed in, against a real Aruma, with no
+  # request to Google's Auth hosts; and a control build without the auth product, whose sign-up is
+  # built for identitytoolkit.googleapis.com and aborted by the page's guard (measure.sh flutter).
   web-storage-flutter:
-    name: Web Storage measured (Flutter web)
+    name: Web Auth and Storage measured (Flutter web)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -652,7 +844,7 @@ jobs:
           ./measure.sh --install flutter
       - name: Egress guard on
         run: test/ci/egress-guard.sh on
-      - name: Build and drive the Flutter web app (measure.sh flutter)
+      - name: Build and drive the Flutter web app, signed in, and the control without auth (measure.sh flutter)
         run: test/ci/egress-guard.sh run test/e2e/web-storage/measure.sh flutter
       - name: Nothing left the machine
         if: always()
@@ -729,3 +921,30 @@ jobs:
         with:
           name: playwright-report
           path: dashboard/playwright-report
+
+  ops:
+    name: Operations (backup and restore, upgrade from the previous release, a second process)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ARUMA_PG_BIN: /usr/lib/postgresql/18/bin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: PostgreSQL 18 client tools (pg_dump must not be older than the server)
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+      # run.sh fetches the v0.4.0 tag and builds that release for the upgrade tests.
+      - name: Backup, restore, upgrade and rolling restart
+        run: test/ops/run.sh -v

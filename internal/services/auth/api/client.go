@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -65,9 +66,11 @@ func (a *API) clientRoutes(r *httpx.Router) {
 	a.idpRoutes(r)
 }
 
-// client resolves the API key before the handler runs.
+// client resolves the API key before the handler runs. It marks the request as a client call,
+// whose outage answer the SDKs must take for a network failure (writeError).
 func (a *API) client(h func(http.ResponseWriter, *http.Request, core.Project)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(context.WithValue(r.Context(), clientCallKey{}, true))
 		p, err := a.project(r)
 		if err != nil {
 			a.writeError(w, r, err)

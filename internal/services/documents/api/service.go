@@ -276,6 +276,14 @@ func (s *Service) fail(ctx context.Context, err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return wire.From(err)
 	}
+	if apierr.IsUnavailable(err) {
+		// Postgres went away under the request: it restarts, it is unreachable, or it ended this
+		// connection (57P01 when an operator terminates the backends). The statement was refused
+		// or never sent, and a COMMIT whose outcome is unknown is core.ErrUnknownOutcome already,
+		// so nothing was applied: UNAVAILABLE, which every SDK retries, not INTERNAL.
+		s.log.Warn("documents: the database is unavailable", "error", err, "request_id", httpx.RequestID(ctx))
+		return wire.NewError(wire.CodeUnavailable, apierr.UnavailableMessage)
+	}
 	s.log.Error("documents", "error", err, "request_id", httpx.RequestID(ctx))
 	return wire.Internal()
 }

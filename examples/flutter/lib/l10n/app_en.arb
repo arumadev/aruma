@@ -1,0 +1,192 @@
+{
+  "@@locale": "en",
+  "appTitle": "Team Board",
+  "signInTitle": "Sign in",
+  "signUpTitle": "Create an account",
+  "nameLabel": "Name",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signInButton": "Sign in",
+  "signUpButton": "Create account",
+  "switchToSignUp": "No account? Create one",
+  "switchToSignIn": "Have an account? Sign in",
+  "guestButton": "Continue as guest",
+  "guestName": "Guest {code}",
+  "@guestName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "nameRequired": "Enter your name",
+  "nameTooLong": "At most {max} characters",
+  "@nameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "emailInvalid": "Enter a valid email address",
+  "passwordRequired": "Enter your password",
+  "errorWrongPassword": "Wrong email or password.",
+  "errorWeakPassword": "This password is too weak. Use at least 6 characters.",
+  "errorEmailInUse": "An account with this email already exists.",
+  "errorInvalidEmail": "That email address is not valid.",
+  "errorUserNotFound": "There is no account with this email.",
+  "errorTooManyRequests": "Too many attempts. Try again later.",
+  "errorPermissionDenied": "You don't have permission to do that.",
+  "errorTeamNotFound": "No team has this code.",
+  "errorFileTooLarge": "The file is too large (at most {max} MB).",
+  "@errorFileTooLarge": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorNotAnImage": "Choose an image file.",
+  "errorNetwork": "Can't reach the server. Check your connection.",
+  "errorUnknown": "Something went wrong: {detail}",
+  "@errorUnknown": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineBanner": "You are offline. Changes sync when you reconnect.",
+  "myTeams": "My teams",
+  "noTeams": "No teams yet",
+  "noTeamsHint": "Create a team, or join one with the code its owner gives you.",
+  "createTeam": "Create team",
+  "joinTeam": "Join team",
+  "teamNameLabel": "Team name",
+  "joinCodeLabel": "Join code",
+  "create": "Create",
+  "join": "Join",
+  "cancel": "Cancel",
+  "teamCreated": "Team created. Its join code is {code}.",
+  "@teamCreated": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "joinedTeam": "You joined {name}.",
+  "@joinedTeam": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ownerBadge": "Owner",
+  "profile": "Profile",
+  "tasksTab": "Tasks",
+  "chatTab": "Chat",
+  "joinCodeTooltip": "Join code {code}. Tap to copy.",
+  "@joinCodeTooltip": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "codeCopied": "Join code copied",
+  "newTaskHint": "New task",
+  "addTask": "Add task",
+  "noTasks": "No tasks yet",
+  "noTasksHint": "Add the first one above.",
+  "taskDoneLabel": "Done: {title}",
+  "@taskDoneLabel": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteTask": "Delete",
+  "attachFile": "Attach a file",
+  "replaceFile": "Replace the file",
+  "openAttachment": "Open {name}",
+  "@openAttachment": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assign": "Assign",
+  "unassigned": "Nobody",
+  "assignedTo": "Assigned to {name}",
+  "@assignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uploading": "Uploading {percent}%",
+  "@uploading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "taskDeleted": "Task deleted",
+  "fileAttached": "File attached",
+  "couldNotOpen": "Could not open the file.",
+  "openTasks": "Open",
+  "doneTasks": "Done",
+  "taskMenu": "More for {title}",
+  "@taskMenu": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "messageHint": "Message",
+  "send": "Send",
+  "noMessages": "No messages yet",
+  "noMessagesHint": "Say hello to your team.",
+  "onlineNow": "Online: {names}",
+  "@onlineNow": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "listSeparator": ", ",
+  "you": "you",
+  "save": "Save",
+  "saved": "Saved",
+  "changePicture": "Change picture",
+  "removePicture": "Remove picture",
+  "language": "Language",
+  "languageDevice": "Device language",
+  "languageEnglish": "English",
+  "languageArabic": "Arabic",
+  "theme": "Theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "signOut": "Sign out",
+  "signedInAs": "Signed in as {email}",
+  "@signedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "guestAccount": "Guest account: create an account to keep your data on other devices.",
+  "retry": "Retry",
+  "loading": "Loading",
+  "members": "Members"
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -34,7 +35,15 @@ type memStore struct {
 	roots map[string]*core.Node
 	seq   map[string]int64
 	rules map[string]string
+	// fail, when set, fails every transaction: errStoreDown as when Postgres cannot be
+	// reached, errStoreBroken as a failure that is not an outage.
+	fail error
 }
+
+var (
+	errStoreDown   = errors.New("failed to connect to `host=127.0.0.1`: connection refused")
+	errStoreBroken = errors.New("ERROR: a statement the database refuses")
+)
 
 func (s *memStore) OpenDatabase(_ context.Context, project int64, name string) (core.DatabaseInfo, error) {
 	s.mu.Lock()
@@ -49,6 +58,9 @@ func (s *memStore) OpenDatabase(_ context.Context, project int64, name string) (
 func (s *memStore) Begin(_ context.Context, db core.DatabaseInfo) (core.StoreTx, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.fail != nil {
+		return nil, s.fail
+	}
 	return &memTx{s: s, name: db.Name, root: s.roots[db.Name], seq: s.seq[db.Name]}, nil
 }
 
@@ -676,3 +688,109 @@ func TestAuthVariableOverrideRevalidated(t *testing.T) {
 }
 
 func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
+
+// A write, listen or get the server could not attempt because its database is unreachable is
+// not answered unavailable, which the SDKs do not retry (a write is reverted and reported
+// failed, a listen cancelled), but by closing the connection: the SDKs keep what they sent
+// unanswered and send it again once they reconnect. Refusals the client acts on, and requests
+// the SDKs do not resend (onDisconnect), keep their answer.
+func TestUnavailableDropsTheConnection(t *testing.T) {
+	a, store, _ := newTestAPI(t, Options{}, core.Options{DevOpenRules: true})
+	url := serve(t, a)
+	setFail := func(err error) {
+		store.mu.Lock()
+		store.fail = err
+		store.mu.Unlock()
+	}
+	setDown := func(down bool) {
+		if down {
+			setFail(errStoreDown)
+		} else {
+			setFail(nil)
+		}
+	}
+	hash := "tSQlCrmB/6mUWeYJBHtcGhm6jDc=" // of null
+	for _, r := range []struct {
+		action string
+		body   map[string]any
+	}{
+		{"p", map[string]any{"p": "/a", "d": 1}},
+		{"m", map[string]any{"p": "/a", "d": map[string]any{"b": 1}}},
+		{"p", map[string]any{"p": "/t", "d": 1, "h": hash}},
+		{"q", map[string]any{"p": "/l", "h": ""}},
+		{"g", map[string]any{"p": "/g", "q": map[string]any{}}},
+	} {
+		c := dial(t, url)
+		c.rid++
+		b, _ := json.Marshal(map[string]any{"t": "d", "d": map[string]any{"r": c.rid, "a": r.action, "b": r.body}})
+		c.send(string(b))
+		// Healthy: answered, and the connection stays.
+		for {
+			m := c.read()
+			if strings.Contains(m, fmt.Sprintf(`"r":%d,`, c.rid)) {
+				if strings.Contains(m, `"s":"unavailable"`) {
+					t.Fatalf("%s before the outage: %s", r.action, m)
+				}
+				break
+			}
+		}
+		setDown(true)
+		c.rid++
+		b, _ = json.Marshal(map[string]any{"t": "d", "d": map[string]any{"r": c.rid, "a": r.action, "b": r.body}})
+		c.send(string(b))
+		var got []string
+		var err error
+		for {
+			var m []byte
+			if _, m, err = c.ws.Read(c.ctx); err != nil {
+				break
+			}
+			got = append(got, string(m))
+		}
+		setDown(false)
+		var ce websocket.CloseError
+		if !errors.As(err, &ce) || ce.Code != websocket.StatusGoingAway {
+			t.Errorf("%s while the database is down: %v, want the connection closed with 1001", r.action, err)
+		}
+		for _, m := range got {
+			if strings.Contains(m, `"r":`) {
+				t.Errorf("%s while the database is down was answered: %s", r.action, m)
+			}
+		}
+	}
+
+	// An onDisconnect write is not resent by the SDKs: it keeps its answer, and so does a
+	// refusal on the request's own terms.
+	c := dial(t, url)
+	setDown(true)
+	if s, _ := c.call("o", map[string]any{"p": "/presence", "d": "offline"}); s != wire.StatusUnavailable {
+		t.Errorf("onDisconnect while the database is down: %s, want unavailable", s)
+	}
+	setDown(false)
+	if s, _ := c.call("p", map[string]any{"p": "/x", "d": 1, "h": "not-the-hash"}); s != "datastale" {
+		t.Errorf("a stale conditional write: %s", s)
+	}
+	if s, _ := c.call("p", map[string]any{"p": "/x", "d": 2}); s != "ok" {
+		t.Errorf("the connection after the refusals: %s", s)
+	}
+
+	// A failure that is not an outage would fail again when resent: it is answered, and the
+	// connection stays, rather than closing it for the SDK to resend the same write forever.
+	setFail(errStoreBroken)
+	for _, a := range []string{"p", "m", "g"} {
+		body := map[string]any{"p": "/y", "d": 1}
+		if a == "m" {
+			body["d"] = map[string]any{"z": 1}
+		}
+		if a == "g" {
+			body = map[string]any{"p": "/y", "q": map[string]any{}}
+		}
+		if s, _ := c.call(a, body); s != wire.StatusUnavailable {
+			t.Errorf("%s failing on its own: %s, want unavailable", a, s)
+		}
+	}
+	setFail(nil)
+	if s, _ := c.call("p", map[string]any{"p": "/x", "d": 3}); s != "ok" {
+		t.Errorf("the connection after a failure that is not an outage: %s", s)
+	}
+}

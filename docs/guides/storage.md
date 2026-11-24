@@ -25,7 +25,7 @@ storage:
 
 The same keys are `ARUMA_STORAGE_ENABLED` and `ARUMA_STORAGE_DATA_DIR`. The server does not start with Storage on and no absolute `data_dir`. Restart Aruma after the change.
 
-- **Where files live.** The bytes are files under `data_dir`. Everything that points to them (names, metadata, download tokens, upload sessions) is in PostgreSQL. Keep the two together: mount the disk before Aruma starts, and back up the directory with the database. See the `data_dir` warning in [configuration](../reference/configuration.md#storage).
+- **Where files live.** The bytes are files under `data_dir`. Everything that points to them (names, metadata, download tokens, upload sessions) is in PostgreSQL. Keep the two together: mount the disk before Aruma starts, and back them up together with `aruma backup --storage-out` (see [operations](operations.md#docker)). See the `data_dir` warning in [configuration](../reference/configuration.md#storage).
 - **Use https.** Off loopback, serve Storage over https. Aruma logs a warning at startup when it runs on plain `http`.
 - **Without it,** the dashboard's Cloud Storage pages say "Cloud Storage is off on this server".
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/arumadev/aruma/internal/platform/apierr"
 	"github.com/arumadev/aruma/internal/services/storage/core"
 	"github.com/arumadev/aruma/internal/services/storage/wire"
 )
@@ -132,6 +133,11 @@ func (a *API) gcsError(err error, bucket, name string) *apiError {
 		if errors.Is(err, core.ErrUnavailable) {
 			a.log.Warn("gcs: unavailable", "error", err)
 		}
+		return &apiError{http.StatusServiceUnavailable, wire.ReasonBackendError, "The service is currently unavailable."}
+	}
+	if apierr.IsUnavailable(err) {
+		// Postgres went away inside a transaction: nothing committed, and the clients retry a 503.
+		a.log.Warn("gcs: unavailable", "error", err)
 		return &apiError{http.StatusServiceUnavailable, wire.ReasonBackendError, "The service is currently unavailable."}
 	}
 	a.log.Error("gcs: internal error", "error", err)

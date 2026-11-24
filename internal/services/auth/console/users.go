@@ -226,8 +226,7 @@ type authLimitsJSON struct {
 	EmailCodeLifetimes     map[string]int64 `json:"emailCodeLifetimeSeconds"` // by template type
 }
 
-func toAuthConfigJSON(c queries.AuthProjectConfig) authConfigJSON {
-	l := api.ClientLimits
+func toAuthConfigJSON(c queries.AuthProjectConfig, l api.Limits) authConfigJSON {
 	codeLifetimes := map[string]int64{}
 	for kind, d := range core.EmailCodeLifetimes() {
 		codeLifetimes[kind] = int64(d.Seconds())
@@ -260,7 +259,7 @@ func (h *handlers) getAuthConfig(w http.ResponseWriter, r *http.Request) {
 		h.failAuth(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c))
+	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c, h.limits))
 }
 
 // updateAuthConfig changes the settings present in the body.
@@ -307,7 +306,7 @@ func (h *handlers) updateAuthConfig(w http.ResponseWriter, r *http.Request) {
 		h.failAuth(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c))
+	httpx.WriteJSON(w, http.StatusOK, toAuthConfigJSON(c, h.limits))
 }
 
 // set copies *v into dst when the field was present.

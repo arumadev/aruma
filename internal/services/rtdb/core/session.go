@@ -40,7 +40,7 @@ type Session struct {
 	disconnect onDisconnect
 	closed     bool
 	// admitted is set once the session counts against its project's connection limit: on
-	// its first operation the rules permit, or when it signs in.
+	// its first operation the rules permit, or when it signs in. REST sessions never count.
 	admitted    bool
 	releaseSlot func()
 }
@@ -52,6 +52,13 @@ type OpenOptions struct {
 	Loopback bool
 	// Sink receives the session's pushes; nil for a session that never listens (REST).
 	Sink Sink
+}
+
+// isClosed reports whether Close has begun.
+func (s *Session) isClosed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.closed
 }
 
 // Database is the database the session works on.
@@ -178,11 +185,14 @@ func (s *Session) Authenticated() bool {
 
 func (s *Session) devOpen() bool { return s.svc.openRules && s.loopback }
 
-// admit counts the session against its project's connection limit, once.
+// admit counts the session against its project's connection limit, once. Only sessions that
+// stay connected count (a WebSocket, a long poll: those with a sink for pushes), as Firebase
+// counts its simultaneous connections; a REST request, which reads or writes once and ends,
+// does not, so that a backend can still write to a database whose listeners fill the limit.
 func (s *Session) admit() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.admitted {
+	if s.admitted || s.sink == nil {
 		return nil
 	}
 	release, err := s.svc.connect(s.target)

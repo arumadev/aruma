@@ -131,3 +131,33 @@ func TestStampFirstIdleTimeout(t *testing.T) {
 		t.Fatalf("next seq %d", res.Seq)
 	}
 }
+
+// A commit, or a transaction's, that deletes a document and then updates it under a
+// precondition fails with INVALID_ARGUMENT before any precondition is checked: the delete's own
+// exists: true on a missing document would be NOT_FOUND (cloud-firestore-emulator v1.22.0; the
+// transaction cases of firebase-js-sdk's transactions.test.ts). Nothing is written.
+func TestCommitDeleteThenUpdate(t *testing.T) {
+	s, _ := newStore(t, Options{})
+	ctx := t.Context()
+	p := ParsePath("c/dtu")
+	writes := []Write{
+		{Kind: WriteDelete, Path: p, Precondition: Precondition{Exists: new(true)}},
+		{Kind: WriteUpdate, Path: p, Masked: true, Fields: doc("a", value.Int(1)), Mask: []value.FieldPath{{"a"}}, Precondition: Precondition{Exists: new(true)}},
+	}
+	if _, err := s.Commit(ctx, testDB, writes); !errors.Is(err, errDeleteThenUpdate) {
+		t.Fatalf("commit: %v, want %v", err, errDeleteThenUpdate)
+	}
+	id, err := s.BeginTransaction(ctx, testDB, admin, TransactionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CommitTransaction(ctx, testDB, TransactionRef{ID: id, By: admin}, writes); !errors.Is(err, errDeleteThenUpdate) {
+		t.Fatalf("transaction: %v, want %v", err, errDeleteThenUpdate)
+	}
+	if _, _, err := s.Get(ctx, testDB, p, ReadOptions{}); err == nil {
+		t.Fatal("the document was written")
+	}
+	// A set may follow the delete (f2-commit.json, same.delete_update).
+	writes[0].Precondition, writes[1].Precondition = Precondition{}, Precondition{}
+	mustCommit(t, s, writes...)
+}

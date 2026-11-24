@@ -139,6 +139,7 @@ type AuthRefreshToken struct {
 	AuthTime       time.Time
 	CreatedAt      time.Time
 	LastUsedAt     *time.Time
+	EndedAt        *time.Time
 }
 
 type AuthSigningKey struct {

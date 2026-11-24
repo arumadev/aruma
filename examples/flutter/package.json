@@ -1,0 +1,9 @@
+{
+  "name": "team-board-web-build",
+  "private": true,
+  "description": "The web build step of the Flutter example: @aruma/web and the Firebase JS SDK that firebase_core_web 3.12.0 loads (see tool/web.sh).",
+  "devDependencies": {
+    "@aruma/web": "file:../../sdk/web/aruma-web",
+    "firebase": "12.19.0"
+  }
+}

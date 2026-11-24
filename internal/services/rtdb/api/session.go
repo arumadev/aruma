@@ -25,6 +25,7 @@ type session struct {
 	mu      sync.Mutex
 	pending []*slot // replies not sent yet, in request order
 	closed  bool
+	dropped bool       // the connection is closing without the replies still pending (drop)
 	admin   adminState // the admin credential the session signed in with (auth.go)
 }
 
@@ -78,6 +79,9 @@ func (s *session) reserve(id int64) *slot {
 func (s *session) fill(sl *slot, msg []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.dropped {
+		return
+	}
 	if int64(len(msg)) > s.out.max {
 		msg = wire.EncodeResponse(sl.id, wire.Fail(wire.StatusTooBig,
 			"Data requested exceeds the maximum size that can be accessed with a single request."))
@@ -89,6 +93,21 @@ func (s *session) fill(sl *slot, msg []byte) {
 		n++
 	}
 	s.pending = s.pending[n:]
+}
+
+// drop closes the connection instead of sending the reply to sl, nor any reply after it: the
+// request could not be attempted, because the server could not reach its database. The SDKs
+// keep a write, a listen or a get they sent until it is answered, and send it again when they
+// reconnect, whereas they give up on a request answered with an error (the write is reverted
+// and the app told it failed, the listen cancelled); so the client resends it once the server
+// can serve again, as after a restart. Every later reply goes too: a later write may be
+// applied before the resent one, but the client resends both, in its order, since it got
+// neither ack. What is queued already (the replies to earlier requests, pushes) is still sent.
+func (s *session) drop() {
+	s.mu.Lock()
+	s.dropped, s.pending = true, nil
+	s.mu.Unlock()
+	s.out.close()
 }
 
 // send queues a message that answers no request, such as a pong or an error frame.

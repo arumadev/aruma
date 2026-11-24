@@ -11,7 +11,7 @@ There are three ways to run it. Docker is the quickest; the other two need a Pos
 You need Docker with Compose and `openssl`. `compose.yaml` runs Aruma and PostgreSQL 18, with the Realtime Database, Storage and the Document Database turned on. The image is built on your machine the first time, which takes a few minutes.
 
 ```bash
-git clone --branch v0.4.0 https://github.com/arumadev/aruma.git
+git clone --branch v0.5.0 https://github.com/arumadev/aruma.git
 cd aruma
 printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env
 docker compose up -d
@@ -36,7 +36,7 @@ export ARUMA_MASTER_KEY="$(openssl rand -base64 32)"   # keep it: every other ke
 
 ### From source
 
-You need Go 1.27.3 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
+You need Go 1.27.4 (an older `go` downloads it by itself unless `GOTOOLCHAIN=local` is set), PostgreSQL 18, Node 24 (to build the dashboard and for your web app), and `openssl`. A local PostgreSQL from [DBngin](https://dbngin.com) or [Postgres.app](https://postgresapp.com) works.
 
 ```bash
 git clone https://github.com/arumadev/aruma.git
@@ -116,4 +116,4 @@ The plugin accepts `http` only for `localhost` and other loopback addresses. For
 - Verify users on your server: [Verifying users on your server](guides/auth-admin.md).
 - Realtime Database, Cloud Storage and the Document Database are off by default. Turn them on in the configuration: see [configuration](reference/configuration.md), [Realtime Database](guides/realtime-database.md) and [Moving your app's Firestore to Aruma](guides/firestore-migration.md).
 - Put it behind your own domain and certificates: [Operations](guides/operations.md).
-- Back up with `aruma backup --out aruma.dump` and restore with `aruma restore --in aruma.dump --yes` while the server is stopped.
+- Back up with `aruma backup --out aruma.dump` (add `--storage-out aruma-storage.tar.gz` if you use Storage) and restore with `aruma restore --in aruma.dump --yes` while the server is stopped. [Operations](guides/operations.md#prebuilt-binaries) has the steps.

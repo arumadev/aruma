@@ -55,7 +55,8 @@ type InstanceOptions struct {
 	// CheckTimeout is how long a check may take before it is cancelled and counted as slow,
 	// which is not a loss: the lock is lost only when its session is (ADR-024 §7). Default 10s.
 	CheckTimeout time.Duration
-	// MinBackoff and MaxBackoff bound the retries while the lock is not held. Default 1s, 30s.
+	// MinBackoff and MaxBackoff bound the retries while the lock is not held. Default 1s, and
+	// DefaultInstanceMaxBackoff.
 	MinBackoff, MaxBackoff time.Duration
 	// OnAcquired runs when the lock is taken after StartInstance returned (a takeover, or a
 	// recovery after a loss): the service starts a new hub and lock manager. OnLost runs when
@@ -96,6 +97,12 @@ const cancelGrace = 30 * time.Second
 // errLockGone is a check that found the session alive without the lock.
 var errLockGone = errors.New("the session no longer holds the advisory lock")
 
+// DefaultInstanceMaxBackoff is the longest wait between two tries for the lock. Until the lock
+// is taken again after a lost session, every call answers ErrNotServing, so a long backoff is
+// downtime after Postgres is back (16 s after a 15 s restart, with 30 s); a try is one connection
+// attempt, cheap enough every few seconds.
+const DefaultInstanceMaxBackoff = 5 * time.Second
+
 // StartInstance tries to take the lock for up to BootWait, then keeps it, or keeps trying for it,
 // in the background until Close. It returns whether the lock is held; when it is not, the
 // process serves the rest of Aruma and the Document Database answers ErrNotServing.
@@ -105,7 +112,7 @@ func StartInstance(ctx context.Context, cfg *pgx.ConnConfig, o InstanceOptions) 
 	o.CheckTimeout = cmp.Or(o.CheckTimeout, 10*time.Second)
 	o.checkSQL = cmp.Or(o.checkSQL, instanceHeld)
 	o.MinBackoff = cmp.Or(o.MinBackoff, time.Second)
-	o.MaxBackoff = cmp.Or(o.MaxBackoff, 30*time.Second)
+	o.MaxBackoff = cmp.Or(o.MaxBackoff, DefaultInstanceMaxBackoff)
 	if o.Log == nil {
 		o.Log = slog.Default()
 	}

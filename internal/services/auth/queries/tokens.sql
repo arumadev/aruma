@@ -15,13 +15,17 @@ SELECT * FROM auth.refresh_tokens WHERE project_number = @project_number AND tok
 -- name: DeleteRefreshToken :exec
 DELETE FROM auth.refresh_tokens WHERE project_number = @project_number AND token_hash = @token_hash;
 
--- name: PurgeOrphanRefreshTokens :execrows
--- scope: global — housekeeping across projects: tokens of deleted users, or revoked long ago.
-DELETE FROM auth.refresh_tokens r
-WHERE r.created_at < now() - interval '30 days'
-  AND NOT EXISTS (SELECT 1 FROM auth.users u
-                  WHERE u.project_number = r.project_number AND u.tenant_id = r.tenant_id
-                    AND u.uid = r.uid AND u.tokens_valid_after <= r.created_at);
+-- name: PurgeEndedRefreshTokens :execrows
+-- scope: global — housekeeping across projects: one batch of the tokens that stopped working 30
+-- days ago (ended_at: their user deleted, or their session revoked; migration auth 00004). Until
+-- then a refresh with one answers USER_NOT_FOUND or TOKEN_EXPIRED, which sign the client out.
+-- A live token has no ended_at and is never purged: refresh tokens do not expire (ADR-004).
+DELETE FROM auth.refresh_tokens
+WHERE token_hash IN (
+    SELECT r.token_hash FROM auth.refresh_tokens r
+    WHERE r.ended_at < now() - interval '30 days'
+    ORDER BY r.ended_at
+    LIMIT sqlc.arg(batch)::int);
 
 -- name: TouchRefreshToken :exec
 UPDATE auth.refresh_tokens SET last_used_at = now() WHERE project_number = @project_number AND token_hash = @token_hash;
@@ -53,6 +57,16 @@ WHERE state = 'active' AND activated_at < @before;
 -- scope: global — the rotation job destroys retired keys whose tokens have all expired.
 SELECT project_number, kid FROM auth.signing_keys
 WHERE state = 'retired' AND retired_at < @before AND purpose = @purpose;
+
+-- name: PurgeAuthAudit :execrows
+-- scope: global — housekeeping across projects: one batch of the sign-in audit rows older than
+-- @days days, oldest first. The age is the database's clock, which also dated the rows.
+DELETE FROM auth.audit
+WHERE id IN (
+    SELECT a.id FROM auth.audit a
+    WHERE a.at < now() - make_interval(days => sqlc.arg(days)::int)
+    ORDER BY a.at
+    LIMIT sqlc.arg(batch)::int);
 
 -- name: InsertAuthAudit :exec
 INSERT INTO auth.audit (project_number, tenant_id, uid, event, result, ip, details)

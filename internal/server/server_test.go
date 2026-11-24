@@ -152,6 +152,17 @@ func TestReadiness(t *testing.T) {
 	if resp := get(t, newServer(t, ahead, Handlers{}), "GET", "/readyz", nil); resp.StatusCode != 200 {
 		t.Fatalf("readyz on a schema newer than the binary: %d", resp.StatusCode)
 	}
+	// A process that does not hold the Document Database's lock (another one serves it) is not
+	// ready, as with the Realtime Database's.
+	pool := storetest.NewPool(t)
+	for _, h := range []Handlers{{RTDBServing: func() bool { return false }}, {DocumentsServing: func() bool { return false }}} {
+		if resp := get(t, newServer(t, pool, h), "GET", "/readyz", nil); resp.StatusCode != 503 {
+			t.Fatalf("readyz without a single-instance lock: %d", resp.StatusCode)
+		}
+	}
+	if resp := get(t, newServer(t, pool, Handlers{RTDBServing: func() bool { return true }, DocumentsServing: func() bool { return true }}), "GET", "/readyz", nil); resp.StatusCode != 200 {
+		t.Fatalf("readyz with both locks: %d", resp.StatusCode)
+	}
 	if resp := get(t, newServer(t, nil, Handlers{}), "GET", "/healthz", nil); resp.StatusCode != 200 {
 		t.Fatalf("healthz: %d", resp.StatusCode)
 	}

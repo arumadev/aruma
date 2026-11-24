@@ -1,4 +1,4 @@
-import { test, expect, e2e, loadApp, expectEleven, expectStorageOnRoot } from './fixtures.mjs';
+import { test, expect, e2e, loadApp, expectEleven, expectStorageOnRoot, authHost } from './fixtures.mjs';
 
 // The app of src/main.js as each bundler built it (build.mjs), from the real npm packages: the
 // domain-only switch in the browser, eleven operations with no ⚠, and the <img> on the unified link.
@@ -40,7 +40,39 @@ for (const { name, url } of apps) {
     // Storage from the rewritten file the tool wrote, never firebase-storage.js from gstatic.
     if (network.mirrored.length) console.log(`  from www.gstatic.com (answered from npm): ${network.mirrored.map((u) => u.split('/').pop()).join(', ')}`);
     expect(network.mirrored.filter((u) => u.endsWith('/firebase-storage.js')), 'gstatic firebase-storage.js').toEqual([]);
+    // Flutter web signed in: firebase_auth_web's every request (sign-up, sign-in, token refresh,
+    // profile, delete) went to Aruma, from the rewritten firebase-auth.js, never gstatic's.
+    if (done.auth) expectAuthOnAruma(done, network);
     expect(page.errors.filter((e) => !/404|Failed to load resource/.test(e))).toEqual([]);
     await context.close();
   });
+}
+
+// The Auth steps of the Flutter app, and what Aruma saw of them: each step ok, every Auth request
+// on Aruma under Google's paths (ADR-014), none to Google's Auth hosts, and firebase-auth.js never
+// taken from www.gstatic.com.
+function expectAuthOnAruma(done, network) {
+  const steps = done.auth.map((r) => `${r.ok ? '✓' : '✗'} ${r.op}: ${r.detail}`);
+  console.log(`  auth:\n    ${steps.join('\n    ')}`);
+  expect(steps.filter((s) => !s.startsWith('✓')), steps.join('\n')).toEqual([]);
+  expect(done.auth.map((r) => r.op)).toEqual([
+    'auth.signUp', 'auth.signOut', 'auth.signInWithPassword', 'auth.wrongPassword', 'auth.refreshIdToken',
+    'auth.updateProfile', 'auth.signInAnonymously', 'auth.signInAgain', 'auth.deleteUser',
+  ]);
+  const calls = network.aruma.filter((r) => /^\/(identitytoolkit|securetoken)\.googleapis\.com\//.test(r.path) && r.method !== 'OPTIONS');
+  const seen = [...new Set(calls.map((r) => `${r.method} ${r.path}`))];
+  console.log(`  Auth on Aruma: ${seen.join(', ')}`);
+  for (const want of [
+    'POST /identitytoolkit.googleapis.com/v1/accounts:signUp',
+    'POST /identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
+    'POST /identitytoolkit.googleapis.com/v1/accounts:lookup',
+    'POST /identitytoolkit.googleapis.com/v1/accounts:update',
+    'POST /identitytoolkit.googleapis.com/v1/accounts:delete',
+    'POST /securetoken.googleapis.com/v1/token',
+  ]) expect(seen, seen.join(', ')).toContain(want);
+  // Sign-up twice (the email user, then the anonymous one), sign-in with a password three times.
+  expect(calls.filter((r) => r.path.endsWith('/accounts:signUp')).length).toBe(2);
+  expect(calls.filter((r) => r.path.endsWith('/accounts:signInWithPassword')).length).toBe(3);
+  expect(network.urls.filter((u) => authHost.test(new URL(u).hostname)), 'URLs on the Auth hosts').toEqual([]);
+  expect(network.mirrored.filter((u) => u.endsWith('/firebase-auth.js')), 'gstatic firebase-auth.js').toEqual([]);
 }

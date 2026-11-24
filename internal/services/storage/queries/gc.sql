@@ -72,3 +72,33 @@ DELETE FROM storage.usage WHERE project_number = @project_number;
 
 -- name: PurgeBuckets :exec
 DELETE FROM storage.buckets WHERE project_number = @project_number;
+
+-- name: TryLockFilesAgainstBackup :one
+-- scope: global — a deletion of files (the blob_gc worker, a purge) runs only while no backup
+-- holds storage.backup (HoldFilesForBackup), and holds the lock to its commit, so a backup never
+-- waits on a deletion halfway and never misses a file its dump names.
+SELECT pg_try_advisory_xact_lock(hashtext('storage.backup'), 0) AS free;
+
+-- name: HoldFilesForBackup :exec
+-- scope: global — a backup holds storage.backup, shared, on its own session from before its
+-- dump until its archive is written: no file is deleted meanwhile.
+SELECT pg_advisory_lock_shared(hashtext('storage.backup'), 0);
+
+-- name: ExportSnapshot :one
+-- scope: global — the snapshot pg_dump takes (--snapshot), so the files a backup copies are the
+-- ones its dump names.
+SELECT pg_export_snapshot()::text AS snapshot;
+
+-- name: ListBackupKeys :many
+-- scope: global — every file the database names, of every project: the objects' files, and the
+-- staging and object files of live upload sessions. A backup copies these and nothing else.
+SELECT blob_key AS key FROM storage.objects
+UNION
+SELECT staging_key FROM storage.upload_sessions WHERE state = 'active'
+UNION
+SELECT blob_key FROM storage.upload_sessions WHERE state = 'active' AND blob_key IS NOT NULL
+ORDER BY 1;
+
+-- name: GetPromotedKey :one
+-- scope: global — where a staging file went: the object key its session moved it to.
+SELECT blob_key FROM storage.upload_sessions WHERE staging_key = @staging_key::text AND blob_key IS NOT NULL;

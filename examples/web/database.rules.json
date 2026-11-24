@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "chat": {
+      "$team": {
+        "messages": {
+          ".read": "auth != null && root.child('members').child($team).child(auth.uid).exists()",
+          ".indexOn": ["ts"],
+          "$message": {
+            ".write": "auth != null && !data.exists() && root.child('members').child($team).child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'ts']) && newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 1000 && newData.child('name').isString() && newData.child('ts').val() === now"
+          }
+        }
+      }
+    },
+    "presence": {
+      "$team": {
+        ".read": "auth != null && root.child('members').child($team).child(auth.uid).exists()",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('members').child($team).child(auth.uid).exists()"
+        }
+      }
+    },
+    "members": {
+      "$team": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.val() === true"
+        }
+      }
+    }
+  }
+}

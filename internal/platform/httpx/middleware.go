@@ -2,6 +2,8 @@ package httpx
 
 import (
 	"context"
+	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/netip"
@@ -44,7 +46,7 @@ func CommonWithLimit(next http.Handler, logger *slog.Logger, trusted []netip.Pre
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		r, id, ip := Begin(w, r, trusted)
-		r.Body = http.MaxBytesReader(w, r.Body, maxBody)
+		r.Body = &requestBody{ReadCloser: http.MaxBytesReader(w, r.Body, maxBody)}
 
 		rec := &StatusRecorder{ResponseWriter: w, Status: http.StatusOK}
 		defer func() {
@@ -112,3 +114,28 @@ func truncate(s string, n int) string {
 	}
 	return s
 }
+
+// requestBody marks the errors of reading a request's body, other than its end and the body
+// cap's own, as BodyError.
+type requestBody struct{ io.ReadCloser }
+
+func (b *requestBody) Read(p []byte) (int, error) {
+	n, err := b.ReadCloser.Read(p)
+	if err != nil && err != io.EOF {
+		var tooLarge *http.MaxBytesError
+		if !errors.As(err, &tooLarge) {
+			err = &BodyError{Err: err}
+		}
+	}
+	return n, err
+}
+
+// BodyError is a failure to read a request's body: the client went away in the middle of its
+// request, or sent less than it announced. It wraps the reader's error, so errors.Is still
+// finds io.ErrUnexpectedEOF in it; apierr answers it INVALID_ARGUMENT, and never takes it for a
+// lost database connection, which ends with the same errors.
+type BodyError struct{ Err error }
+
+func (e *BodyError) Error() string     { return "request body: " + e.Err.Error() }
+func (e *BodyError) Unwrap() error     { return e.Err }
+func (e *BodyError) RequestBody() bool { return true }

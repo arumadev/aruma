@@ -1,0 +1,103 @@
+name: ios-firestore
+
+# The Document Database end to end on an iOS simulator: test/e2e/ios-firestore/run.sh, the official
+# FirebaseFirestore and FirebaseAuth 12 (Swift) in production mode, the host set in
+# FirestoreSettings, under the released firestore.rules. It runs here so that no one has to run a
+# simulator on their own Mac: on pull requests that touch what it tests, and by hand. The repository
+# is public: GitHub's macOS runners cost no minutes. The same suite runs in Codemagic by hand
+# (codemagic.yaml, ios-firestore).
+#
+# The network guard: test/ci/egress-guard.sh (iptables) is Linux only and does not apply on macOS.
+# The suite keeps its own guard, which is the proof here: LoopbackGuard (a URLProtocol refusing
+# every URLSession request off this machine that ArumaRedirect does not take) in the tests, and
+# run.sh's lsof samples of the app's sockets, which see Firestore's gRPC channels (a second look,
+# not proof). The build itself fetches the Swift packages and Firestore's binary from Google; the
+# tests do not run until it is done.
+on:
+  pull_request:
+    paths:
+      - sdk/ios/ArumaRedirect/**
+      - test/e2e/ios-firestore/**
+      - test/e2e/server.sh
+      - test/smoke/genconfig/**
+      - internal/services/documents/**
+      - internal/platform/rules/**
+      - .github/workflows/ios-firestore.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-firestore-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARUMA_TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  ios-firestore:
+    name: iOS Document Database e2e (Swift, simulator, production mode)
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+          xcodebuild -version
+      # The redirect's own unit tests (host matching, rewriting, forwarding). They need no server
+      # and no simulator, and no other workflow runs them.
+      - name: ArumaRedirect unit tests
+        run: swift test --package-path sdk/ios/ArumaRedirect
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: PostgreSQL 18
+        run: |
+          brew install postgresql@18
+          PG=$(brew --prefix postgresql@18)/bin
+          "$PG/initdb" -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust >/dev/null
+          "$PG/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/pg.log" -o "-p 5432 -k $RUNNER_TEMP" -w start
+          "$PG/psql" "$ARUMA_TEST_DATABASE_URL" -tAc 'select version()'
+
+      # The Swift package checkouts (Firebase and its binary dependencies), pinned by Package.resolved.
+      - name: Restore the Swift packages
+        id: spm
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/xcode/spm
+          key: ios-firestore-spm-${{ hashFiles('test/e2e/ios-firestore/FirestoreE2E.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'sdk/ios/ArumaRedirect/Package.swift') }}
+          restore-keys: ios-firestore-spm-
+
+      - name: Boot an iPhone simulator (the newest iOS runtime)
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          rts = [(tuple(int(x) for x in re.findall(r"\d+", rt)), ds) for rt, ds in json.load(sys.stdin)["devices"].items() if ".iOS-" in rt]
+          rts = [(v, [d for d in ds if d["name"].startswith("iPhone")]) for v, ds in sorted(rts, reverse=True)]
+          print(next(ds[0]["udid"] for v, ds in rts if ds))')
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b >/dev/null
+          xcrun simctl list devices | grep "$udid"
+          echo "ARUMA_IOS_SIMULATOR=$udid" >>"$GITHUB_ENV"
+
+      - name: Swift (test/e2e/ios-firestore/run.sh)
+        run: test/e2e/ios-firestore/run.sh
+
+      - name: Save the Swift packages
+        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/xcode/spm
+          key: ${{ steps.spm.outputs.cache-primary-key }}
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: ios-firestore-logs
+          path: |
+            test/e2e/ios-firestore/.generated/xcodebuild.log
+            test/e2e/ios-firestore/.generated/server.log
+            test/e2e/ios-firestore/.generated/sockets.unique.txt

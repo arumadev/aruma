@@ -1,0 +1,9 @@
+{
+  "name": "team-board-flutter-e2e",
+  "private": true,
+  "type": "module",
+  "description": "The web end-to-end test of examples/flutter: run it through run.sh.",
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

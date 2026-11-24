@@ -1,0 +1,18 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Your project's config file and local settings: copy firebase-config.example.json
+firebase-config.json
+.env.local
+.env.*.local
+
+# End-to-end runs
+e2e/.generated/
+test-results/
+playwright-report/
+
+# The Firebase emulators and the firebase CLI
+.firebase/
+*-debug.log

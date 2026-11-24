@@ -564,33 +564,35 @@ func TestConnectionLimit(t *testing.T) {
 	s := newTestService(t, newMemStore(), Options{Limits: lim})
 	tg, _ := s.Resolve(context.Background(), "chat-app-default-rtdb")
 	other, _ := s.Resolve(context.Background(), "other-app-default-rtdb")
+	// Connections: sessions with a sink for their pushes (WebSockets, long polls).
+	conn := OpenOptions{Sink: &recorder{}}
 
 	// Sessions that have neither signed in nor been allowed anything take no slot
 	// (review #3): any number of them leaves room for the project's clients.
 	for range 5 {
-		anon, err := s.Open(tg, Auth{}, OpenOptions{})
+		anon, err := s.Open(tg, Auth{}, conn)
 		if err != nil {
 			t.Fatal(err)
 		}
 		get(anon, "/x") // denied: still no slot
 		defer anon.Close()
 	}
-	a1, err1 := s.Open(tg, admin, OpenOptions{})
-	_, err2 := s.Open(tg, admin, OpenOptions{})
+	a1, err1 := s.Open(tg, admin, conn)
+	_, err2 := s.Open(tg, admin, conn)
 	if err1 != nil || err2 != nil {
 		t.Fatal(err1, err2)
 	}
-	if _, err := s.Open(tg, admin, OpenOptions{}); !errors.Is(err, ErrTooManyConnections) {
+	if _, err := s.Open(tg, admin, conn); !errors.Is(err, ErrTooManyConnections) {
 		t.Errorf("third admin session: %v", err)
 	}
-	late, _ := s.Open(tg, Auth{}, OpenOptions{})
+	late, _ := s.Open(tg, Auth{}, conn)
 	if err := late.SetAuth(admin); !errors.Is(err, ErrTooManyConnections) {
 		t.Errorf("signing in at the limit: %v", err)
 	}
 	if late.Auth().Admin {
 		t.Error("a refused sign-in changed the session")
 	}
-	if _, err := s.Open(other, admin, OpenOptions{}); err != nil {
+	if _, err := s.Open(other, admin, conn); err != nil {
 		t.Errorf("another project has its own limit: %v", err)
 	}
 	a1.Close()
@@ -598,6 +600,40 @@ func TestConnectionLimit(t *testing.T) {
 		t.Errorf("after a close: %v", err)
 	}
 	late.Close()
+}
+
+// REST requests do not count against connections_per_project, as Firebase counts only its
+// simultaneous connections: a database whose listeners fill the limit can still be read and
+// written by a backend over REST, and the listeners get what it writes.
+func TestConnectionLimitLeavesREST(t *testing.T) {
+	lim := DefaultLimits
+	lim.ConnectionsPerProject = 1
+	s := newTestService(t, newMemStore(), Options{Limits: lim})
+	tg, _ := s.Resolve(context.Background(), "chat-app-default-rtdb")
+	rec := &recorder{}
+	listener, err := s.Open(tg, admin, OpenOptions{Sink: rec})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	if _, err := s.Open(tg, admin, OpenOptions{Sink: &recorder{}}); !errors.Is(err, ErrTooManyConnections) {
+		t.Fatalf("a second connection at the limit: %v", err)
+	}
+	for i := range 3 {
+		rest, err := s.Open(tg, admin, OpenOptions{}) // a REST request with an admin credential
+		if err != nil {
+			t.Fatalf("REST request %d at the limit: %v", i, err)
+		}
+		if _, err := set(rest, "/x", strconv.Itoa(i), nil); err != nil {
+			t.Errorf("REST write %d at the limit: %v", i, err)
+		}
+		rest.Close()
+		user, _ := s.Open(tg, Auth{}, OpenOptions{})
+		if err := user.SetAuth(admin); err != nil {
+			t.Errorf("REST sign-in %d at the limit: %v", i, err)
+		}
+		user.Close()
+	}
 }
 
 // A session's queued writes finish before its database can retire, and a new writer starts

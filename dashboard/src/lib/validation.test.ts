@@ -43,7 +43,7 @@ describe('safeNextPath', () => {
   it('accepts same-site paths', () => {
     expect(safeNextPath('/project/keys/?id=chat-app')).toBe('/project/keys/?id=chat-app');
   });
-  it.each([null, '', 'https://evil.example', '//evil.example', '/\\evil.example', 'projects'])('rejects %s', (next) =>
+  it.each([null, '', 'https://evil.example', '//evil.example', '/\\evil.example', 'projects', '/\t/evil.example', '/\n/evil.example', '/\r/evil.example'])('rejects %s', (next) =>
     expect(safeNextPath(next)).toBeNull(),
   );
 });

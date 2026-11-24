@@ -426,3 +426,96 @@ func TestListWithABadSeal(t *testing.T) {
 		}
 	}
 }
+
+// The rules decide a list on the children of the prefix's folder. Without "/" as the delimiter,
+// or with another one, deeper names come back whole, so each deeper folder is decided too: a name
+// is shown only where a list of its folder is allowed (shared/{file} open to all,
+// shared/{team}/hr/{file} to HR alone). Rules that allow every depth list every name, as the
+// emulator does, and so does an admin, whom no rule governs.
+func TestListWithoutSlashDelimiterAsksTheRulesOfEachFolder(t *testing.T) {
+	ctx := context.Background()
+	f := newObjectsFixture(t)
+	all := []string{"shared/handbook.txt", "shared/sales/hr/salary-review.txt", "shared/sales/q1.txt", "shared/zeta.txt", "sharedx/y.txt"}
+	for _, name := range all {
+		f.put(t, name, seed{body: "x"})
+	}
+	names := func(p Principal, o ListOptions) (objects, prefixes []string) {
+		t.Helper()
+		o.Surface = SurfaceFirebase
+		for range 20 {
+			page, err := f.s.List(ctx, f.b, p, o)
+			if err != nil {
+				t.Fatalf("%+v: %v", o, err)
+			}
+			for _, obj := range page.Objects {
+				objects = append(objects, obj.Name)
+			}
+			prefixes = append(prefixes, page.Prefixes...)
+			if page.NextPageToken == "" {
+				return objects, prefixes
+			}
+			o.PageToken = page.NextPageToken
+		}
+		t.Fatalf("%+v: the list did not end", o)
+		return nil, nil
+	}
+	inShared := all[:4]
+
+	// Rules that allow every depth: every name, as before and as the emulator lists.
+	for _, delim := range []string{"", "/"} {
+		objects, _ := names(alice, ListOptions{Prefix: "shared/", Delimiter: delim})
+		if delim == "" && !slices.Equal(objects, inShared) {
+			t.Errorf("open rules, no delimiter: %v, want %v", objects, inShared)
+		}
+	}
+
+	// The HR folder's list is refused.
+	f.allow(func(op ruleOp) error {
+		if op.Method == rules.MethodList && strings.HasPrefix(op.Name, "shared/sales/hr/") {
+			return ErrPermissionDenied
+		}
+		return nil
+	})
+	open := []string{"shared/handbook.txt", "shared/sales/q1.txt", "shared/zeta.txt"}
+	for _, max := range []int{0, 1, 2} {
+		objects, prefixes := names(alice, ListOptions{Prefix: "shared/", MaxResults: max})
+		if !slices.Equal(objects, open) || len(prefixes) != 0 {
+			t.Errorf("no delimiter, maxResults %d: objects %v, prefixes %v, want %v and none", max, objects, prefixes, open)
+		}
+	}
+	// Another delimiter folds names at it, and still shows nothing of the refused folder.
+	objects, prefixes := names(alice, ListOptions{Prefix: "shared/", Delimiter: "x"})
+	for _, n := range slices.Concat(objects, prefixes) {
+		if strings.Contains(n, "/hr/") {
+			t.Errorf("delimiter x: %q is of the refused folder", n)
+		}
+	}
+	if want := []string{"shared/handbook.tx", "shared/sales/q1.tx", "shared/zeta.tx"}; !slices.Equal(prefixes, want) || len(objects) != 0 {
+		t.Errorf("delimiter x: objects %v, prefixes %v, want prefixes %v", objects, prefixes, want)
+	}
+	// A prefix that is not a folder lists among the root's children, and deeper as allowed.
+	objects, _ = names(alice, ListOptions{Prefix: "shared"})
+	if want := append(slices.Clone(open), "sharedx/y.txt"); !slices.Equal(objects, want) {
+		t.Errorf("prefix shared, no delimiter: %v, want %v", objects, want)
+	}
+	// The SDKs' list is unchanged: the subfolder is a prefix.
+	objects, prefixes = names(alice, ListOptions{Prefix: "shared/", Delimiter: "/"})
+	if !slices.Equal(objects, []string{"shared/handbook.txt", "shared/zeta.txt"}) || !slices.Equal(prefixes, []string{"shared/sales/"}) {
+		t.Errorf("delimiter /: objects %v, prefixes %v", objects, prefixes)
+	}
+	// An admin is not governed by the rules.
+	if objects, _ = names(admin, ListOptions{Prefix: "shared/"}); !slices.Equal(objects, inShared) {
+		t.Errorf("admin, no delimiter: %v, want %v", objects, inShared)
+	}
+	// Each folder is asked once a page, and a page asks about a bounded number of them.
+	for i := range listFolderDecisions + 20 {
+		f.put(t, fmt.Sprintf("many/d%03d/x.txt", i), seed{body: "x"})
+	}
+	page, err := f.s.List(ctx, f.b, alice, ListOptions{Prefix: "many/", Surface: SurfaceFirebase})
+	if err != nil || len(page.Objects) != listFolderDecisions || page.NextPageToken == "" {
+		t.Fatalf("a page over many folders: %d objects, token %q, %v; want %d and a next page", len(page.Objects), page.NextPageToken, err, listFolderDecisions)
+	}
+	if objects, _ = names(alice, ListOptions{Prefix: "many/"}); len(objects) != listFolderDecisions+20 {
+		t.Errorf("all pages over many folders: %d names, want %d", len(objects), listFolderDecisions+20)
+	}
+}

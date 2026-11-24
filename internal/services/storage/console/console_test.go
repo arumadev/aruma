@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -111,7 +112,7 @@ type env struct {
 	routes  []route
 	bucket  core.Bucket
 	pool    *pgxpool.Pool
-	// audit wraps tenancy's audit log; failAudit makes it fail.
+	// audit wraps tenancy's audit log; failAudit makes it fail with errAuditRefused.
 	failAudit bool
 }
 
@@ -198,7 +199,9 @@ func newEnv(t *testing.T, enabled bool, opts ...envOption) *env {
 	}
 	audit := func(ctx context.Context, p *authn.Principal, project int64, action, target string, details map[string]any) error {
 		if e.failAudit {
-			return io.ErrUnexpectedEOF
+			// A refused insert: a connection lost on the way (unexpected EOF) would make the
+			// request UNAVAILABLE instead, as any lost database connection does.
+			return errAuditRefused
 		}
 		return ten.Audit(ctx, p, project, action, target, details)
 	}
@@ -356,3 +359,6 @@ func (e *env) lastAudit(action string) (auditRow, bool) {
 	}
 	return auditRow{}, false
 }
+
+// errAuditRefused is the audit log's failure under failAudit.
+var errAuditRefused = errors.New("audit: insert refused")

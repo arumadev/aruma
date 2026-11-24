@@ -25,6 +25,10 @@ import (
 type Config struct {
 	// DatabaseURL is the Postgres connection string. Required.
 	DatabaseURL log.Secret `yaml:"database_url"`
+	// DatabaseTimeout bounds how long a request waits for the database: for a connection from
+	// the pool, and then for each statement's answer. Past it the request fails with
+	// UNAVAILABLE (503), which clients retry, instead of hanging while Postgres is frozen.
+	DatabaseTimeout time.Duration `yaml:"database_timeout"`
 	// PublicURL is the address developers and SDKs reach the server at. Required.
 	PublicURL string `yaml:"public_url"`
 	// MasterKey is 32 random bytes, base64-encoded, used to derive HMAC and encryption keys. Required.
@@ -46,6 +50,10 @@ type Config struct {
 	// Document Database, whose X-Forwarded-Proto: https lets a credential arrive without TLS
 	// (ADR-029 §3.7). Empty by default.
 	TrustedProxies []string `yaml:"trusted_proxies"`
+	// Server holds the HTTP timeouts of the public listener.
+	Server Server `yaml:"server"`
+	// Auth holds Auth's instance-wide rate limits.
+	Auth Auth `yaml:"auth"`
 
 	Session   Session   `yaml:"session"`
 	Mail      Mail      `yaml:"mail"`
@@ -53,6 +61,7 @@ type Config struct {
 	Rules     Rules     `yaml:"rules"`
 	Storage   Storage   `yaml:"storage"`
 	Documents Documents `yaml:"documents"`
+	Retention Retention `yaml:"retention"`
 
 	masterKey      []byte
 	publicURL      *url.URL
@@ -119,9 +128,10 @@ type RTDBLimits struct {
 	StringBytes int64 `yaml:"string_bytes"`
 	// WriteBytesPerMinute caps the bytes written to one database per minute.
 	WriteBytesPerMinute int64 `yaml:"write_bytes_per_minute"`
-	// ConnectionsPerProject caps the connections to one project's databases. A connection
-	// counts once it has signed in or done its first permitted operation, so anonymous sockets
-	// cannot take a project's slots.
+	// ConnectionsPerProject caps the connections to one project's databases: WebSockets and
+	// long polls. A connection counts once it has signed in or done its first permitted
+	// operation, so anonymous sockets cannot take a project's slots. REST requests do not
+	// count, as in Firebase, so a database full of listeners can still be written to.
 	ConnectionsPerProject int `yaml:"connections_per_project"`
 	// ConnectionsPerIP caps the open connections from one client address (resolved through
 	// trusted_proxies), counted from the handshake.
@@ -141,13 +151,26 @@ type RTDBLimits struct {
 // Defaults returns a configuration with every optional field set.
 func Defaults() Config {
 	return Config{
-		Listen:        ":8080",
-		MetricsListen: "127.0.0.1:9464",
-		LogLevel:      "info",
+		DatabaseTimeout: 15 * time.Second, // store.DefaultTimeout, which config may not import
+		Listen:          ":8080",
+		MetricsListen:   "127.0.0.1:9464",
+		LogLevel:        "info",
 		Session: Session{
 			IdleTimeout:     30 * time.Minute,
 			AbsoluteTimeout: 8 * time.Hour,
 		},
+		Server: Server{
+			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       60 * time.Second,
+			WriteTimeout:      60 * time.Second,
+			IdleTimeout:       120 * time.Second,
+		},
+		// auth/api.ClientLimits, which config may not import; a test in internal/app keeps the
+		// two equal.
+		Auth: Auth{Limits: AuthLimits{
+			RequestsPerMinute: 300, RequestBurst: 100,
+			SignUpsPerMinute: 2, SignUpBurst: 100,
+		}},
 		RTDB: RTDB{Limits: RTDBLimits{
 			MessageBytes:                16 << 20,
 			UnauthenticatedMessageBytes: 1 << 20,
@@ -212,7 +235,56 @@ func Defaults() Config {
 				ListMaxResults:             1000,
 			},
 		},
+		Retention: Retention{AuthAuditDays: 90, ControlAuditDays: 90, EventsDays: 30},
 	}
+}
+
+// Retention is how long housekeeping keeps the tables that grow with use, in days. It runs at
+// start and then hourly, deleting in bounded batches. 0 keeps a table forever; a negative value
+// is refused. Credentials that stopped working (console sessions, CLI tokens, refresh tokens,
+// email codes, upload sessions) need no setting: each goes a fixed time after it stopped
+// working, as docs/reference/configuration.md lists.
+type Retention struct {
+	// AuthAuditDays keeps auth.audit, a row per sign-in attempt, successful or not, and per
+	// email code and session cookie issued. Nothing in the server reads it; it is for an
+	// operator's queries.
+	AuthAuditDays int `yaml:"auth_audit_days"`
+	// ControlAuditDays keeps control.audit_log, the console's and Management API's record of
+	// administrative actions, which the console's audit log pages read. At least 7: the database
+	// itself refuses to delete a younger row.
+	ControlAuditDays int `yaml:"control_audit_days"`
+	// EventsDays keeps events.changes, the shared change log Auth writes a row to per account
+	// created. Nothing in the server reads it yet.
+	EventsDays int `yaml:"events_days"`
+}
+
+// Bounds of the retention settings: a century is a typo's ceiling, not a policy, and the
+// administrative audit log's floor is the database's own (control migration 00004).
+const (
+	maxRetentionDays    = 36500
+	minControlAuditDays = 7
+)
+
+// validateRetention checks the retention section.
+func (c *Config) validateRetention() []error {
+	var errs []error
+	r := c.Retention
+	for _, f := range []struct {
+		name string
+		v    int
+	}{
+		{"auth_audit_days", r.AuthAuditDays},
+		{"control_audit_days", r.ControlAuditDays},
+		{"events_days", r.EventsDays},
+	} {
+		if f.v < 0 || f.v > maxRetentionDays {
+			errs = append(errs, fmt.Errorf("retention.%s must be between 0 (keep forever) and %d days", f.name, maxRetentionDays))
+		}
+	}
+	if r.ControlAuditDays > 0 && r.ControlAuditDays < minControlAuditDays {
+		errs = append(errs, fmt.Errorf("retention.control_audit_days must be 0 (keep forever) or at least %d: the database keeps the last %d days of the audit log", minControlAuditDays, minControlAuditDays))
+	}
+	return errs
 }
 
 // Documents holds the Document Database settings (ADR-024 to ADR-029).
@@ -414,6 +486,32 @@ type RulesLimits struct {
 // Load reads the YAML file at path (skipped when empty), applies environment overrides from
 // getenv, and validates the result.
 func Load(path string, getenv func(string) string) (*Config, error) {
+	c, err := read(path, getenv)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// LoadForOperator reads the configuration as Load does, without validating it: the operator
+// commands (migrate, backup, restore) need the database URL and the Storage directory only, and
+// must work before the rest of the configuration exists, from the file as from the environment.
+// A database URL that is missing is an error.
+func LoadForOperator(path string, getenv func(string) string) (*Config, error) {
+	c, err := read(path, getenv)
+	if err != nil {
+		return nil, err
+	}
+	if c.DatabaseURL == "" {
+		return nil, errors.New("database_url (ARUMA_DATABASE_URL) is not set")
+	}
+	return c, nil
+}
+
+func read(path string, getenv func(string) string) (*Config, error) {
 	c := Defaults()
 	if path != "" {
 		b, err := os.ReadFile(path)
@@ -427,9 +525,6 @@ func Load(path string, getenv func(string) string) (*Config, error) {
 		}
 	}
 	if err := c.applyEnv(getenv); err != nil {
-		return nil, err
-	}
-	if err := c.validate(); err != nil {
 		return nil, err
 	}
 	return &c, nil
@@ -479,6 +574,7 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	}
 
 	secret("ARUMA_DATABASE_URL", &c.DatabaseURL)
+	duration("ARUMA_DATABASE_TIMEOUT", &c.DatabaseTimeout)
 	str("ARUMA_PUBLIC_URL", &c.PublicURL)
 	secret("ARUMA_MASTER_KEY", &c.MasterKey)
 	str("ARUMA_LISTEN", &c.Listen)
@@ -493,6 +589,10 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	}
 	duration("ARUMA_SESSION_IDLE_TIMEOUT", &c.Session.IdleTimeout)
 	duration("ARUMA_SESSION_ABSOLUTE_TIMEOUT", &c.Session.AbsoluteTimeout)
+	duration("ARUMA_SERVER_READ_HEADER_TIMEOUT", &c.Server.ReadHeaderTimeout)
+	duration("ARUMA_SERVER_READ_TIMEOUT", &c.Server.ReadTimeout)
+	duration("ARUMA_SERVER_WRITE_TIMEOUT", &c.Server.WriteTimeout)
+	duration("ARUMA_SERVER_IDLE_TIMEOUT", &c.Server.IdleTimeout)
 	if v := getenv("ARUMA_MAIL_DEV_MAILBOX"); v != "" {
 		var b bool
 		boolean("ARUMA_MAIL_DEV_MAILBOX", &b)
@@ -530,6 +630,11 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 		integer(name, &n)
 		*dst = int(n)
 	}
+	al := &c.Auth.Limits
+	count("ARUMA_AUTH_REQUESTS_PER_MINUTE", &al.RequestsPerMinute)
+	count("ARUMA_AUTH_REQUEST_BURST", &al.RequestBurst)
+	count("ARUMA_AUTH_SIGN_UPS_PER_MINUTE", &al.SignUpsPerMinute)
+	count("ARUMA_AUTH_SIGN_UP_BURST", &al.SignUpBurst)
 	rl := &c.Rules.Limits
 	count("ARUMA_RULES_CALL_DEPTH", &rl.CallDepth)
 	count("ARUMA_RULES_FUNCTION_LETS", &rl.FunctionLets)
@@ -618,6 +723,9 @@ func (c *Config) applyEnv(getenv func(string) string) error {
 	count("ARUMA_STORAGE_UPLOAD_REQUESTS_PER_IP", &sl.UploadRequestsPerIP)
 	integer("ARUMA_STORAGE_MIN_BYTES_PER_SECOND", &sl.MinBytesPerSecond)
 	count("ARUMA_STORAGE_LIST_MAX_RESULTS", &sl.ListMaxResults)
+	count("ARUMA_RETENTION_AUTH_AUDIT_DAYS", &c.Retention.AuthAuditDays)
+	count("ARUMA_RETENTION_CONTROL_AUDIT_DAYS", &c.Retention.ControlAuditDays)
+	count("ARUMA_RETENTION_EVENTS_DAYS", &c.Retention.EventsDays)
 	return errors.Join(errs...)
 }
 
@@ -648,6 +756,9 @@ func (c *Config) validate() error {
 	var errs []error
 	if c.DatabaseURL == "" {
 		errs = append(errs, errors.New("database_url (ARUMA_DATABASE_URL) is required"))
+	}
+	if c.DatabaseTimeout < time.Second || c.DatabaseTimeout > 10*time.Minute {
+		errs = append(errs, fmt.Errorf("database_timeout %v must be between 1s and 10m", c.DatabaseTimeout))
 	}
 
 	if c.PublicURL == "" {
@@ -700,10 +811,13 @@ func (c *Config) validate() error {
 		c.trustedProxies = append(c.trustedProxies, prefix.Masked())
 	}
 
+	errs = append(errs, c.validateServer()...)
+	errs = append(errs, c.validateAuth()...)
 	errs = append(errs, c.validateRTDB()...)
 	errs = append(errs, c.validateRules()...)
 	errs = append(errs, c.validateStorage()...)
 	errs = append(errs, c.validateDocuments()...)
+	errs = append(errs, c.validateRetention()...)
 
 	if c.Session.IdleTimeout <= 0 || c.Session.AbsoluteTimeout <= 0 {
 		errs = append(errs, errors.New("session timeouts must be positive"))
