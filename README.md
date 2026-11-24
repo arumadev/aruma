@@ -33,7 +33,7 @@ Behavior is checked against real Firebase and the official emulators, and the of
 
 ## Status
 
-Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). What is not verified yet is listed in [testing](docs/testing.md#what-is-not-verified-yet).
+Aruma is pre-1.0. The latest release is [v0.5.0](docs/CHANGELOG.md#v050). What is not verified yet is listed in [testing](docs/testing.md#what-is-not-verified-yet).
 
 | Service | Status | Details |
 |---|---|---|
@@ -50,7 +50,7 @@ Aruma is pre-1.0. The latest release is [v0.4.0](docs/CHANGELOG.md#v040). What i
 With Docker (Aruma and PostgreSQL 18, nothing else to install):
 
 ```bash
-git clone --branch v0.4.0 https://github.com/arumadev/aruma.git && cd aruma
+git clone --branch v0.5.0 https://github.com/arumadev/aruma.git && cd aruma
 printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env
 docker compose up -d
 docker compose logs aruma | grep code    # the one-time setup code

@@ -107,7 +107,7 @@ const shots = [
             </div>
             <div class="copy-line reveal">
               <code><span class="dim">$</span> git clone {repo}.git &amp;&amp; docker compose up -d</code>
-              <button class="copy" type="button" data-copy={`git clone --branch v0.4.0 ${repo}.git && cd aruma\nprintf 'ARUMA_MASTER_KEY=%s\\nPOSTGRES_PASSWORD=%s\\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env\ndocker compose up -d`} aria-label="Copy the install commands">Copy</button>
+              <button class="copy" type="button" data-copy={`git clone --branch v0.5.0 ${repo}.git && cd aruma\nprintf 'ARUMA_MASTER_KEY=%s\\nPOSTGRES_PASSWORD=%s\\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env\ndocker compose up -d`} aria-label="Copy the install commands">Copy</button>
             </div>
           </div>
 

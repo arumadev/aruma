@@ -66,8 +66,8 @@ Each [release](https://github.com/arumadev/aruma/releases) has one archive per s
 **Check what you downloaded.** `checksums.txt` lists the SHA-256 of every archive, and each archive has a build attestation that proves it was built by this repository's release workflow:
 
 ```bash
-grep aruma_0.4.0_linux_amd64 checksums.txt | sha256sum --check     # macOS: shasum -a 256 --check
-gh attestation verify aruma_0.4.0_linux_amd64.tar.gz --repo arumadev/aruma
+grep aruma_0.5.0_linux_amd64 checksums.txt | sha256sum --check     # macOS: shasum -a 256 --check
+gh attestation verify aruma_0.5.0_linux_amd64.tar.gz --repo arumadev/aruma
 ```
 
 **Not signed by Apple or Microsoft.** macOS blocks a binary downloaded with a browser until you allow it: `xattr -d com.apple.quarantine aruma arumactl`, or System Settings, Privacy & Security, Open Anyway. Windows SmartScreen may show "Windows protected your PC"; choose More info, then Run anyway. Files fetched with `curl` are not marked on macOS. Docker avoids both.

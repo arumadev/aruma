@@ -1,6 +1,6 @@
 # The Aruma server image: the dashboard is built with Node, embedded in a static Go binary, and run
 # on Alpine with the PostgreSQL 18 client tools that `aruma backup` and `aruma restore` call.
-# compose.yaml builds it; `docker build --build-arg VERSION=v0.4.0 -t aruma .` works on its own.
+# compose.yaml builds it; `docker build --build-arg VERSION=v0.5.0 -t aruma .` works on its own.
 
 FROM node:24-slim AS dashboard
 WORKDIR /src/dashboard

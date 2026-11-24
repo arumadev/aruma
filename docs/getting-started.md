@@ -11,7 +11,7 @@ There are three ways to run it. Docker is the quickest; the other two need a Pos
 You need Docker with Compose and `openssl`. `compose.yaml` runs Aruma and PostgreSQL 18, with the Realtime Database, Storage and the Document Database turned on. The image is built on your machine the first time, which takes a few minutes.
 
 ```bash
-git clone --branch v0.4.0 https://github.com/arumadev/aruma.git
+git clone --branch v0.5.0 https://github.com/arumadev/aruma.git
 cd aruma
 printf 'ARUMA_MASTER_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env
 docker compose up -d
