@@ -4,7 +4,7 @@ One section per release, newest first. Each release has an upgrade section when 
 
 ## v0.5.0
 
-Released 2026-11-24.
+Released 2026-11-25.
 
 v0.5.0 is for production on one server, for small and medium projects. It adds no new service. It
 fixes what a release-wide review, Firebase's own Firestore tests, crash and outage tests and two
