@@ -1,8 +1,12 @@
 package core
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"math/rand/v2"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -108,6 +112,77 @@ func TestQueryIdentity(t *testing.T) {
 	} {
 		if _, err := NewQuery(spec(t, bad)); !errors.Is(err, want) {
 			t.Errorf("%s: %v, want %v", bad, err, want)
+		}
+	}
+}
+
+// Keys with a limit puts only the selected children in order; it must select exactly what a
+// full sort, the range, then the first or last Limit select.
+func TestQueryKeysMatchesFullSort(t *testing.T) {
+	rng := rand.New(rand.NewPCG(3, 5))
+	values := []string{`null`, `false`, `true`, `0`, `1`, `2.5`, `-3`, `"a"`, `"b"`, `{"x": 1}`}
+	keyBounds := []string{`"0"`, `"1"`, `"5"`, `"a"`, `"m"`}
+	for round := range 300 {
+		doc := map[string]json.RawMessage{}
+		for i := range rng.IntN(60) {
+			k := fmt.Sprint(i)
+			if rng.IntN(3) == 0 {
+				k = fmt.Sprintf("k%02d", i)
+			}
+			doc[k] = json.RawMessage(fmt.Sprintf(`{"s": %s, ".priority": %d}`, values[rng.IntN(len(values))], rng.IntN(4)))
+		}
+		b, _ := json.Marshal(doc)
+		n := mustParse(t, string(b))
+		for _, index := range []string{".key", ".priority", ".value", "s"} {
+			obj := map[string]any{"i": index}
+			if l := rng.IntN(12); l > 0 {
+				obj["l"] = l
+				if rng.IntN(2) == 0 {
+					obj["vf"] = "r"
+				}
+			}
+			bounds := values[1 : len(values)-1] // no null, no object: neither may bound a range
+			if index == ".key" {
+				bounds = keyBounds
+			}
+			if rng.IntN(3) == 0 {
+				obj["sp"] = json.RawMessage(bounds[rng.IntN(len(bounds))])
+			}
+			if rng.IntN(3) == 0 {
+				obj["ep"] = json.RawMessage(bounds[rng.IntN(len(bounds))])
+			}
+			qs, _ := json.Marshal(obj)
+			q, err := NewQuery(spec(t, string(qs)))
+			if err != nil {
+				t.Fatalf("%s: %v", qs, err)
+			}
+			want := slices.DeleteFunc(n.SortedKeys(q.Index), func(k string) bool { return !q.inRange(k, n.Child(k)) })
+			if q.Limit > 0 && len(want) > q.Limit {
+				if q.FromRight {
+					want = want[len(want)-q.Limit:]
+				} else {
+					want = want[:q.Limit]
+				}
+			}
+			if got := q.Keys(n); !slices.Equal(got, want) {
+				t.Fatalf("round %d, query %s on %s:\n got  %q\n want %q", round, qs, b, got, want)
+			}
+		}
+	}
+}
+
+func TestSmallest(t *testing.T) {
+	rng := rand.New(rand.NewPCG(1, 1))
+	for range 500 {
+		es := make([]int, rng.IntN(40))
+		for i := range es {
+			es[i] = rng.IntN(20)
+		}
+		k := rng.IntN(45) - 2
+		want := slices.Sorted(slices.Values(es))
+		want = want[:max(0, min(k, len(want)))]
+		if got := smallest(slices.Clone(es), k, cmp.Compare[int]); !slices.Equal(got, want) {
+			t.Fatalf("smallest(%v, %d) = %v, want %v", es, k, got, want)
 		}
 	}
 }

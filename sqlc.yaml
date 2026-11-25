@@ -96,12 +96,16 @@ sql:
         overrides:
           - db_type: timestamptz
             go_type: time.Time
-          # A nil RawMessage is SQL NULL: a leaf's value is NULL on an object's priority row.
+          # Raw bytes, which pgx copies as they come; a json.RawMessage would make it run
+          # json.Unmarshal on every value. A nil slice is SQL NULL: a leaf's value is NULL on an
+          # object's priority row.
           - db_type: jsonb
-            go_type: encoding/json.RawMessage
+            go_type:
+              type: "[]byte"
           - db_type: jsonb
             nullable: true
-            go_type: encoding/json.RawMessage
+            go_type:
+              type: "[]byte"
   - engine: postgresql
     schema:
       - internal/store/migrations/storage

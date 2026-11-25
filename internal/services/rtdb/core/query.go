@@ -164,20 +164,23 @@ func (q Query) IndexKey() string {
 	return ""
 }
 
-// Keys returns the children of n the query selects, in index order. A leaf has none.
+// Keys returns the children of n the query selects, in index order. A leaf has none. With a
+// limit, only the selected children are put in order, not every child.
 func (q Query) Keys(n *Node) []string {
-	keys := n.SortedKeys(q.Index)
+	es := n.sortEntries(q.Index)
 	if q.start != nil || q.end != nil {
-		keys = slices.DeleteFunc(keys, func(k string) bool { return !q.inRange(k, n.children[k]) })
+		es = slices.DeleteFunc(es, func(e sortEntry) bool { return !q.inRange(e.key, e.child) })
 	}
-	if q.Limit > 0 && len(keys) > q.Limit {
-		if q.FromRight {
-			keys = keys[len(keys)-q.Limit:]
-		} else {
-			keys = keys[:q.Limit]
-		}
+	switch {
+	case q.Limit <= 0 || len(es) <= q.Limit:
+		slices.SortFunc(es, q.Index.compareEntries)
+	case q.FromRight:
+		es = smallest(es, q.Limit, func(a, b sortEntry) int { return q.Index.compareEntries(b, a) })
+		slices.Reverse(es)
+	default:
+		es = smallest(es, q.Limit, q.Index.compareEntries)
 	}
-	return keys
+	return entryKeys(es)
 }
 
 // Filter returns the part of n the query selects: n itself when it loads everything, else
@@ -216,16 +219,7 @@ func (q Query) compare(key string, c *Node, b *bound) int {
 	if q.Index.kind == byKey {
 		return compareNames(key, b.value.StringValue())
 	}
-	var v *Node
-	switch q.Index.kind {
-	case byPriority:
-		v = c.Priority()
-	case byValue:
-		v = c
-	case byChild:
-		v = c.Get(q.Index.child)
-	}
-	if cmp := CompareValues(v, b.value); cmp != 0 {
+	if cmp := CompareValues(q.Index.value(c), b.value); cmp != 0 {
 		return cmp
 	}
 	return compareNames(key, b.name)
