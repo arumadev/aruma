@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 )
 
@@ -83,7 +84,7 @@ func (d *Database) fanout(ctx context.Context, tx StoreTx, ch Change, b *batchSt
 			}
 		})
 	}
-	views := &views{nodes: map[string]*Node{}, windows: map[string]*Node{}, cache: d.cache, state: b}
+	views := &views{nodes: map[string]*Node{}, windows: map[string]*Node{}, cache: d.cache, state: b, missed: d.missed}
 	for _, l := range concerned {
 		if l.tag == 0 {
 			untaggedPushes(l, ch, b)
@@ -106,6 +107,8 @@ type views struct {
 	// cache keeps the nodes from one change to the next; state is the batch's.
 	cache *nodeCache
 	state *batchState
+	// missed is the database's count of changes the writer may have missed (Database.missed).
+	missed uint64
 }
 
 func (v *views) node(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
@@ -127,14 +130,45 @@ func (v *views) node(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
 	return n, nil
 }
 
-func (v *views) window(l *listen, node *Node) *Node {
+// window returns l's window over node. When the change touched only the children keys of
+// node (nil: it may have touched any) and l's window is from after the last missed change,
+// the window is updated from l's rather than filtered from every child again: a write under
+// a leaderboard of 100,000 children visits the window and the written child, not the 100,000.
+func (v *views) window(l *listen, node *Node, keys []string) *Node {
 	key := l.path.String() + "\x00" + l.query.ID()
 	if w, ok := v.windows[key]; ok {
 		return w
 	}
-	w := l.query.Filter(node)
+	w, ok := (*Node)(nil), false
+	if keys != nil && l.windowAt == v.missed {
+		w, ok = l.query.Update(l.window, node, keys)
+		if ok && v.cache.check {
+			if full := l.query.Filter(node); !Equal(w, full) {
+				panic(fmt.Sprintf("rtdb: the window of %s at %q updated by %q is %s, filtered %s",
+					l.query.ID(), l.path.String(), keys, w.ExportJSON(), full.ExportJSON()))
+			}
+		}
+	}
+	if !ok {
+		w = l.query.Filter(node)
+	}
 	v.windows[key] = w
 	return w
+}
+
+// changedKeys returns the children of p that changes at targets touched, nil when one is at p
+// or above it, which may touch any. The priority of p itself is no child.
+func changedKeys(p Path, targets []Path) []string {
+	keys := []string{}
+	for _, t := range targets {
+		switch {
+		case t.Contains(p):
+			return nil
+		case p.Contains(t) && t[len(p)] != PriorityKey:
+			keys = append(keys, t[len(p)])
+		}
+	}
+	return keys
 }
 
 func untaggedPushes(l *listen, ch Change, b *batchState) {
@@ -178,13 +212,14 @@ func taggedPushes(ctx context.Context, tx StoreTx, l *listen, targets []Path, b 
 	if err != nil {
 		return err
 	}
-	old, neu := l.window, v.window(l, node)
+	keys := changedKeys(l.path, targets)
+	old, oldAt, neu := l.window, l.windowAt, v.window(l, node, keys)
+	l.window, l.windowAt = neu, v.missed
+	b.undo = append(b.undo, func() { l.window, l.windowAt = old, oldAt })
 	if Equal(old, neu) {
 		return nil
 	}
-	l.window = neu
-	b.undo = append(b.undo, func() { l.window = old })
-	if slices.ContainsFunc(targets, func(t Path) bool { return t.Contains(l.path) }) {
+	if keys == nil {
 		b.deliver(l.sess, Push{Action: PushData, Path: l.path, Data: neu.ExportJSON(), Tag: l.tag})
 		return nil
 	}

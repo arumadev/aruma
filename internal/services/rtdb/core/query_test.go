@@ -171,6 +171,78 @@ func TestQueryKeysMatchesFullSort(t *testing.T) {
 	}
 }
 
+// A window kept by Update through random changes to a node's children is always Filter's on the
+// node, and Update gives up only when the window loses a child the limit had kept.
+func TestQueryUpdateMatchesFilter(t *testing.T) {
+	rng := rand.New(rand.NewPCG(4, 2))
+	values := []string{`null`, `false`, `true`, `0`, `1`, `2.5`, `-3`, `"a"`, `"b"`, `{"x": 1}`}
+	keyBounds := []string{`"0"`, `"1"`, `"5"`, `"a"`, `"m"`}
+	keys := []string{"0", "1", "2", "5", "10", "a", "b", "k01", "k02", "m", "z"}
+	child := func() *Node {
+		if rng.IntN(5) == 0 {
+			return nil
+		}
+		return mustParse(t, fmt.Sprintf(`{"s": %s, ".priority": %d}`, values[rng.IntN(len(values))], rng.IntN(4)))
+	}
+	updated, filtered := 0, 0
+	for round := range 200 {
+		var n *Node
+		for _, k := range keys {
+			if rng.IntN(2) == 0 {
+				n = n.Set(Path{k}, child())
+			}
+		}
+		for _, index := range []string{".key", ".priority", ".value", "s"} {
+			obj := map[string]any{"i": index}
+			if l := rng.IntN(6); l > 0 {
+				obj["l"] = l
+				if rng.IntN(2) == 0 {
+					obj["vf"] = "r"
+				}
+			}
+			bounds := values[1 : len(values)-1]
+			if index == ".key" {
+				bounds = keyBounds
+			}
+			if rng.IntN(3) == 0 {
+				obj["sp"] = json.RawMessage(bounds[rng.IntN(len(bounds))])
+			}
+			if rng.IntN(3) == 0 {
+				obj["ep"] = json.RawMessage(bounds[rng.IntN(len(bounds))])
+			}
+			qs, _ := json.Marshal(obj)
+			q, err := NewQuery(spec(t, string(qs)))
+			if err != nil {
+				t.Fatalf("%s: %v", qs, err)
+			}
+			cur, w := n, q.Filter(n)
+			for range 30 {
+				var touched []string
+				for range 1 + rng.IntN(3) {
+					k := keys[rng.IntN(len(keys))]
+					cur = cur.Set(Path{k}, child())
+					touched = append(touched, k)
+				}
+				next, ok := q.Update(w, cur, touched)
+				if ok {
+					updated++
+				} else {
+					filtered++
+					next = q.Filter(cur)
+				}
+				if want := q.Filter(cur); !Equal(next, want) {
+					t.Fatalf("round %d, query %s, after changes to %q (updated: %v):\n got  %s\n want %s",
+						round, qs, touched, ok, next.ExportJSON(), want.ExportJSON())
+				}
+				w = next
+			}
+		}
+	}
+	if updated < 4*filtered {
+		t.Errorf("Update gave up %d times and succeeded %d: it should rarely need Filter", filtered, updated)
+	}
+}
+
 func TestSmallest(t *testing.T) {
 	rng := rand.New(rand.NewPCG(1, 1))
 	for range 500 {

@@ -230,10 +230,14 @@ func (n *Node) sortEntries(ix Index) []sortEntry {
 	}
 	es := make([]sortEntry, 0, len(n.children))
 	for k, c := range n.children {
-		ki, isInt := keyInt(k)
-		es = append(es, sortEntry{key: k, ki: ki, isInt: isInt, child: c, value: ix.value(c)})
+		es = append(es, newSortEntry(ix, k, c))
 	}
 	return es
+}
+
+func newSortEntry(ix Index, k string, c *Node) sortEntry {
+	ki, isInt := keyInt(k)
+	return sortEntry{key: k, ki: ki, isInt: isInt, child: c, value: ix.value(c)}
 }
 
 // compareEntries is Compare on entries. The order is total (ties go to the key), so a sort by

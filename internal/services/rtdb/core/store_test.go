@@ -23,6 +23,9 @@ type memStore struct {
 	// lostAcks makes the next n commits take effect and still report an error, as a lost
 	// connection after the commit would.
 	lostAcks int
+	// seqErrs makes the next n reads of a database's seq fail, so that a lost ack leaves the
+	// commit's outcome unknown.
+	seqErrs int
 	// refuse makes writes of this string value fail as Postgres refuses data (class 22).
 	refuse  string
 	commits int
@@ -73,6 +76,10 @@ func (s *memStore) Begin(_ context.Context, info DatabaseInfo) (StoreTx, error) 
 func (s *memStore) Seq(_ context.Context, info DatabaseInfo) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.seqErrs > 0 {
+		s.seqErrs--
+		return 0, errors.New("connection lost")
+	}
 	if db := s.dbs[info.Name]; db != nil {
 		return db.info.Seq, nil
 	}
