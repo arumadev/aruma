@@ -83,7 +83,7 @@ func (d *Database) fanout(ctx context.Context, tx StoreTx, ch Change, b *batchSt
 			}
 		})
 	}
-	views := &views{nodes: map[string]*Node{}, windows: map[string]*Node{}}
+	views := &views{nodes: map[string]*Node{}, windows: map[string]*Node{}, cache: d.cache, state: b}
 	for _, l := range concerned {
 		if l.tag == 0 {
 			untaggedPushes(l, ch, b)
@@ -103,6 +103,9 @@ func (d *Database) fanout(ctx context.Context, tx StoreTx, ch Change, b *batchSt
 type views struct {
 	nodes   map[string]*Node // by path
 	windows map[string]*Node // by path and query
+	// cache keeps the nodes from one change to the next; state is the batch's.
+	cache *nodeCache
+	state *batchState
 }
 
 func (v *views) node(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
@@ -110,9 +113,15 @@ func (v *views) node(ctx context.Context, tx StoreTx, p Path) (*Node, error) {
 	if n, ok := v.nodes[key]; ok {
 		return n, nil
 	}
-	n, err := tx.Read(ctx, p)
+	n, ok, err := v.cache.get(ctx, tx, p)
 	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		if n, err = tx.Read(ctx, p); err != nil {
+			return nil, err
+		}
+		v.cache.put(p, n, v.state)
 	}
 	v.nodes[key] = n
 	return n, nil

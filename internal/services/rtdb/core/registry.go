@@ -24,12 +24,15 @@ type registry struct {
 	limits   Limits
 	idle     time.Duration
 	onCommit func(*Database, Commit)
+	// cache is the rows all writers' node caches may hold together (Limits.CacheRows).
+	cache *cacheBudget
 }
 
 func newRegistry(store Store, now func() time.Time, log *slog.Logger, limits Limits, idle time.Duration) *registry {
 	return &registry{
 		dbs: map[string]*Database{}, retiring: map[string]*Database{},
 		store: store, now: now, log: log, limits: limits, idle: idle,
+		cache: &cacheBudget{limit: limits.CacheRows},
 	}
 }
 
@@ -52,7 +55,7 @@ func (r *registry) acquire(project int64, name string) (*Database, error) {
 	}
 	d := r.dbs[name]
 	if d == nil {
-		d = newDatabase(project, name, r.store, r.now, r.log, r.limits, nil)
+		d = newDatabase(project, name, r.store, r.now, r.log, r.limits, r.cache, nil)
 		if r.onCommit != nil {
 			d.onCommit = func(c Commit) { r.onCommit(d, c) }
 		}
@@ -106,6 +109,27 @@ func (r *registry) stop(d *Database) {
 			delete(r.retiring, d.name)
 		}
 	}()
+}
+
+// purged tells the running writers of a project that its data were deleted outside them, and
+// waits until each has emptied its cache.
+func (r *registry) purged(project int64) {
+	r.mu.Lock()
+	var dbs []*Database
+	for _, d := range r.dbs {
+		if d.project == project {
+			d.refs++
+			d.gen++
+			dbs = append(dbs, d)
+		}
+	}
+	r.mu.Unlock()
+	for _, d := range dbs {
+		done := make(chan struct{})
+		d.submit(&command{purged: true, done: func(Result) { close(done) }})
+		<-done
+		r.release(d)
+	}
 }
 
 // close stops every writer once its sessions are gone, and waits for them until ctx ends.
